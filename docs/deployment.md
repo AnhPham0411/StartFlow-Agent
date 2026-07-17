@@ -10,15 +10,15 @@ PostgreSQL 18 và Keycloak tiếp tục là external dependencies được cung 
 
 Mỗi môi trường phải dùng namespace riêng:
 
-| Tài nguyên      | Giá trị khuyến nghị                                                                                       |
-| --------------- | --------------------------------------------------------------------------------------------------------- |
-| Release root    | `/opt/startflow-agent/dev`, `/opt/startflow-agent/prod` hoặc đường dẫn riêng qua `STARTFLOW_DROPLET_PATH` |
-| Compose project | `startflow-dev`, `startflow-prod`                                                                         |
-| Docker network  | `startflow-dev`, `startflow-prod`                                                                         |
-| Container names | `startflow-frontend-*`, `startflow-backend-*`, `startflow-ai-*`                                           |
-| Host ports      | cặp port riêng, ví dụ `3100/3101`                                                                         |
-| Nginx sites     | `startflow-<env>-frontend.conf`, `startflow-<env>-backend.conf`                                           |
-| Domains         | app/API subdomain riêng của StartFlow                                                                     |
+| Tài nguyên      | Giá trị khuyến nghị                                                                                  |
+| --------------- | ---------------------------------------------------------------------------------------------------- |
+| Release root    | `/opt/startflow-agent/dev`, `/opt/startflow-agent/prod` hoặc root riêng qua `STARTFLOW_DROPLET_ROOT` |
+| Compose project | `startflow-dev`, `startflow-prod`                                                                    |
+| Docker network  | `startflow-dev`, `startflow-prod`                                                                    |
+| Container names | `startflow-frontend-*`, `startflow-backend-*`, `startflow-ai-*`                                      |
+| Host ports      | cặp port riêng, ví dụ `3100/3101`                                                                    |
+| Nginx sites     | `startflow-<env>-frontend.conf`, `startflow-<env>-backend.conf`                                      |
+| Domains         | app/API subdomain riêng của StartFlow                                                                |
 
 Không dùng port, container name, Compose project hoặc Nginx site của ứng dụng đang có trên droplet.
 
@@ -26,17 +26,17 @@ Không dùng port, container name, Compose project hoặc Nginx site của ứng
 
 Tạo GitHub Environments `development` và `production`, sau đó cấu hình:
 
-| Secret/variable                           | Nội dung                                                                     |
-| ----------------------------------------- | ---------------------------------------------------------------------------- |
-| `STARTFLOW_ENV_DEV`, `STARTFLOW_ENV_MAIN` | toàn bộ runtime `KEY=value`, dựa trên `.env.production.example`              |
-| `DROPLET_HOST_DEV/MAIN`                   | hostname/IP của shared droplet                                               |
-| `DROPLET_USER_DEV/MAIN`                   | SSH deploy user                                                              |
-| `SSH_PRIVATE_KEY_DEV/MAIN`                | private key deploy                                                           |
-| `DROPLET_SSH_KNOWN_HOSTS_DEV/MAIN`        | verified host-key line lấy từ kênh tin cậy                                   |
-| `POSTGRES_TLS_CA_BASE64_DEV/MAIN`         | CA certificate base64 khi dùng `verify-ca`/`verify-full`                     |
-| Variable `STARTFLOW_DROPLET_PATH`         | tùy chọn theo từng GitHub Environment; mặc định `/opt/startflow-agent/<env>` |
+| Secret/variable                   | Nội dung                                                                     |
+| --------------------------------- | ---------------------------------------------------------------------------- |
+| `STARTFLOW_ENV`                   | toàn bộ runtime `KEY=value`, dựa trên `.env.production.example`              |
+| `DROPLET_HOST`                    | hostname/IP của shared droplet                                               |
+| `DROPLET_USER`                    | SSH deploy user                                                              |
+| `SSH_PRIVATE_KEY`                 | private key deploy                                                           |
+| `DROPLET_SSH_KNOWN_HOSTS`         | verified host-key line lấy từ kênh tin cậy                                   |
+| `POSTGRES_TLS_CA_BASE64`          | CA certificate base64 khi dùng `verify-ca`/`verify-full`                     |
+| Variable `STARTFLOW_DROPLET_ROOT` | tùy chọn theo từng GitHub Environment; mặc định `/opt/startflow-agent/<env>` |
 
-`STARTFLOW_ENV_*` phải có `DEPLOY_ENV`, `APP_DOMAIN`, `API_DOMAIN`, port riêng, `STARTFLOW_NETWORK`, database URLs, Keycloak config, LLM config và internal token. Runtime secret không được chứa placeholder.
+`STARTFLOW_ENV` phải có `DEPLOY_ENV`, `APP_DOMAIN`, `API_DOMAIN`, port riêng, `STARTFLOW_NETWORK`, database URLs, Keycloak config, LLM config và internal token. Runtime secret không được chứa placeholder. Dùng cùng tên secret ở hai GitHub Environments; mỗi environment lưu giá trị riêng.
 
 ## Pipeline độc lập
 

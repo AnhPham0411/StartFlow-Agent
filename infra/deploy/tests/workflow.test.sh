@@ -8,8 +8,8 @@ grep -Fq 'DROPLET_SSH_KNOWN_HOSTS' "$workflow"
 grep -Fq 'startflow-backend:$IMAGE_TAG' "$workflow"
 grep -Fq 'infra/deploy/prepare-env.sh' "$workflow"
 grep -Fq 'infra/deploy/deploy.sh' "$workflow"
-grep -Fq "'/opt/startflow-agent/prod'" "$workflow"
-grep -Fq "'/opt/startflow-agent/dev'" "$workflow"
+grep -Fq 'STARTFLOW_DROPLET_ROOT' "$workflow"
+grep -Fq 'DROPLET_PATH=%s/%s' "$workflow"
 
 if grep -Fq 'devops-config' "$workflow"; then
   echo 'StartFlow deploy must be self-contained.' >&2

@@ -17,13 +17,13 @@ concurrency:
 jobs:
   deploy:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
-    name: Deploy ${{ ((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && 'production' || 'development' }}
+    name: Deploy ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'main' && 'production' || 'development' }}
     runs-on: ubuntu-latest
-    environment: ${{ ((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && 'production' || 'development' }}
+    environment: ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'main' && 'production' || 'development' }}
     env:
-      TARGET_ENV: ${{ ((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && 'prod' || 'dev' }}
-      RELEASE_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
-      DROPLET_PATH: ${{ vars.STARTFLOW_DROPLET_PATH || (((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && '/opt/startflow-agent/prod' || '/opt/startflow-agent/dev') }}
+      TARGET_ENV: ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'main' && 'prod' || 'dev' }}
+      RELEASE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      DROPLET_ROOT: ${{ vars.STARTFLOW_DROPLET_ROOT || '/opt/startflow-agent' }}
     steps:
       - name: Checkout StartFlow
         uses: actions/checkout@v5
@@ -40,11 +40,19 @@ jobs:
           bash infra/deploy/tests/deploy.test.sh
           bash infra/deploy/tests/workflow.test.sh
 
+      - name: Select isolated release root
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$DROPLET_ROOT" =~ ^/[A-Za-z0-9._/-]+$ ]]
+          [[ "$DROPLET_ROOT" != '/' ]]
+          printf 'DROPLET_PATH=%s/%s\n' "${DROPLET_ROOT%/}" "$TARGET_ENV" >> "$GITHUB_ENV"
+
       - name: Prepare runtime environment
         shell: bash
         env:
-          STARTFLOW_RUNTIME_ENV: ${{ ((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && secrets.STARTFLOW_ENV_MAIN || secrets.STARTFLOW_ENV_DEV }}
-          POSTGRES_CA_CERT_BASE64: ${{ ((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && secrets.POSTGRES_TLS_CA_BASE64_MAIN || secrets.POSTGRES_TLS_CA_BASE64_DEV }}
+          STARTFLOW_RUNTIME_ENV: ${{ secrets.STARTFLOW_ENV }}
+          POSTGRES_CA_CERT_BASE64: ${{ secrets.POSTGRES_TLS_CA_BASE64 }}
         run: |
           set -euo pipefail
           mkdir -p .deploy
@@ -99,8 +107,8 @@ jobs:
       - name: Configure strict SSH
         shell: bash
         env:
-          SSH_PRIVATE_KEY: ${{ ((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && secrets.SSH_PRIVATE_KEY_MAIN || secrets.SSH_PRIVATE_KEY_DEV }}
-          DROPLET_SSH_KNOWN_HOSTS: ${{ ((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && secrets.DROPLET_SSH_KNOWN_HOSTS_MAIN || secrets.DROPLET_SSH_KNOWN_HOSTS_DEV }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DROPLET_SSH_KNOWN_HOSTS: ${{ secrets.DROPLET_SSH_KNOWN_HOSTS }}
         run: |
           set -euo pipefail
           install -d -m 700 ~/.ssh
@@ -113,8 +121,8 @@ jobs:
       - name: Upload release bundle
         shell: bash
         env:
-          DROPLET_HOST: ${{ ((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && secrets.DROPLET_HOST_MAIN || secrets.DROPLET_HOST_DEV }}
-          DROPLET_USER: ${{ ((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && secrets.DROPLET_USER_MAIN || secrets.DROPLET_USER_DEV }}
+          DROPLET_HOST: ${{ secrets.DROPLET_HOST }}
+          DROPLET_USER: ${{ secrets.DROPLET_USER }}
         run: |
           set -euo pipefail
           [[ "$DROPLET_PATH" =~ ^/[A-Za-z0-9._/-]+$ ]]
@@ -134,8 +142,8 @@ jobs:
       - name: Migrate, deploy, and verify
         shell: bash
         env:
-          DROPLET_HOST: ${{ ((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && secrets.DROPLET_HOST_MAIN || secrets.DROPLET_HOST_DEV }}
-          DROPLET_USER: ${{ ((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && secrets.DROPLET_USER_MAIN || secrets.DROPLET_USER_DEV }}
+          DROPLET_HOST: ${{ secrets.DROPLET_HOST }}
+          DROPLET_USER: ${{ secrets.DROPLET_USER }}
         run: |
           set -euo pipefail
           ssh -o BatchMode=yes "$DROPLET_USER@$DROPLET_HOST" \
