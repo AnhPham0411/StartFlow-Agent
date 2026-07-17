@@ -97,3 +97,18 @@ jobs:
           fi
       - name: Check immutable contract vocabulary
         run: node --test test/contracts/*.test.mjs
+
+  deployment-assets:
+    name: Independent deployment assets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Validate scripts and deployment contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n infra/deploy/prepare-env.sh
+          bash -n infra/deploy/deploy.sh
+          bash infra/deploy/tests/prepare-env.test.sh
+          bash infra/deploy/tests/deploy.test.sh
+          bash infra/deploy/tests/workflow.test.sh

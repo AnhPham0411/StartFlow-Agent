@@ -28,12 +28,12 @@ Chứng minh một đội AI ngân hàng có thể lập kế hoạch, dùng cô
 
 ## Implementation Map
 
-| AC          | Backend                         | Frontend            | Other                | Status      |
-| ----------- | ------------------------------- | ------------------- | -------------------- | ----------- |
-| AC-001..004 | `backend/`                      | `frontend/`         | Compose/external env | implemented |
-| AC-005..013 | `backend/src/modules/runs`      | `frontend/app/runs` | `ai-service/src/`    | implemented |
-| AC-014..019 | auth/approval/knowledge modules | role-aware screens  | contracts/RAG        | implemented |
-| AC-020..024 | backend tests                   | frontend/e2e        | CI/devops/docs       | implemented |
+| AC          | Backend                         | Frontend            | Other                     | Status      |
+| ----------- | ------------------------------- | ------------------- | ------------------------- | ----------- |
+| AC-001..004 | `backend/`                      | `frontend/`         | Compose/external env      | implemented |
+| AC-005..013 | `backend/src/modules/runs`      | `frontend/app/runs` | `ai-service/src/`         | implemented |
+| AC-014..019 | auth/approval/knowledge modules | role-aware screens  | contracts/RAG             | implemented |
+| AC-020..024 | backend tests                   | frontend/e2e        | CI/standalone deploy/docs | implemented |
 
 ## Test Map
 

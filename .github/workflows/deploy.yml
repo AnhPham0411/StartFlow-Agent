@@ -1,25 +1,143 @@
 name: Deploy StartFlow
 
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [dev, main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: startflow-deploy-${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref_name }}
+  cancel-in-progress: false
+
 jobs:
   deploy:
-    uses: local-soltuion/devops-config/.github/workflows/deploy-startflow-agent.yml@main
-    with:
-      environment: ${{ github.ref_name == 'main' && 'production' || 'development' }}
-      env_tag: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
-      devops_ref: main
-    secrets:
-      DEVOPS_CONFIG_TOKEN: ${{ secrets.DEVOPS_CONFIG_TOKEN }}
-      STARTFLOW_RUNTIME_ENV: ${{ github.ref_name == 'main' && secrets.STARTFLOW_ENV_MAIN || secrets.STARTFLOW_ENV_DEV }}
-      DROPLET_HOST: ${{ github.ref_name == 'main' && secrets.DROPLET_HOST_MAIN || secrets.DROPLET_HOST_DEV }}
-      DROPLET_USER: ${{ github.ref_name == 'main' && secrets.DROPLET_USER_MAIN || secrets.DROPLET_USER_DEV }}
-      SSH_PRIVATE_KEY: ${{ github.ref_name == 'main' && secrets.SSH_PRIVATE_KEY_MAIN || secrets.SSH_PRIVATE_KEY_DEV }}
-      DROPLET_SSH_KNOWN_HOSTS: ${{ github.ref_name == 'main' && secrets.DROPLET_SSH_KNOWN_HOSTS_MAIN || secrets.DROPLET_SSH_KNOWN_HOSTS_DEV }}
-      POSTGRES_CA_CERT_BASE64: ${{ github.ref_name == 'main' && secrets.POSTGRES_TLS_CA_BASE64_MAIN || secrets.POSTGRES_TLS_CA_BASE64_DEV }}
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    name: Deploy ${{ ((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && 'production' || 'development' }}
+    runs-on: ubuntu-latest
+    environment: ${{ ((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && 'production' || 'development' }}
+    env:
+      TARGET_ENV: ${{ ((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && 'prod' || 'dev' }}
+      RELEASE_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+      DROPLET_PATH: ${{ vars.STARTFLOW_DROPLET_PATH || (((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && '/opt/startflow-agent/prod' || '/opt/startflow-agent/dev') }}
+    steps:
+      - name: Checkout StartFlow
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.RELEASE_SHA }}
+
+      - name: Validate deployment assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n infra/deploy/prepare-env.sh
+          bash -n infra/deploy/deploy.sh
+          bash infra/deploy/tests/prepare-env.test.sh
+          bash infra/deploy/tests/deploy.test.sh
+          bash infra/deploy/tests/workflow.test.sh
+
+      - name: Prepare runtime environment
+        shell: bash
+        env:
+          STARTFLOW_RUNTIME_ENV: ${{ ((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && secrets.STARTFLOW_ENV_MAIN || secrets.STARTFLOW_ENV_DEV }}
+          POSTGRES_CA_CERT_BASE64: ${{ ((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && secrets.POSTGRES_TLS_CA_BASE64_MAIN || secrets.POSTGRES_TLS_CA_BASE64_DEV }}
+        run: |
+          set -euo pipefail
+          mkdir -p .deploy
+          OUTPUT_ENV="$GITHUB_WORKSPACE/.deploy/.env" \
+          OUTPUT_CA="$GITHUB_WORKSPACE/.deploy/postgres-ca.crt" \
+            bash infra/deploy/prepare-env.sh
+
+          image_tag="${RELEASE_SHA::12}"
+          {
+            printf '\nSTARTFLOW_BACKEND_IMAGE=startflow-backend:%s\n' "$image_tag"
+            printf 'STARTFLOW_FRONTEND_IMAGE=startflow-frontend:%s\n' "$image_tag"
+            printf 'STARTFLOW_AI_IMAGE=startflow-ai:%s\n' "$image_tag"
+            printf 'COMPOSE_PROJECT_NAME=startflow-%s\n' "$TARGET_ENV"
+          } >> .deploy/.env
+          chmod 600 .deploy/.env
+          printf 'IMAGE_TAG=%s\n' "$image_tag" >> "$GITHUB_ENV"
+
+      - name: Build immutable images
+        shell: bash
+        run: |
+          set -euo pipefail
+          env_value() {
+            local key="$1"
+            sed -n "s/^${key}=//p" .deploy/.env | tail -n 1
+          }
+
+          docker build \
+            --file backend/Dockerfile \
+            --tag "startflow-backend:$IMAGE_TAG" \
+            .
+
+          docker build \
+            --file frontend/Dockerfile \
+            --build-arg "NEXT_PUBLIC_API_URL=$(env_value NEXT_PUBLIC_API_URL)" \
+            --build-arg "NEXT_PUBLIC_AUTH_MODE=$(env_value NEXT_PUBLIC_AUTH_MODE)" \
+            --build-arg "NEXT_PUBLIC_KEYCLOAK_URL=$(env_value NEXT_PUBLIC_KEYCLOAK_URL)" \
+            --build-arg "NEXT_PUBLIC_KEYCLOAK_REALM=$(env_value NEXT_PUBLIC_KEYCLOAK_REALM)" \
+            --build-arg "NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=$(env_value NEXT_PUBLIC_KEYCLOAK_CLIENT_ID)" \
+            --tag "startflow-frontend:$IMAGE_TAG" \
+            .
+
+          docker build \
+            --file ai-service/Dockerfile \
+            --tag "startflow-ai:$IMAGE_TAG" \
+            .
+
+          docker save \
+            "startflow-backend:$IMAGE_TAG" \
+            "startflow-frontend:$IMAGE_TAG" \
+            "startflow-ai:$IMAGE_TAG" | gzip -1 > .deploy/images.tar.gz
+
+      - name: Configure strict SSH
+        shell: bash
+        env:
+          SSH_PRIVATE_KEY: ${{ ((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && secrets.SSH_PRIVATE_KEY_MAIN || secrets.SSH_PRIVATE_KEY_DEV }}
+          DROPLET_SSH_KNOWN_HOSTS: ${{ ((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && secrets.DROPLET_SSH_KNOWN_HOSTS_MAIN || secrets.DROPLET_SSH_KNOWN_HOSTS_DEV }}
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$DROPLET_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+          test -s ~/.ssh/id_ed25519
+          test -s ~/.ssh/known_hosts
+
+      - name: Upload release bundle
+        shell: bash
+        env:
+          DROPLET_HOST: ${{ ((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && secrets.DROPLET_HOST_MAIN || secrets.DROPLET_HOST_DEV }}
+          DROPLET_USER: ${{ ((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && secrets.DROPLET_USER_MAIN || secrets.DROPLET_USER_DEV }}
+        run: |
+          set -euo pipefail
+          [[ "$DROPLET_PATH" =~ ^/[A-Za-z0-9._/-]+$ ]]
+          ssh -o BatchMode=yes "$DROPLET_USER@$DROPLET_HOST" "mkdir -p '$DROPLET_PATH/release'"
+          cp docker-compose.yml .deploy/docker-compose.yml
+          cp docker-compose.prod.yml .deploy/docker-compose.prod.yml
+          cp infra/deploy/deploy.sh .deploy/deploy.sh
+          cp -R infra/deploy/nginx .deploy/nginx
+          release_files=(.env images.tar.gz docker-compose.yml docker-compose.prod.yml deploy.sh nginx)
+          if [[ -f .deploy/postgres-ca.crt ]]; then
+            release_files+=(postgres-ca.crt)
+          fi
+          tar -C .deploy -czf .deploy/release.tar.gz "${release_files[@]}"
+          scp -o BatchMode=yes .deploy/release.tar.gz \
+            "$DROPLET_USER@$DROPLET_HOST:$DROPLET_PATH/release/release-$RELEASE_SHA.tar.gz"
+
+      - name: Migrate, deploy, and verify
+        shell: bash
+        env:
+          DROPLET_HOST: ${{ ((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && secrets.DROPLET_HOST_MAIN || secrets.DROPLET_HOST_DEV }}
+          DROPLET_USER: ${{ ((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || github.ref_name == 'main') && secrets.DROPLET_USER_MAIN || secrets.DROPLET_USER_DEV }}
+        run: |
+          set -euo pipefail
+          ssh -o BatchMode=yes "$DROPLET_USER@$DROPLET_HOST" \
+            "DROPLET_PATH='$DROPLET_PATH' RELEASE_SHA='$RELEASE_SHA' TARGET_ENV='$TARGET_ENV' bash -se" \
+            < infra/deploy/deploy.sh

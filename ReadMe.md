@@ -40,6 +40,7 @@ ai-service/          FastAPI, LangGraph, tools, RAG, Alembic
 packages/contracts/  Zod + JSON Schema public contracts
 knowledge/seed/      chính sách demo không chứa dữ liệu khách hàng
 infra/keycloak/      realm/client/roles template cho Keycloak có sẵn
+infra/deploy/        standalone deploy scripts, tests và Nginx templates
 product/             PRD, stories, acceptance criteria, UAT
 design/              flow, UI spec và wireframe
 test/                contract tests và Playwright journey
@@ -80,9 +81,9 @@ Python quality/tests được khóa bằng `ai-service/uv.lock` và chạy trong
 
 ## Deploy
 
-Push `dev` hoặc `main` gọi reusable workflow `local-soltuion/devops-config/.github/workflows/deploy-startflow-agent.yml@main`. Workflow build ba image theo commit SHA, dùng strict SSH known hosts, chạy Prisma/Alembic migration trước khi thay container, health-check và rollback về release trước nếu application không ready.
+Push `dev` hoặc `main` chạy CI rồi kích hoạt workflow độc lập `.github/workflows/deploy.yml` ngay trong repository này khi CI thành công. Workflow build ba image theo commit SHA, dùng strict SSH known hosts, triển khai vào `/opt/startflow-agent/<env>`, chạy Prisma/Alembic migration trước khi thay container, health-check và chỉ rollback các container StartFlow nếu application không ready.
 
-Xem [deployment](docs/deployment.md) để cấu hình GitHub Environment/secrets. Scaffold này không tự push, không chạy workflow và chưa thay đổi droplet.
+Xem [deployment](docs/deployment.md) để cấu hình GitHub Environment/secrets, port, domain và release path riêng trên shared droplet.
 
 ## Tài liệu
 

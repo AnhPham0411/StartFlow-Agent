@@ -2,7 +2,7 @@
 
 ## Yêu cầu
 
-Scaffold ứng dụng hackathon đa tác nhân bằng Next.js, NestJS và Python AI service; kết nối PostgreSQL 18/Keycloak có sẵn qua env; đóng gói Docker và deploy bằng GitHub Actions qua repository `devops-config` trên cùng droplet.
+Scaffold ứng dụng hackathon đa tác nhân bằng Next.js, NestJS và Python AI service; kết nối PostgreSQL 18/Keycloak có sẵn qua env; đóng gói Docker và deploy độc lập bằng GitHub Actions trên cùng droplet với các ứng dụng khác.
 
 ## Đã thay đổi
 
@@ -12,7 +12,7 @@ Scaffold ứng dụng hackathon đa tác nhân bằng Next.js, NestJS và Python
 - CREATE `packages/contracts/` — vocabulary và schema dùng chung cho case/run/event.
 - CREATE `docker-compose.yml`, `docker-compose.prod.yml`, Dockerfiles và env examples — chỉ quản lý ba app services.
 - CREATE `.github/workflows/ci.yml`, `.github/workflows/deploy.yml` — quality gates, E2E, image build và reusable deployment.
-- CREATE/EDIT `devops-config` StartFlow workflow, deploy scripts và Nginx TLS templates — migrate-first, healthcheck và rollback container.
+- CREATE `infra/deploy/` và `.github/workflows/deploy.yml` — standalone deploy, Nginx TLS, migrate-first, healthcheck và rollback container.
 - CREATE `START.md`, `docs/`, `product/`, `design/`, `knowledge/seed/` — runbook, architecture, demo flow và dữ liệu mô phỏng.
 
 ## Quyết định
@@ -31,7 +31,7 @@ Scaffold ứng dụng hackathon đa tác nhân bằng Next.js, NestJS và Python
 - `pnpm test:e2e` với Chrome hệ thống — pass: 2 critical journeys.
 - AI service — pass ở lượt kiểm tra trước khi dọn bootstrap environment: Ruff, mypy, compileall và 27 pytest tests.
 - Docker Compose local/production `config --quiet` — pass.
-- `git diff --check` cho StartFlow và `devops-config` — pass.
+- `git diff --check` cho StartFlow — pass.
 
 ## Review và repair
 
@@ -44,7 +44,7 @@ Scaffold ứng dụng hackathon đa tác nhân bằng Next.js, NestJS và Python
 - Docker daemon local đang tắt nên chưa build image tại máy này; CI có job build cả ba image.
 - Chưa có runtime credentials nên chưa chạy readiness/migration với PostgreSQL/Keycloak thật hoặc live admin knowledge ingest.
 - Chưa kích hoạt GitHub Actions deploy lên droplet và chưa thực hiện UAT demo tối đa 10 phút.
-- Bash không có trên máy Windows này nên shell test của `devops-config` sẽ chạy trong Ubuntu GitHub runner.
+- Bash không có trên máy Windows này nên shell test của `infra/deploy` sẽ chạy trong Ubuntu GitHub runner.
 
 ## Product traceability
 

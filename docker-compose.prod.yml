@@ -40,5 +40,5 @@ services:
 
 networks:
   startflow:
-    name: ${STARTFLOW_NETWORK:-shared-apps}
+    name: ${STARTFLOW_NETWORK:-startflow-prod}
     external: true
