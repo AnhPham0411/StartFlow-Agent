@@ -4,16 +4,31 @@ node_modules/
 venv/
 __pycache__/
 *.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
 
 # Env & secrets
 .env
 .env.*
 !.env.example
+!.env.*.example
 
 # Build output
 dist/
 build/
 .next/
+coverage/
+test-results/
+playwright-report/
+
+# Local agent session state (approved specs/plans remain tracked)
+.sdcorejs/tasks/current-session.md
+
+# Local TLS/secret material
+*.pem
+*.key
+*.crt
 
 # Claude Code local state (không phải minh chứng)
 .claude/hooks/.last_logged_uuid

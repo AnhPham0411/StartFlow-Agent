@@ -1,0 +1,129 @@
+x-backend: &backend
+  image: ${STARTFLOW_BACKEND_IMAGE:-startflow-backend:local}
+  build:
+    context: .
+    dockerfile: backend/Dockerfile
+  env_file:
+    - path: ${STARTFLOW_ENV_FILE:-.env}
+      required: false
+  environment:
+    AI_SERVICE_URL: http://ai-service:8000
+    PORT: 3001
+  networks:
+    - startflow
+
+x-ai-service: &ai-service
+  image: ${STARTFLOW_AI_IMAGE:-startflow-ai:local}
+  build:
+    context: .
+    dockerfile: ai-service/Dockerfile
+  env_file:
+    - path: ${STARTFLOW_ENV_FILE:-.env}
+      required: false
+  environment:
+    ENVIRONMENT: ${NODE_ENV:-development}
+    INTERNAL_CALLBACK_URL: http://backend:3001/internal/ai/events
+    PORT: 8000
+  networks:
+    - startflow
+
+services:
+  backend:
+    <<: *backend
+    container_name: startflow-backend-${DEPLOY_ENV:-local}
+    ports:
+      - '${BACKEND_BIND_ADDRESS:-0.0.0.0}:${BACKEND_PORT:-3001}:3001'
+    depends_on:
+      ai-service:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+
+  ai-service:
+    <<: *ai-service
+    container_name: startflow-ai-${DEPLOY_ENV:-local}
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'python',
+          '-c',
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=3)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+
+  frontend:
+    image: ${STARTFLOW_FRONTEND_IMAGE:-startflow-frontend:local}
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_AUTH_MODE: ${NEXT_PUBLIC_AUTH_MODE:-keycloak}
+        NEXT_PUBLIC_KEYCLOAK_URL: ${NEXT_PUBLIC_KEYCLOAK_URL}
+        NEXT_PUBLIC_KEYCLOAK_REALM: ${NEXT_PUBLIC_KEYCLOAK_REALM}
+        NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: ${NEXT_PUBLIC_KEYCLOAK_CLIENT_ID}
+    container_name: startflow-frontend-${DEPLOY_ENV:-local}
+    env_file:
+      - path: ${STARTFLOW_ENV_FILE:-.env}
+        required: false
+    ports:
+      - '${FRONTEND_BIND_ADDRESS:-0.0.0.0}:${FRONTEND_PORT:-3000}:3000'
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - startflow
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+
+  backend-migrate:
+    <<: *backend
+    profiles: [tools]
+    command:
+      [
+        'node',
+        'backend/node_modules/prisma/build/index.js',
+        'migrate',
+        'deploy',
+        '--schema',
+        'backend/prisma/schema.prisma',
+      ]
+    depends_on: []
+    restart: 'no'
+
+  ai-migrate:
+    <<: *ai-service
+    profiles: [tools]
+    command: ['sh', '-c', 'alembic upgrade head && python -m src.rag.ingest']
+    restart: 'no'
+
+networks:
+  startflow:
+    name: ${STARTFLOW_NETWORK:-startflow-local}

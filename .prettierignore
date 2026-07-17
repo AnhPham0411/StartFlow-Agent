@@ -1,0 +1,13 @@
+node_modules
+.next
+dist
+coverage
+.venv
+.claude
+.sdcorejs/plans
+.sdcorejs/specs
+ai-service/uv.lock
+backend/openapi/startflow-api.json
+frontend/next-env.d.ts
+packages/contracts/run-event.schema.json
+pnpm-lock.yaml

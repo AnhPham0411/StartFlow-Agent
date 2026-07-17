@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wireframe - Chi tiết lượt đánh giá</title>
+    <style>
+      :root {
+        --bg: #f3f5f7;
+        --panel: #fff;
+        --ink: #18212f;
+        --muted: #596779;
+        --accent: #b73a0a;
+        --focus: #08756d;
+        --line: #d8dee6;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: var(--bg);
+        font:
+          14px/1.5 'Segoe UI',
+          sans-serif;
+      }
+      .shell {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        min-height: 100vh;
+      }
+      nav {
+        background: #202a38;
+        color: #fff;
+        padding: 24px 16px;
+      }
+      nav a {
+        display: block;
+        color: #dbe4ef;
+        padding: 10px;
+        text-decoration: none;
+      }
+      main {
+        padding: 24px;
+      }
+      .top,
+      .panel,
+      .lane {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+      }
+      .top,
+      .panel {
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      .plan {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+      .lanes {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr) 300px;
+        gap: 12px;
+      }
+      .lane {
+        padding: 14px;
+        min-height: 250px;
+        border-top: 4px solid var(--focus);
+      }
+      .decision {
+        border-top-color: var(--accent);
+      }
+      .meta {
+        color: var(--muted);
+        font-family: Consolas, monospace;
+      }
+      button {
+        min-height: 44px;
+        border: 0;
+        border-radius: 4px;
+        padding: 0 16px;
+        font-weight: 650;
+      }
+      .primary {
+        color: #fff;
+        background: var(--accent);
+      }
+      @media (max-width: 900px) {
+        .shell {
+          grid-template-columns: 1fr;
+        }
+        nav {
+          display: none;
+        }
+        .lanes {
+          grid-template-columns: 1fr;
+        }
+        .plan {
+          grid-template-columns: 1fr;
+        }
+        main {
+          padding: 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <nav aria-label="Điều hướng">
+        <strong>STARTFLOW</strong><a href="#">Dashboard</a><a href="#">Hồ sơ</a
+        ><a href="#">Lượt đánh giá</a>
+      </nav>
+      <main
+        data-story="US-02 US-03 US-04 US-05"
+        data-ac="AC-005 AC-006 AC-007 AC-008 AC-009 AC-010 AC-012 AC-015"
+      >
+        <section class="top">
+          <span class="meta">RUN #1042 · ĐANG TỔNG HỢP</span>
+          <h1>Công ty Cổ phần Sao Việt Demo</h1>
+          <p>Đề nghị 5 tỷ · Bổ sung vốn lưu động</p>
+        </section>
+        <section class="panel">
+          <strong>Kế hoạch của Planner</strong>
+          <div class="plan">
+            <p>01 · Đánh giá tín dụng</p>
+            <p>02 · Kiểm tra tuân thủ</p>
+            <p>03 · Rà soát hồ sơ</p>
+          </div>
+        </section>
+        <section class="lanes">
+          <article class="lane">
+            <span class="meta">CREDIT · HOÀN TẤT</span>
+            <h2>Rủi ro trung bình</h2>
+            <p>Debt/EBITDA 1,78 · Current ratio 1,67</p>
+            <a href="#">Xem 2 căn cứ</a>
+          </article>
+          <article class="lane">
+            <span class="meta">COMPLIANCE · CẦN XEM XÉT</span>
+            <h2>1 điều kiện bổ sung</h2>
+            <p>Cần xác minh người hưởng lợi cuối cùng.</p>
+            <a href="#">Xem công cụ KYC/AML</a>
+          </article>
+          <article class="lane">
+            <span class="meta">OPERATIONS · HOÀN TẤT</span>
+            <h2>Thiếu 2 tài liệu</h2>
+            <p>Biên bản HĐQT và sao kê thuế quý gần nhất.</p>
+            <a href="#">Xem checklist</a>
+          </article>
+          <aside class="lane decision">
+            <span class="meta">DECISION GATE</span>
+            <h2>Cần xem xét</h2>
+            <p>Đủ năng lực tài chính, chưa đủ điều kiện vận hành.</p>
+            <button class="primary">Phê duyệt hành động</button>
+          </aside>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

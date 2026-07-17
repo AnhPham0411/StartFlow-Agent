@@ -1,0 +1,50 @@
+{
+  "realm": "startflow",
+  "enabled": true,
+  "displayName": "StartFlow Demo",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": true,
+  "roles": {
+    "realm": [
+      { "name": "analyst", "description": "Create cases and run assessments" },
+      { "name": "approver", "description": "Review and approve proposed actions" },
+      { "name": "admin", "description": "Manage demo knowledge and audit access" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "startflow-api",
+      "name": "StartFlow API audience",
+      "enabled": true,
+      "bearerOnly": true,
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "startflow-web",
+      "name": "StartFlow Web",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "protocol": "openid-connect",
+      "redirectUris": ["http://localhost:3000/*"],
+      "webOrigins": ["http://localhost:3000"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocolMappers": [
+        {
+          "name": "startflow-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "startflow-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ]
+}

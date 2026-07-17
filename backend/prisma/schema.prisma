@@ -1,0 +1,214 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RunMode {
+  SINGLE
+  MULTI
+}
+
+enum RunStatus {
+  PENDING
+  PLANNING
+  RUNNING
+  AWAITING_APPROVAL
+  COMPLETED
+  PARTIAL
+  FAILED
+}
+
+enum AgentKind {
+  PLANNER
+  CREDIT
+  COMPLIANCE
+  OPERATIONS
+  SYNTHESIZER
+}
+
+enum AgentTaskStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  SKIPPED
+}
+
+enum ApprovalState {
+  NONE
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ApprovalDecision {
+  APPROVE
+  REJECT
+}
+
+model LoanCase {
+  id                    String         @id @default(uuid()) @db.Uuid
+  companyName           String         @map("company_name") @db.VarChar(160)
+  registrationNumber    String         @unique @map("registration_number") @db.VarChar(32)
+  requestedAmount       Decimal        @map("requested_amount") @db.Decimal(19, 2)
+  purpose               String         @db.Text
+  financials            Json
+  submittedDocuments    Json           @map("submitted_documents")
+  demoData              Boolean        @default(true) @map("demo_data")
+  createdBy             String         @map("created_by") @db.VarChar(255)
+  createdAt             DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  runs                  WorkflowRun[]
+  snapshots             CaseSnapshot[]
+  comparisons           Comparison[]
+
+  @@map("cases")
+}
+
+model CaseSnapshot {
+  id          String         @id @default(uuid()) @db.Uuid
+  caseId      String         @map("case_id") @db.Uuid
+  snapshot    Json
+  contentHash String         @map("content_hash") @db.Char(64)
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  loanCase    LoanCase       @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  runs        WorkflowRun[]
+  comparisons Comparison[]
+
+  @@index([caseId, createdAt])
+  @@map("case_snapshots")
+}
+
+model WorkflowRun {
+  id                String          @id @default(uuid()) @db.Uuid
+  caseId            String          @map("case_id") @db.Uuid
+  snapshotId        String          @map("snapshot_id") @db.Uuid
+  mode              RunMode         @default(MULTI)
+  status            RunStatus       @default(PENDING)
+  approvalState     ApprovalState    @default(NONE) @map("approval_state")
+  version           Int             @default(0)
+  lastEventSequence Int             @default(0) @map("last_event_sequence")
+  plan              Json?
+  results           Json?
+  decision          Json?
+  createdBy         String          @map("created_by") @db.VarChar(255)
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  startedAt         DateTime?       @map("started_at") @db.Timestamptz(6)
+  completedAt       DateTime?       @map("completed_at") @db.Timestamptz(6)
+  loanCase          LoanCase        @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  snapshot          CaseSnapshot    @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
+  tasks             AgentTask[]
+  events            RunEvent[]
+  approval          Approval?
+  actionTicket      ActionTicket?
+  singleComparison  Comparison?     @relation("SingleComparisonRun")
+  multiComparison   Comparison?     @relation("MultiComparisonRun")
+
+  @@index([caseId, createdAt])
+  @@index([status])
+  @@map("workflow_runs")
+}
+
+model AgentTask {
+  id              String          @id @default(uuid()) @db.Uuid
+  runId           String          @map("run_id") @db.Uuid
+  externalTaskId  String          @map("external_task_id") @db.VarChar(120)
+  agent           AgentKind
+  title           String          @db.VarChar(255)
+  objective       String          @db.Text
+  dependencies    Json
+  successCriteria Json            @map("success_criteria")
+  status          AgentTaskStatus @default(PENDING)
+  result          Json?
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  run             WorkflowRun     @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, externalTaskId])
+  @@index([runId, status])
+  @@map("agent_tasks")
+}
+
+model RunEvent {
+  id             String      @id @db.Uuid
+  runId          String      @map("run_id") @db.Uuid
+  sequence       Int
+  type           String      @db.VarChar(80)
+  agent          AgentKind?
+  occurredAt     DateTime    @map("occurred_at") @db.Timestamptz(6)
+  correlationId  String      @map("correlation_id") @db.Uuid
+  idempotencyKey String      @map("idempotency_key") @db.VarChar(200)
+  payload        Json
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  run            WorkflowRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, sequence])
+  @@unique([runId, idempotencyKey])
+  @@index([runId, createdAt])
+  @@map("run_events")
+}
+
+model Approval {
+  id           String           @id @default(uuid()) @db.Uuid
+  runId        String           @unique @map("run_id") @db.Uuid
+  decision     ApprovalDecision
+  reason       String           @db.Text
+  actorSubject String           @map("actor_subject") @db.VarChar(255)
+  runVersion   Int              @map("run_version")
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  run          WorkflowRun      @relation(fields: [runId], references: [id], onDelete: Restrict)
+  actionTicket ActionTicket?
+
+  @@map("approvals")
+}
+
+model ActionTicket {
+  id          String      @id @default(uuid()) @db.Uuid
+  runId       String      @unique @map("run_id") @db.Uuid
+  approvalId  String      @unique @map("approval_id") @db.Uuid
+  title       String      @db.VarChar(255)
+  description String      @db.Text
+  status      String      @default("OPEN") @db.VarChar(40)
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  run         WorkflowRun @relation(fields: [runId], references: [id], onDelete: Restrict)
+  approval    Approval    @relation(fields: [approvalId], references: [id], onDelete: Restrict)
+
+  @@map("action_tickets")
+}
+
+model AuditLog {
+  id            String   @id @default(uuid()) @db.Uuid
+  action        String   @db.VarChar(100)
+  entityType    String   @map("entity_type") @db.VarChar(80)
+  entityId      String   @map("entity_id") @db.VarChar(255)
+  actorSubject  String?  @map("actor_subject") @db.VarChar(255)
+  correlationId String   @map("correlation_id") @db.Uuid
+  payload       Json
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorSubject, createdAt])
+  @@map("audit_logs")
+}
+
+model Comparison {
+  id               String       @id @default(uuid()) @db.Uuid
+  caseId           String       @map("case_id") @db.Uuid
+  snapshotId       String       @map("snapshot_id") @db.Uuid
+  singleAgentRunId String       @unique @map("single_agent_run_id") @db.Uuid
+  multiAgentRunId  String       @unique @map("multi_agent_run_id") @db.Uuid
+  metrics          Json?
+  createdBy        String       @map("created_by") @db.VarChar(255)
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  loanCase         LoanCase     @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  snapshot         CaseSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
+  singleAgentRun   WorkflowRun  @relation("SingleComparisonRun", fields: [singleAgentRunId], references: [id], onDelete: Restrict)
+  multiAgentRun    WorkflowRun  @relation("MultiComparisonRun", fields: [multiAgentRunId], references: [id], onDelete: Restrict)
+
+  @@index([caseId, createdAt])
+  @@map("comparisons")
+}

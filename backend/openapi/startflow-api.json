@@ -1,0 +1,616 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "HealthController_health",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Process liveness",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/ready": {
+      "get": {
+        "operationId": "HealthController_ready",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "External PostgreSQL and Keycloak readiness",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/cases": {
+      "post": {
+        "operationId": "CasesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCaseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Case created"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a demo corporate-loan case",
+        "tags": [
+          "cases"
+        ]
+      },
+      "get": {
+        "operationId": "CasesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List demo cases",
+        "tags": [
+          "cases"
+        ]
+      }
+    },
+    "/api/cases/{caseId}": {
+      "get": {
+        "operationId": "CasesController_get",
+        "parameters": [
+          {
+            "name": "caseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get a case and its runs",
+        "tags": [
+          "cases"
+        ]
+      }
+    },
+    "/api/runs/{runId}/events": {
+      "get": {
+        "operationId": "EventsController_stream",
+        "parameters": [
+          {
+            "name": "runId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "last-event-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Replay and stream filtered run events",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/cases/{caseId}/runs": {
+      "post": {
+        "operationId": "RunsController_create",
+        "parameters": [
+          {
+            "name": "caseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Snapshot a case and start a multi-agent run",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/cases/{caseId}/comparisons": {
+      "post": {
+        "operationId": "RunsController_compare",
+        "parameters": [
+          {
+            "name": "caseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start single- and multi-agent runs on one immutable snapshot",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/runs/{runId}": {
+      "get": {
+        "operationId": "RunsController_get",
+        "parameters": [
+          {
+            "name": "runId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get persisted run state and timeline",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/internal/ai/events": {
+      "post": {
+        "operationId": "InternalCallbackController_record",
+        "parameters": [
+          {
+            "name": "x-run-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordEventDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "internal-service-token": []
+          }
+        ],
+        "summary": "Persist one filtered, monotonic AI workflow event",
+        "tags": [
+          "internal"
+        ]
+      }
+    },
+    "/api/runs/{runId}/approvals": {
+      "post": {
+        "operationId": "ApprovalsController_decide",
+        "parameters": [
+          {
+            "name": "runId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApprovalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Approve or reject a proposed action with optimistic concurrency",
+        "tags": [
+          "approvals"
+        ]
+      }
+    },
+    "/api/knowledge": {
+      "get": {
+        "operationId": "KnowledgeController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List demo knowledge documents through the AI boundary",
+        "tags": [
+          "knowledge"
+        ]
+      },
+      "post": {
+        "operationId": "KnowledgeController_ingest",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestKnowledgeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ingest a demo knowledge document through the AI boundary",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "StartFlow API",
+    "description": "Corporate-loan multi-agent workflow API. Public events are filtered summaries only.",
+    "version": "0.1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      },
+      "internal-service-token": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-internal-service-token"
+      }
+    },
+    "schemas": {
+      "FinancialSnapshotDto": {
+        "type": "object",
+        "properties": {
+          "revenue": {
+            "type": "number",
+            "minimum": 0
+          },
+          "ebitda": {
+            "type": "number"
+          },
+          "totalDebt": {
+            "type": "number",
+            "minimum": 0
+          },
+          "equity": {
+            "type": "number",
+            "exclusiveMinimum": true,
+            "minimum": 0
+          },
+          "currentAssets": {
+            "type": "number",
+            "minimum": 0
+          },
+          "currentLiabilities": {
+            "type": "number",
+            "exclusiveMinimum": true,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "revenue",
+          "ebitda",
+          "totalDebt",
+          "equity",
+          "currentAssets",
+          "currentLiabilities"
+        ]
+      },
+      "CreateCaseDto": {
+        "type": "object",
+        "properties": {
+          "companyName": {
+            "type": "string",
+            "example": "Công ty Cổ phần Sao Mai Demo",
+            "maxLength": 160,
+            "minLength": 2
+          },
+          "registrationNumber": {
+            "type": "string",
+            "example": "DEMO-01010101",
+            "maxLength": 32,
+            "minLength": 4
+          },
+          "requestedAmount": {
+            "type": "number",
+            "exclusiveMinimum": true,
+            "minimum": 0
+          },
+          "purpose": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 10
+          },
+          "financials": {
+            "$ref": "#/components/schemas/FinancialSnapshotDto"
+          },
+          "submittedDocuments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "demoData": {
+            "type": "boolean",
+            "enum": [
+              true
+            ],
+            "example": true
+          }
+        },
+        "required": [
+          "companyName",
+          "registrationNumber",
+          "requestedAmount",
+          "purpose",
+          "financials",
+          "submittedDocuments",
+          "demoData"
+        ]
+      },
+      "RecordEventDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "runId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sequence": {
+            "type": "number",
+            "minimum": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "run.started",
+              "plan.created",
+              "agent.started",
+              "tool.completed",
+              "citation.added",
+              "agent.completed",
+              "synthesis.completed",
+              "approval.required",
+              "run.completed",
+              "run.failed"
+            ]
+          },
+          "agent": {
+            "type": "string",
+            "enum": [
+              "PLANNER",
+              "CREDIT",
+              "COMPLIANCE",
+              "OPERATIONS",
+              "SYNTHESIZER"
+            ],
+            "nullable": true
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "correlationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 8
+          },
+          "payload": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "id",
+          "runId",
+          "sequence",
+          "type",
+          "occurredAt",
+          "correlationId",
+          "idempotencyKey",
+          "payload"
+        ]
+      },
+      "CreateApprovalDto": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "APPROVE",
+              "REJECT"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 5
+          },
+          "expectedVersion": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "decision",
+          "reason",
+          "expectedVersion"
+        ]
+      },
+      "IngestKnowledgeDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 3
+          },
+          "domain": {
+            "type": "string",
+            "enum": [
+              "CREDIT",
+              "COMPLIANCE",
+              "OPERATIONS"
+            ]
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 50000,
+            "minLength": 20
+          },
+          "demoData": {
+            "type": "boolean",
+            "enum": [
+              true
+            ],
+            "example": true
+          }
+        },
+        "required": [
+          "title",
+          "domain",
+          "content",
+          "demoData"
+        ]
+      }
+    }
+  }
+}

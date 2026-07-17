@@ -1,0 +1,25 @@
+name: Deploy StartFlow
+
+on:
+  push:
+    branches: [dev, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    uses: local-soltuion/devops-config/.github/workflows/deploy-startflow-agent.yml@main
+    with:
+      environment: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+      env_tag: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
+      devops_ref: main
+    secrets:
+      DEVOPS_CONFIG_TOKEN: ${{ secrets.DEVOPS_CONFIG_TOKEN }}
+      STARTFLOW_RUNTIME_ENV: ${{ github.ref_name == 'main' && secrets.STARTFLOW_ENV_MAIN || secrets.STARTFLOW_ENV_DEV }}
+      DROPLET_HOST: ${{ github.ref_name == 'main' && secrets.DROPLET_HOST_MAIN || secrets.DROPLET_HOST_DEV }}
+      DROPLET_USER: ${{ github.ref_name == 'main' && secrets.DROPLET_USER_MAIN || secrets.DROPLET_USER_DEV }}
+      SSH_PRIVATE_KEY: ${{ github.ref_name == 'main' && secrets.SSH_PRIVATE_KEY_MAIN || secrets.SSH_PRIVATE_KEY_DEV }}
+      DROPLET_SSH_KNOWN_HOSTS: ${{ github.ref_name == 'main' && secrets.DROPLET_SSH_KNOWN_HOSTS_MAIN || secrets.DROPLET_SSH_KNOWN_HOSTS_DEV }}
+      POSTGRES_CA_CERT_BASE64: ${{ github.ref_name == 'main' && secrets.POSTGRES_TLS_CA_BASE64_MAIN || secrets.POSTGRES_TLS_CA_BASE64_DEV }}

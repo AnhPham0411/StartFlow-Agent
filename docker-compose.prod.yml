@@ -1,0 +1,44 @@
+services:
+  backend:
+    pull_policy: never
+    ports:
+      - '127.0.0.1:${BACKEND_PORT:-3101}:3001'
+    volumes:
+      - type: bind
+        source: ${POSTGRES_CA_CERT_PATH:-/dev/null}
+        target: /run/secrets/postgres-ca.crt
+        read_only: true
+
+  ai-service:
+    pull_policy: never
+    volumes:
+      - type: bind
+        source: ${POSTGRES_CA_CERT_PATH:-/dev/null}
+        target: /run/secrets/postgres-ca.crt
+        read_only: true
+
+  frontend:
+    pull_policy: never
+    ports:
+      - '127.0.0.1:${FRONTEND_PORT:-3100}:3000'
+
+  backend-migrate:
+    pull_policy: never
+    volumes:
+      - type: bind
+        source: ${POSTGRES_CA_CERT_PATH:-/dev/null}
+        target: /run/secrets/postgres-ca.crt
+        read_only: true
+
+  ai-migrate:
+    pull_policy: never
+    volumes:
+      - type: bind
+        source: ${POSTGRES_CA_CERT_PATH:-/dev/null}
+        target: /run/secrets/postgres-ca.crt
+        read_only: true
+
+networks:
+  startflow:
+    name: ${STARTFLOW_NETWORK:-shared-apps}
+    external: true

@@ -1,0 +1,11 @@
+packages:
+  - backend
+  - frontend
+  - packages/*
+  - test/e2e
+
+onlyBuiltDependencies:
+  - '@prisma/client'
+  - '@prisma/engines'
+  - esbuild
+  - prisma
