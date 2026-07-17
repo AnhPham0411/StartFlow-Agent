@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+build/
+.next/
+
+# Claude Code local state (không phải minh chứng)
+.claude/hooks/.last_logged_uuid
+.claude/settings.local.json
+
+# OS
+Thumbs.db
+.DS_Store
