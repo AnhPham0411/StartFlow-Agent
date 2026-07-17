@@ -2,6 +2,7 @@
 
 import { KeyRound, ShieldAlert } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { AppShell } from '@/src/components/layout/app-shell';
 import { Button } from '@/src/components/ui/button';
 import { LoadingState } from '@/src/components/ui/loading-state';
@@ -9,6 +10,8 @@ import { useAuth } from './auth-context';
 
 export function ProtectedApp({ children }: { children: ReactNode }) {
   const { status, error, login } = useAuth();
+  const pathname = usePathname();
+  const isStandalone = pathname?.startsWith('/prototypes');
 
   if (status === 'initializing') return <LoadingState label="Đang xác minh phiên làm việc…" />;
 
@@ -64,6 +67,8 @@ export function ProtectedApp({ children }: { children: ReactNode }) {
       </main>
     );
   }
+
+  if (isStandalone) return <>{children}</>;
 
   return <AppShell>{children}</AppShell>;
 }

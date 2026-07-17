@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wireframe v2 — Serenity: Hàng đợi hồ sơ</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Palette — từ reference: #F4F4F4 · #000 · #FAFF7F · #0C9762 · #CBCBCB */
+      :root {
+        --bg: #f2f3f1;
+        --ink: #28332c;
+        --body: #55554f;
+        --muted: #8a8a83;
+        --gray: #cbcbcb;
+        --lime: #faff7f;
+        --green: #0c9762;
+        --green-dark: #0a7a50;
+        --red: #d64545;
+        --glass: rgba(255, 255, 255, 0.62);
+        --glass-strong: rgba(255, 255, 255, 0.8);
+        --glass-line: rgba(20, 20, 20, 0.07);
+        --sans: 'Outfit', system-ui, sans-serif;
+        --mono: 'JetBrains Mono', monospace;
+        --rail: 64px;
+        --drawer: 232px;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font: 400 16px/1.55 var(--sans);
+      }
+      /* Soft ambient light — gives the translucent panels something to blur over */
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background:
+          radial-gradient(640px 420px at 88% -8%, rgba(250, 255, 127, 0.4), transparent 70%),
+          radial-gradient(560px 420px at -12% 24%, rgba(12, 151, 98, 0.1), transparent 70%),
+          radial-gradient(700px 500px at 40% 110%, rgba(12, 151, 98, 0.06), transparent 70%);
+      }
+
+      /* ---- Sidebar: frosted rail ---- */
+      .sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        z-index: 100;
+        width: var(--rail);
+        background: var(--glass);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border-right: 1px solid var(--glass-line);
+        display: flex;
+        flex-direction: column;
+        padding: 18px 12px 14px;
+        overflow: hidden;
+        white-space: nowrap;
+        transition: width 0.18s ease;
+      }
+      .sidebar:hover { width: var(--drawer); }
+      .sidebar .label { opacity: 0; transition: opacity 0.12s ease; }
+      .sidebar:hover .label { opacity: 1; }
+
+      .brand { display: flex; align-items: center; gap: 12px; padding: 4px 8px 18px; }
+      .brand-mark {
+        width: 12px; height: 12px;
+        border-radius: 50%;
+        background: var(--ink);
+        flex: none;
+        margin: 0 2px;
+        position: relative;
+      }
+      .brand-mark::after {
+        content: '';
+        position: absolute;
+        right: -3px; top: -3px;
+        width: 7px; height: 7px;
+        border-radius: 50%;
+        background: var(--lime);
+        border: 1.5px solid #fff;
+      }
+      .brand-name { font: 600 15px/1.3 var(--sans); letter-spacing: -0.2px; }
+      .brand-sub { font: 400 11px/1.3 var(--sans); color: var(--muted); }
+
+      .side-nav { display: flex; flex-direction: column; gap: 3px; }
+      .side-nav a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--muted);
+        text-decoration: none;
+        font: 500 14px var(--sans);
+        padding: 10px 11px;
+        border-radius: 999px;
+        transition: background 0.12s ease, color 0.12s ease;
+      }
+      .side-nav a:hover { background: rgba(20, 20, 20, 0.06); color: var(--ink); }
+      .side-nav a.active { background: var(--ink); color: #fff; }
+      .side-nav svg { width: 18px; height: 18px; flex: none; }
+      .side-nav .label { flex: 1; }
+      .side-nav .n {
+        font: 500 11px var(--mono);
+        background: var(--lime);
+        color: var(--ink);
+        border-radius: 999px;
+        padding: 1px 8px;
+      }
+
+      .side-section {
+        font: 600 10px var(--sans);
+        letter-spacing: 0.9px;
+        text-transform: uppercase;
+        color: var(--gray);
+        padding: 18px 12px 6px;
+      }
+
+      .side-user {
+        margin-top: auto;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 6px 2px;
+      }
+      .avatar {
+        width: 30px; height: 30px; border-radius: 50%;
+        background: var(--ink);
+        color: #fff;
+        display: grid; place-items: center;
+        font: 500 11px var(--sans);
+        flex: none;
+      }
+      .side-user .name { font: 500 13px/1.3 var(--sans); }
+      .side-user .role { font: 400 11px/1.3 var(--sans); color: var(--muted); }
+
+      /* ---- Content ---- */
+      main { margin-left: var(--rail); padding: 44px 48px 88px; }
+      .wrap { max-width: 1000px; margin: 0 auto; }
+
+      /* ---- Squarish frosted panels (reference language) ---- */
+      .panel {
+        background: var(--glass);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid var(--glass-line);
+        border-radius: 18px;
+      }
+      .chip {
+        width: 30px; height: 30px;
+        border-radius: 50%;
+        background: var(--ink);
+        color: #fff;
+        display: grid; place-items: center;
+        flex: none;
+      }
+      .chip svg { width: 14px; height: 14px; }
+
+      /* ---- Hero: greeting panel + lime "next best action" panel ---- */
+      .hero {
+        display: grid;
+        grid-template-columns: 1.45fr 1fr;
+        gap: 14px;
+        margin-bottom: 14px;
+      }
+      .hero-hello { padding: 32px 36px; display: flex; flex-direction: column; justify-content: center; }
+      .greeting {
+        font: 300 36px/1.15 var(--sans);
+        letter-spacing: -0.7px;
+        margin: 0 0 10px;
+      }
+      .greeting em { font-style: normal; font-weight: 500; }
+      .subline { color: var(--body); margin: 0; max-width: 44ch; font-size: 15px; }
+
+      .hero-next {
+        padding: 24px 26px;
+        background: rgba(250, 255, 127, 0.55);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid rgba(20, 20, 20, 0.05);
+        border-radius: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .hero-next .top { display: flex; align-items: center; gap: 10px; }
+      .hero-next .cap {
+        font: 500 11px var(--sans);
+        letter-spacing: 0.9px;
+        text-transform: uppercase;
+        color: rgba(20, 20, 20, 0.55);
+      }
+      .hero-next .big { font: 300 34px/1 var(--sans); letter-spacing: -0.5px; }
+      .hero-next .note { font: 400 13px/1.45 var(--sans); color: rgba(20, 20, 20, 0.65); }
+      .hero-next .note b { color: var(--ink); font-weight: 600; }
+
+      /* ---- Secondary metrics: two quiet frosted tiles ---- */
+      .metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-bottom: 40px;
+      }
+      .metric { padding: 18px 22px; display: flex; align-items: center; gap: 16px; }
+      .metric .num {
+        font: 300 28px/1 var(--sans);
+        letter-spacing: -0.4px;
+        font-variant-numeric: tabular-nums;
+      }
+      .metric .num.green { color: var(--green); }
+      .metric .lbl {
+        font: 500 11px/1.4 var(--sans);
+        letter-spacing: 0.9px;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+
+      /* ---- Queue header ---- */
+      .queue-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
+      }
+      .queue-head h2 { font-size: 20px; font-weight: 500; letter-spacing: -0.2px; margin: 0; }
+      .btn-primary {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: var(--green); color: #fff;
+        border: 0; border-radius: 999px;
+        height: 40px; padding: 0 20px;
+        font: 500 14px var(--sans);
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+      .btn-primary:hover { background: var(--green-dark); }
+
+      /* ---- Tabs: frosted pill group ---- */
+      .tabs {
+        display: inline-flex;
+        gap: 2px;
+        background: var(--glass);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid var(--glass-line);
+        border-radius: 999px;
+        padding: 4px;
+        margin-bottom: 16px;
+      }
+      .tab {
+        background: none; border: 0; cursor: pointer;
+        font: 500 14px var(--sans);
+        color: var(--muted);
+        padding: 7px 15px;
+        border-radius: 999px;
+        display: inline-flex; align-items: center; gap: 8px;
+        transition: background 0.12s ease, color 0.12s ease;
+      }
+      .tab:hover { color: var(--ink); }
+      .tab.active { background: var(--ink); color: #fff; }
+      .tab .count {
+        font: 500 11px var(--mono);
+        background: rgba(20, 20, 20, 0.07);
+        color: var(--ink);
+        border-radius: 999px;
+        padding: 1px 8px;
+      }
+      .tab.active .count { background: var(--lime); color: var(--ink); }
+
+      /* ---- Rows: squarish frosted tiles ---- */
+      .rows { display: flex; flex-direction: column; gap: 10px; }
+      .row {
+        display: grid;
+        grid-template-columns: minmax(200px, 1.05fr) max-content minmax(250px, 1.55fr) max-content 92px;
+        align-items: center;
+        gap: 22px;
+        background: var(--glass-strong);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--glass-line);
+        border-radius: 14px;
+        padding: 16px 20px;
+        cursor: pointer;
+        transition: background 0.15s ease, transform 0.15s ease;
+      }
+      .row:hover { background: rgba(255, 255, 255, 0.95); transform: translateY(-1px); }
+      .row:hover .cust { text-decoration: underline; text-underline-offset: 3px; }
+      .cust { font-weight: 600; font-size: 15px; }
+      .seg { color: var(--muted); font-size: 13px; margin-top: 1px; }
+      .case-id { font: 500 12px var(--mono); color: var(--gray); }
+      .amount {
+        font: 500 14px var(--mono);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        text-align: right;
+      }
+      .sla {
+        font: 500 13px var(--sans);
+        color: var(--muted);
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+      .sla.urgent { color: var(--red); }
+
+      /* ---- Signal ---- */
+      .sig { display: flex; gap: 10px; align-items: flex-start; }
+      .sig-tick {
+        width: 8px; height: 8px; border-radius: 50%;
+        flex: none; margin-top: 7px;
+      }
+      .sig-warn .sig-tick { background: var(--ink); }
+      .sig-risk .sig-tick { background: var(--red); }
+      .sig-ok .sig-tick { background: var(--green); }
+      .sig-plain .sig-tick { background: var(--gray); }
+      .sig-title { font: 500 13.5px/1.45 var(--sans); color: var(--ink); }
+      .sig-reason { font: 400 12.5px/1.45 var(--sans); color: var(--muted); }
+
+      /* ---- Row action ---- */
+      .btn-quiet {
+        background: var(--ink);
+        color: #fff;
+        border: 0;
+        border-radius: 999px;
+        height: 34px;
+        padding: 0 15px;
+        font: 500 13px var(--sans);
+        cursor: pointer;
+        white-space: nowrap;
+        opacity: 0;
+        transition: opacity 0.12s ease, background 0.12s ease;
+      }
+      .row:hover .btn-quiet, .btn-quiet:focus-visible { opacity: 1; }
+      .btn-quiet:hover { background: var(--green); }
+
+      /* ---- Pipeline stages ---- */
+      .pipe { font: 500 12px var(--mono); color: var(--gray); white-space: nowrap; }
+      .pipe .st.done { color: var(--muted); }
+      .pipe .st.live { color: var(--green); }
+      .pipe .sep { color: rgba(20, 20, 20, 0.15); margin: 0 6px; }
+      .pipe .dots::after { content: ''; animation: dots 1.4s steps(4) infinite; }
+      @keyframes dots {
+        0% { content: ''; } 25% { content: '.'; }
+        50% { content: '..'; } 75% { content: '...'; }
+      }
+
+      .col-head {
+        display: grid;
+        grid-template-columns: minmax(200px, 1.05fr) max-content minmax(250px, 1.55fr) max-content 92px;
+        gap: 22px;
+        padding: 0 20px 8px;
+        font: 500 11px var(--sans);
+        letter-spacing: 0.9px;
+        text-transform: uppercase;
+        color: var(--gray);
+      }
+      .col-head .r { text-align: right; }
+
+      @media (max-width: 900px) {
+        main { padding: 28px 20px 56px; }
+        .hero, .metrics { grid-template-columns: 1fr; }
+        .row, .col-head { grid-template-columns: 1fr; gap: 8px; }
+        .col-head { display: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <span class="brand-mark"></span>
+        <div class="label">
+          <div class="brand-name">SHB StartFlow</div>
+          <div class="brand-sub">Thẩm định tín dụng</div>
+        </div>
+      </div>
+      <nav class="side-nav" aria-label="Điều hướng chính">
+        <a href="#" class="active" title="Hàng đợi">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+          <span class="label">Hàng đợi</span><span class="n label">4</span>
+        </a>
+        <a href="#" title="Báo cáo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 15l4-6 4 3 5-8"/></svg>
+          <span class="label">Báo cáo</span>
+        </a>
+        <a href="#" title="Luật tín dụng">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+          <span class="label">Luật tín dụng</span>
+        </a>
+      </nav>
+      <div class="side-section label">Hệ thống</div>
+      <nav class="side-nav" aria-label="Hệ thống">
+        <a href="#" title="Nhật ký agent">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          <span class="label">Nhật ký agent</span>
+        </a>
+        <a href="#" title="Cài đặt">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4m0 14v4M4.2 4.2l2.8 2.8m10 10 2.8 2.8M1 12h4m14 0h4M4.2 19.8l2.8-2.8m10-10 2.8-2.8"/></svg>
+          <span class="label">Cài đặt</span>
+        </a>
+      </nav>
+      <div class="side-user">
+        <span class="avatar">MT</span>
+        <div class="label">
+          <div class="name">Minh Trần</div>
+          <div class="role">Cán bộ tín dụng</div>
+        </div>
+      </div>
+    </aside>
+
+    <main>
+      <div class="wrap">
+        <div class="hero">
+          <section class="panel hero-hello">
+            <h1 class="greeting" id="greeting">Chào buổi sáng, <em>Minh</em>.</h1>
+            <p class="subline">
+              AI đã tự duyệt 15 hồ sơ hôm nay. Phần còn lại cần phán xét của bạn.
+            </p>
+          </section>
+          <section class="hero-next">
+            <div class="top">
+              <span class="chip">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+              </span>
+              <span class="cap">Cần bạn xử lý</span>
+            </div>
+            <div class="big"><span data-count="4">0</span> hồ sơ</div>
+            <div class="note">Gần hạn nhất: <b>Phạm Thu Hà</b> — còn 0:41</div>
+          </section>
+        </div>
+
+        <section class="metrics" aria-label="Tổng quan hôm nay">
+          <article class="panel metric">
+            <span class="chip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+            </span>
+            <div>
+              <div class="num green" data-count="15">0</div>
+              <div class="lbl">AI tự động duyệt hôm nay</div>
+            </div>
+          </article>
+          <article class="panel metric">
+            <span class="chip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            </span>
+            <div>
+              <div class="num" data-count="6">0</div>
+              <div class="lbl">Đang phân tích</div>
+            </div>
+          </article>
+        </section>
+
+        <div class="queue-head">
+          <h2>Hàng đợi hồ sơ</h2>
+          <button class="btn-primary">+ Thêm hồ sơ mới</button>
+        </div>
+
+        <div class="tabs" role="tablist">
+          <button class="tab active" data-tab="hitl" role="tab" aria-selected="true">
+            Cần xử lý <span class="count">4</span>
+          </button>
+          <button class="tab" data-tab="processing" role="tab">Đang xử lý <span class="count">6</span></button>
+          <button class="tab" data-tab="all" role="tab">Tất cả</button>
+          <button class="tab" data-tab="history" role="tab">Lịch sử</button>
+        </div>
+
+        <div data-pane="hitl">
+          <div class="col-head">
+            <span>Khách hàng</span><span class="r">Khoản vay</span>
+            <span>Vấn đề cần bạn xem</span><span>Hạn xử lý</span><span></span>
+          </div>
+          <div class="rows">
+            <div class="row">
+              <div>
+                <div class="cust">Phạm Thu Hà</div>
+                <div class="seg">TikTok Shop · Đà Nẵng · <span class="case-id">SHB-26-0419</span></div>
+              </div>
+              <div class="amount">350.000.000 ₫</div>
+              <div class="sig sig-risk">
+                <span class="sig-tick"></span>
+                <div>
+                  <div class="sig-title">Nghi vấn gian lận — 66/100</div>
+                  <div class="sig-reason">5 vòng chuyển tiền vòng lặp giữa 2 tài khoản trong 30 ngày</div>
+                </div>
+              </div>
+              <div class="sla urgent">còn 0:41</div>
+              <div><button class="btn-quiet">Xử lý</button></div>
+            </div>
+            <div class="row">
+              <div>
+                <div class="cust">Nguyễn Thị Lan</div>
+                <div class="seg">Shopee seller · HCM · <span class="case-id">SHB-26-0417</span></div>
+              </div>
+              <div class="amount">480.000.000 ₫</div>
+              <div class="sig sig-warn">
+                <span class="sig-tick"></span>
+                <div>
+                  <div class="sig-title">OCR chưa rõ — 72%</div>
+                  <div class="sig-reason">Ảnh sao kê mờ trang 2–3, cần kiểm tra số dư cuối kỳ</div>
+                </div>
+              </div>
+              <div class="sla">còn 2:14</div>
+              <div><button class="btn-quiet">Xử lý</button></div>
+            </div>
+            <div class="row">
+              <div>
+                <div class="cust">Trần Văn Đức</div>
+                <div class="seg">Tài xế giao hàng · Cần Thơ · <span class="case-id">SHB-26-0421</span></div>
+              </div>
+              <div class="amount">220.000.000 ₫</div>
+              <div class="sig sig-warn">
+                <span class="sig-tick"></span>
+                <div>
+                  <div class="sig-title">Dòng tiền biến động — 47%</div>
+                  <div class="sig-reason">Vượt ngưỡng 40%, có dấu hiệu mùa vụ quanh Tết</div>
+                </div>
+              </div>
+              <div class="sla">còn 3:55</div>
+              <div><button class="btn-quiet">Xử lý</button></div>
+            </div>
+            <div class="row">
+              <div>
+                <div class="cust">Lê Minh Phát</div>
+                <div class="seg">Freelance dev · Hà Nội · <span class="case-id">SHB-26-0423</span></div>
+              </div>
+              <div class="amount">3.200.000.000 ₫</div>
+              <div class="sig sig-warn">
+                <span class="sig-tick"></span>
+                <div>
+                  <div class="sig-title">Vượt ngưỡng 3 tỷ</div>
+                  <div class="sig-reason">Chính sách bắt buộc phê duyệt thủ công</div>
+                </div>
+              </div>
+              <div class="sla">còn 3:02</div>
+              <div><button class="btn-quiet">Xử lý</button></div>
+            </div>
+          </div>
+        </div>
+
+        <div data-pane="processing" hidden>
+          <div class="col-head">
+            <span>Khách hàng</span><span class="r">Khoản vay</span>
+            <span>Pipeline</span><span>Bắt đầu</span><span></span>
+          </div>
+          <div class="rows">
+            <div class="row">
+              <div>
+                <div class="cust">Võ Hoài Nam</div>
+                <div class="seg">Chủ tiệm cà phê · Huế · <span class="case-id">SHB-26-0424</span></div>
+              </div>
+              <div class="amount">150.000.000 ₫</div>
+              <div>
+                <span class="pipe"><span class="st live">thinking<span class="dots"></span></span><span class="sep">→</span><span class="st">reading</span><span class="sep">→</span><span class="st">scoring</span></span>
+              </div>
+              <div class="sla">09:41</div>
+              <div></div>
+            </div>
+            <div class="row">
+              <div>
+                <div class="cust">Đỗ Ngọc Anh</div>
+                <div class="seg">Freelance thiết kế · HCM · <span class="case-id">SHB-26-0425</span></div>
+              </div>
+              <div class="amount">600.000.000 ₫</div>
+              <div>
+                <span class="pipe"><span class="st done">reading</span><span class="sep">→</span><span class="st live">scoring<span class="dots"></span></span><span class="sep">→</span><span class="st">done</span></span>
+              </div>
+              <div class="sla">09:38</div>
+              <div></div>
+            </div>
+            <div class="row">
+              <div>
+                <div class="cust">Bùi Quốc Bảo</div>
+                <div class="seg">TikTok Shop · Hải Phòng · <span class="case-id">SHB-26-0426</span></div>
+              </div>
+              <div class="amount">90.000.000 ₫</div>
+              <div>
+                <span class="pipe"><span class="st done">scoring</span><span class="sep">→</span><span class="st live">done</span></span>
+              </div>
+              <div class="sla">09:31</div>
+              <div></div>
+            </div>
+          </div>
+        </div>
+
+        <div data-pane="all" hidden>
+          <div class="col-head">
+            <span>Khách hàng</span><span class="r">Khoản vay</span>
+            <span>Trạng thái</span><span>Cập nhật</span><span></span>
+          </div>
+          <div class="rows">
+            <div class="row">
+              <div>
+                <div class="cust">Phạm Thu Hà</div>
+                <div class="seg">TikTok Shop · Đà Nẵng · <span class="case-id">SHB-26-0419</span></div>
+              </div>
+              <div class="amount">350.000.000 ₫</div>
+              <div class="sig sig-risk"><span class="sig-tick"></span><div class="sig-title">Cần xử lý</div></div>
+              <div class="sla">09:12</div>
+              <div></div>
+            </div>
+            <div class="row">
+              <div>
+                <div class="cust">Nguyễn Thị Lan</div>
+                <div class="seg">Shopee seller · HCM · <span class="case-id">SHB-26-0417</span></div>
+              </div>
+              <div class="amount">480.000.000 ₫</div>
+              <div class="sig sig-warn"><span class="sig-tick"></span><div class="sig-title">Cần xử lý</div></div>
+              <div class="sla">09:05</div>
+              <div></div>
+            </div>
+            <div class="row">
+              <div>
+                <div class="cust">Võ Hoài Nam</div>
+                <div class="seg">Chủ tiệm cà phê · Huế · <span class="case-id">SHB-26-0424</span></div>
+              </div>
+              <div class="amount">150.000.000 ₫</div>
+              <div class="sig sig-plain"><span class="sig-tick"></span><div class="sig-title">Đang chạy</div></div>
+              <div class="sla">09:41</div>
+              <div></div>
+            </div>
+            <div class="row">
+              <div>
+                <div class="cust">Ngô Thanh Tùng</div>
+                <div class="seg">Shipper · Hà Nội · <span class="case-id">SHB-26-0402</span></div>
+              </div>
+              <div class="amount">120.000.000 ₫</div>
+              <div class="sig sig-ok"><span class="sig-tick"></span><div class="sig-title">Đã duyệt</div></div>
+              <div class="sla">08:52</div>
+              <div></div>
+            </div>
+          </div>
+        </div>
+
+        <div data-pane="history" hidden>
+          <div class="col-head">
+            <span>Khách hàng</span><span class="r">Khoản vay</span>
+            <span>Kết quả</span><span>Hoàn tất</span><span></span>
+          </div>
+          <div class="rows">
+            <div class="row">
+              <div>
+                <div class="cust">Ngô Thanh Tùng</div>
+                <div class="seg">Shipper · Hà Nội · <span class="case-id">SHB-26-0402</span></div>
+              </div>
+              <div class="amount">120.000.000 ₫</div>
+              <div class="sig sig-ok"><span class="sig-tick"></span><div class="sig-title">Đã duyệt</div></div>
+              <div class="sla">Hôm nay, 08:52</div>
+              <div></div>
+            </div>
+            <div class="row">
+              <div>
+                <div class="cust">Hà Thu Trang</div>
+                <div class="seg">Shopee seller · Bắc Ninh · <span class="case-id">SHB-26-0398</span></div>
+              </div>
+              <div class="amount">280.000.000 ₫</div>
+              <div class="sig sig-risk"><span class="sig-tick"></span><div class="sig-title">Từ chối</div></div>
+              <div class="sla">Hôm qua, 16:20</div>
+              <div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      // Time-aware greeting
+      const h = new Date().getHours();
+      const part = h < 12 ? 'buổi sáng' : h < 18 ? 'buổi chiều' : 'buổi tối';
+      document.getElementById('greeting').innerHTML = `Chào ${part}, <em>Minh</em>.`;
+
+      // Count-up
+      document.querySelectorAll('[data-count]').forEach((el) => {
+        const target = +el.dataset.count;
+        const t0 = performance.now();
+        const dur = 600;
+        const tick = (t) => {
+          const p = Math.min((t - t0) / dur, 1);
+          el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+          if (p < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      });
+
+      // Tabs
+      const tabs = document.querySelectorAll('.tab');
+      tabs.forEach((tab) =>
+        tab.addEventListener('click', () => {
+          tabs.forEach((t) => {
+            t.classList.toggle('active', t === tab);
+            t.setAttribute('aria-selected', t === tab ? 'true' : 'false');
+          });
+          document.querySelectorAll('[data-pane]').forEach((p) => {
+            p.hidden = p.dataset.pane !== tab.dataset.tab;
+          });
+        }),
+      );
+    </script>
+  </body>
+</html>

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SHB StartFlow — UI Prototypes</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #f4f4f4;
+        color: #141414;
+        font: 400 16px/1.5 'Inter', system-ui, sans-serif;
+        display: grid;
+        place-items: center;
+        padding: 48px 24px;
+      }
+      .wrap { width: 100%; max-width: 720px; }
+      h1 {
+        font-size: 28px;
+        font-weight: 400;
+        letter-spacing: -0.5px;
+        margin: 0 0 6px;
+      }
+      .sub { color: #6b6b66; margin: 0 0 36px; }
+      .list { display: flex; flex-direction: column; gap: 12px; }
+      a.card {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        background: #fff;
+        border: 1px solid #e8e8e6;
+        border-radius: 16px;
+        padding: 20px 24px;
+        text-decoration: none;
+        color: inherit;
+        transition: border-color 0.15s ease, transform 0.15s ease;
+      }
+      a.card:hover { border-color: #141414; transform: translateY(-1px); }
+      .swatches { display: flex; gap: 4px; flex: none; }
+      .sw { width: 18px; height: 44px; border-radius: 5px; }
+      .name { font-weight: 600; }
+      .desc { color: #6b6b66; font-size: 14px; margin-top: 2px; }
+      .arrow { margin-left: auto; color: #a5a59e; flex: none; }
+      a.card:hover .arrow { color: #141414; }
+      .tag {
+        font: 500 11px 'Inter', sans-serif;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        color: #6b6b66;
+        border: 1px solid #e0e0dc;
+        border-radius: 999px;
+        padding: 3px 10px;
+        flex: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>SHB StartFlow — Prototypes</h1>
+      <p class="sub">Màn hình 1 · Hàng đợi hồ sơ. Chọn một phiên bản để xem.</p>
+      <div class="list">
+        <a class="card" href="./case-queue-dashboard.html">
+          <span class="swatches">
+            <span class="sw" style="background:#f7f7f4;border:1px solid #e6e5e0"></span>
+            <span class="sw" style="background:#f54e00"></span>
+            <span class="sw" style="background:#26251e"></span>
+          </span>
+          <span>
+            <span class="name">v1 · Editorial</span>
+            <div class="desc">Kem ấm, cam Cursor, hairline, grain giấy. Giọng tạp chí.</div>
+          </span>
+          <span class="tag">ổn định</span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="card" href="./case-queue-serenity.html">
+          <span class="swatches">
+            <span class="sw" style="background:#f4f4f4;border:1px solid #e2e2e2"></span>
+            <span class="sw" style="background:#faff7f"></span>
+            <span class="sw" style="background:#0c9762"></span>
+          </span>
+          <span>
+            <span class="name">v2 · Serenity</span>
+            <div class="desc">Xám nhạt, Outfit, lime + xanh lá. Nhẹ nhàng, thư thái.</div>
+          </span>
+          <span class="tag">đang thử</span>
+          <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
+  </body>
+</html>
