@@ -48,3 +48,21 @@ test('frontend container never receives private runtime env', async () => {
   assert.ok(frontend);
   assert.doesNotMatch(frontend, /env_file:/);
 });
+
+test('CI prepares workspace-generated types before quality checks and e2e', async () => {
+  const packageJson = JSON.parse(await readFile('package.json', 'utf8'));
+  const prepareCommand = packageJson.scripts?.['ci:prepare'];
+  assert.match(prepareCommand, /@startflow\/contracts build/);
+  assert.match(prepareCommand, /@startflow\/backend prisma:generate/);
+
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  const nodeJob = workflow.match(/^  node:\n([\s\S]*?)(?=^  python:)/m)?.[0];
+  const e2eJob = workflow.match(/^  e2e:\n([\s\S]*?)(?=^  docker:)/m)?.[0];
+
+  for (const job of [nodeJob, e2eJob]) {
+    assert.ok(job);
+    assert.ok(job.indexOf('pnpm ci:prepare') > job.indexOf('pnpm install --frozen-lockfile'));
+  }
+  assert.ok(nodeJob.indexOf('pnpm ci:prepare') < nodeJob.indexOf('pnpm lint'));
+  assert.ok(e2eJob.indexOf('pnpm ci:prepare') < e2eJob.indexOf('playwright install'));
+});

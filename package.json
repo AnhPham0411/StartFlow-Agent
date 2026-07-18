@@ -10,6 +10,7 @@
   },
   "scripts": {
     "build": "pnpm -r --if-present build",
+    "ci:prepare": "pnpm --filter @startflow/contracts build && pnpm --filter @startflow/backend prisma:generate",
     "dev": "pnpm -r --parallel --if-present dev",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
