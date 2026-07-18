@@ -11,13 +11,14 @@ import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose';
 import type { RequestContext } from '../../common/types/request-context';
 import type { AppEnvironment, AuthMode } from '../../config/env.validation';
 import { IS_PUBLIC_KEY } from './public.decorator';
+import { PrismaService } from '../../database/prisma.service';
 
 interface RealmAccess {
   roles?: unknown;
 }
 
 // Dev-login: mọi role hợp lệ để xem đủ luồng; có thể thu hẹp bằng header x-dev-roles.
-const DEV_ROLES = ['analyst', 'approver', 'admin'];
+const DEV_ROLES = ['analyst', 'approver', 'admin', 'sale', 'manager'];
 const DEV_SUBJECT = 'demo-reviewer';
 
 @Injectable()
@@ -30,6 +31,7 @@ export class JwtAuthGuard implements CanActivate {
   constructor(
     config: ConfigService<AppEnvironment, true>,
     private readonly reflector: Reflector,
+    private readonly prisma: PrismaService,
   ) {
     this.authMode = config.get('AUTH_MODE', { infer: true });
     this.audience = config.get('KEYCLOAK_AUDIENCE', { infer: true });
@@ -53,7 +55,10 @@ export class JwtAuthGuard implements CanActivate {
 
     // Dev-login: bỏ qua Keycloak, gán user demo. KHÔNG bao giờ bật ở production (chặn ở env.validation).
     if (this.authMode === 'mock') {
-      request.user = this.toDevUser(request.header('x-dev-roles'));
+      const devRoles = request.header('x-dev-roles');
+      const devBranch = request.header('x-dev-branch');
+      const devUserId = request.header('x-dev-user-id');
+      request.user = await this.toDevUser(devRoles, devBranch, devUserId);
       return true;
     }
 
@@ -69,20 +74,41 @@ export class JwtAuthGuard implements CanActivate {
         audience: this.audience,
         issuer: this.issuer,
       });
-      request.user = this.toUser(payload);
+      request.user = await this.toUser(payload);
       return true;
     } catch {
       throw new UnauthorizedException('Access token is invalid or expired');
     }
   }
 
-  private toDevUser(rolesHeader: string | undefined) {
+  private async toDevUser(rolesHeader: string | undefined, branchHeader: string | undefined, idHeader: string | undefined) {
     const requested = (rolesHeader ?? '')
       .split(',')
       .map((role) => role.trim())
       .filter((role) => DEV_ROLES.includes(role));
     const roles = requested.length > 0 ? requested : DEV_ROLES;
-    return { roles, sub: DEV_SUBJECT, username: DEV_SUBJECT };
+    const branch = branchHeader || 'Chi nhánh A';
+    let userId = idHeader ? Number(idHeader) : 1;
+
+    try {
+      const dbUsers = await this.prisma.$queryRawUnsafe<any[]>(
+        `SELECT id, branch, role::text FROM users WHERE id = $1 LIMIT 1`,
+        userId
+      );
+      if (dbUsers && dbUsers.length > 0) {
+        const u = dbUsers[0];
+        // Cast SQL BIGINT properly
+        return {
+          id: Number(u.id),
+          roles: [u.role],
+          sub: DEV_SUBJECT,
+          username: DEV_SUBJECT,
+          branch: u.branch || branch,
+        };
+      }
+    } catch {}
+
+    return { id: userId, roles, sub: DEV_SUBJECT, username: DEV_SUBJECT, branch };
   }
 
   private extractBearerToken(header: string | undefined): string | undefined {
@@ -91,7 +117,7 @@ export class JwtAuthGuard implements CanActivate {
     return scheme?.toLowerCase() === 'bearer' && token && !extra ? token : undefined;
   }
 
-  private toUser(payload: JWTPayload) {
+  private async toUser(payload: JWTPayload) {
     if (typeof payload.sub !== 'string' || payload.sub.length === 0) {
       throw new Error('Token subject is missing');
     }
@@ -102,6 +128,22 @@ export class JwtAuthGuard implements CanActivate {
     const username =
       typeof payload.preferred_username === 'string' ? payload.preferred_username : undefined;
 
-    return { roles, sub: payload.sub, ...(username ? { username } : {}) };
+    let id: number | undefined;
+    let branch: string | undefined;
+
+    if (username) {
+      try {
+        const dbUsers = await this.prisma.$queryRawUnsafe<any[]>(
+          `SELECT id, branch FROM users WHERE username = $1 LIMIT 1`,
+          username
+        );
+        if (dbUsers && dbUsers.length > 0) {
+          id = Number(dbUsers[0].id);
+          branch = dbUsers[0].branch;
+        }
+      } catch {}
+    }
+
+    return { roles, sub: payload.sub, ...(username ? { username } : {}), id, branch };
   }
 }

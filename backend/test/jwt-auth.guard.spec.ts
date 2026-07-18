@@ -29,6 +29,9 @@ function executionContext(authorization?: string): {
 }
 
 describe('Keycloak access-token verification', () => {
+  const prisma = {
+    $queryRawUnsafe: jest.fn().mockResolvedValue([]),
+  } as any;
   const config = {
     get: jest.fn((key: keyof AppEnvironment) => {
       if (key === 'AUTH_MODE') return 'keycloak';
@@ -52,7 +55,7 @@ describe('Keycloak access-token verification', () => {
       protectedHeader: { alg: 'RS256' },
     } as never);
     const { context, request } = executionContext('Bearer signed-token');
-    const guard = new JwtAuthGuard(config, reflector);
+    const guard = new JwtAuthGuard(config, reflector, prisma);
 
     await expect(guard.canActivate(context)).resolves.toBe(true);
     expect(jwtVerify).toHaveBeenCalledWith(
@@ -64,11 +67,11 @@ describe('Keycloak access-token verification', () => {
         issuer: 'https://auth.example.test/realms/startflow',
       }),
     );
-    expect(request.user).toEqual({ roles: ['analyst'], sub: 'demo-user' });
+    expect(request.user).toEqual({ roles: ['analyst'], sub: 'demo-user', id: undefined, branch: undefined });
   });
 
   it('returns unauthorized when a bearer token is missing', async () => {
-    const guard = new JwtAuthGuard(config, reflector);
+    const guard = new JwtAuthGuard(config, reflector, prisma);
     const { context } = executionContext();
 
     await expect(guard.canActivate(context)).rejects.toBeInstanceOf(UnauthorizedException);
@@ -77,6 +80,9 @@ describe('Keycloak access-token verification', () => {
 });
 
 describe('Dev-login (AUTH_MODE=mock)', () => {
+  const prisma = {
+    $queryRawUnsafe: jest.fn().mockResolvedValue([]),
+  } as any;
   const config = {
     get: jest.fn((key: keyof AppEnvironment) => (key === 'AUTH_MODE' ? 'mock' : '')),
   } as unknown as ConfigService<AppEnvironment, true>;
@@ -102,27 +108,31 @@ describe('Dev-login (AUTH_MODE=mock)', () => {
   }
 
   it('accepts requests without a token and grants all demo roles', async () => {
-    const guard = new JwtAuthGuard(config, reflector);
+    const guard = new JwtAuthGuard(config, reflector, prisma);
     const { context, request } = contextWithDevRoles();
 
     await expect(guard.canActivate(context)).resolves.toBe(true);
     expect(jwtVerify).not.toHaveBeenCalled();
     expect(request.user).toEqual({
-      roles: ['analyst', 'approver', 'admin'],
+      id: 1,
+      roles: ['analyst', 'approver', 'admin', 'sale', 'manager'],
       sub: 'demo-reviewer',
       username: 'demo-reviewer',
+      branch: 'Chi nhánh A',
     });
   });
 
   it('narrows to the roles requested via x-dev-roles', async () => {
-    const guard = new JwtAuthGuard(config, reflector);
+    const guard = new JwtAuthGuard(config, reflector, prisma);
     const { context, request } = contextWithDevRoles('approver, bogus');
 
     await expect(guard.canActivate(context)).resolves.toBe(true);
     expect(request.user).toEqual({
+      id: 1,
       roles: ['approver'],
       sub: 'demo-reviewer',
       username: 'demo-reviewer',
+      branch: 'Chi nhánh A',
     });
   });
 });

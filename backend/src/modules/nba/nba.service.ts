@@ -6,6 +6,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../../database/prisma.service';
+import type { AuthenticatedUser } from '../../common/types/request-context';
 
 /** Staleness threshold theo BUILD_SPEC B4 */
 const STALE_CASA_PCT = 0.2;
@@ -19,6 +20,8 @@ export interface CallListEntry {
   assigned_sale_id: string | null;
   product_rank1: string | null;
   product_rank2: string | null;
+  score_rank1?: number | null;
+  score_rank2?: number | null;
   rec_id: string | null;
   rec_version: number | null;
 }
@@ -37,31 +40,48 @@ export class NbaService {
   constructor(private readonly prisma: PrismaService) {}
 
   /** GET /api/nba/calllist?date= */
-  async getCallList(dateStr: string): Promise<CallListEntry[]> {
-    const rows = await this.prisma.$queryRawUnsafe<CallListEntry[]>(
-      `SELECT cl.customer_id::int AS customer_id,
+  async getCallList(dateStr: string, user?: AuthenticatedUser): Promise<CallListEntry[]> {
+    let query = `
+       SELECT cl.customer_id::int AS customer_id,
               c.full_name AS name,
               c.cif_code AS cif_code,
               '090-mock'::text AS phone,
               cl.assigned_sale_id::text AS assigned_sale_id,
               r.product_rank1,
               r.product_rank2,
+              r.score_rank1,
+              r.score_rank2,
               r.id::text AS rec_id,
               r.version::int AS rec_version
        FROM call_lists cl
        JOIN customers c ON c.id = cl.customer_id
        LEFT JOIN LATERAL (
-         SELECT id, product_rank1, product_rank2, version
+         SELECT id, product_rank1, product_rank2, score_rank1::float AS score_rank1, score_rank2::float AS score_rank2, version
          FROM recommendations
          WHERE customer_id = cl.customer_id
          ORDER BY version DESC
          LIMIT 1
        ) r ON true
        WHERE cl.list_date = $1::date
-       ORDER BY c.full_name`,
-      dateStr,
-    );
-    return rows;
+    `;
+
+    const params: any[] = [dateStr];
+
+    if (user) {
+      if (user.roles.includes('admin')) {
+        // No filter
+      } else if (user.roles.includes('manager')) {
+        query += ` AND cl.assigned_sale_id IN (SELECT id FROM users WHERE branch = $2) `;
+        params.push(user.branch || '');
+      } else if (user.roles.includes('sale')) {
+        query += ` AND cl.assigned_sale_id = $2::bigint `;
+        params.push(user.id || 1);
+      }
+    }
+
+    query += ` ORDER BY c.full_name`;
+
+    return this.prisma.$queryRawUnsafe<CallListEntry[]>(query, ...params);
   }
 
   /** GET /api/nba/customer/:id — đề xuất mới nhất + staleness + versions[] */
@@ -231,5 +251,27 @@ export class NbaService {
     );
 
     return { ...rec, feedback };
+  }
+
+  async saveCallNote(customerId: number, saleId: number, noteText: string) {
+    await this.prisma.$queryRawUnsafe(
+      `INSERT INTO call_notes(customer_id, sale_id, note_text) VALUES($1::bigint, $2::bigint, $3)`,
+      customerId,
+      saleId,
+      noteText,
+    );
+    return { ok: true };
+  }
+
+  async getCallNotes(customerId: number) {
+    return this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT cn.id::text AS id, cn.customer_id::int AS customer_id, cn.sale_id::int AS sale_id,
+              cn.note_text, cn.created_at, u.full_name AS sale_name
+       FROM call_notes cn
+       LEFT JOIN users u ON u.id = cn.sale_id
+       WHERE cn.customer_id = $1::bigint
+       ORDER BY cn.created_at DESC`,
+      customerId,
+    );
   }
 }

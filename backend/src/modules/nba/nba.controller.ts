@@ -67,6 +67,14 @@ class SetKpiDto {
   multiplier!: number;
 }
 
+class CreateNoteDto {
+  @IsNumber()
+  customerId!: number;
+
+  @IsString()
+  noteText!: string;
+}
+
 @ApiTags('nba')
 @ApiBearerAuth()
 @Controller('api/nba')
@@ -77,9 +85,9 @@ export class NbaController {
   @Get('calllist')
   @Roles('sale', 'manager', 'admin')
   @ApiOperation({ summary: 'Call list T+1 với đề xuất mới nhất' })
-  getCallList(@Query('date') date: string) {
+  getCallList(@Query('date') date: string, @CurrentUser() user: AuthenticatedUser) {
     const d = date ?? new Date().toISOString().slice(0, 10);
-    return this.nba.getCallList(d);
+    return this.nba.getCallList(d, user);
   }
 
   /** GET /api/nba/customer/:id */
@@ -120,5 +128,22 @@ export class NbaController {
   @ApiOperation({ summary: 'Truy vết đề xuất (version + snapshot + rules)' })
   audit(@Param('id') id: string) {
     return this.nba.auditRecommendation(id);
+  }
+
+  /** POST /api/nba/notes */
+  @Post('notes')
+  @Roles('sale', 'manager', 'admin')
+  @ApiOperation({ summary: 'Lưu ghi chú cuộc gọi' })
+  saveCallNote(@Body() body: CreateNoteDto, @CurrentUser() user: AuthenticatedUser) {
+    const saleId = user.id ? Number(user.id) : 1;
+    return this.nba.saveCallNote(body.customerId, saleId, body.noteText);
+  }
+
+  /** GET /api/nba/notes/:customerId */
+  @Get('notes/:customerId')
+  @Roles('sale', 'manager', 'admin')
+  @ApiOperation({ summary: 'Xem lịch sử ghi chú' })
+  getCallNotes(@Param('customerId', ParseIntPipe) customerId: number) {
+    return this.nba.getCallNotes(customerId);
   }
 }
