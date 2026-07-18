@@ -10,8 +10,8 @@ from src.core.settings import Settings
 from src.graph.workflow import WorkflowRunner
 from src.rag.repository import KnowledgeRepository
 from src.rag.retrieval import (
-    DatabaseKnowledgeRetriever,
     KnowledgeRetriever,
+    QdrantKnowledgeRetriever,
     SeedKnowledgeRetriever,
 )
 
@@ -30,18 +30,18 @@ class Runtime:
 
 
 def build_runtime(settings: Settings) -> Runtime:
-    repository = (
-        KnowledgeRepository(
-            settings.ai_database_url,
-            settings.db_ssl_mode,
-            settings.db_ssl_root_cert,
+    repository = None
+    if settings.qdrant_url:
+        repository = KnowledgeRepository(
+            str(settings.qdrant_url),
+            settings.qdrant_api_key.get_secret_value() if settings.qdrant_api_key else None,
+            settings.qdrant_collection,
+            settings.qdrant_vector_size,
+            settings.qdrant_timeout_seconds,
         )
-        if settings.ai_database_url
-        else None
-    )
     retriever: KnowledgeRetriever
     if repository:
-        retriever = DatabaseKnowledgeRetriever(repository, settings.embedding_dimensions)
+        retriever = QdrantKnowledgeRetriever(repository, settings.embedding_dimensions)
     else:
         seed_path = Path(settings.knowledge_seed_path)
         if not seed_path.exists():

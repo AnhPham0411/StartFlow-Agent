@@ -99,7 +99,7 @@ class SeedKnowledgeRetriever:
         ]
 
 
-class DatabaseKnowledgeRetriever:
+class QdrantKnowledgeRetriever:
     def __init__(self, repository: KnowledgeRepository, dimensions: int = 1536) -> None:
         self.repository = repository
         self.dimensions = dimensions

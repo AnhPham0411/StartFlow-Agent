@@ -4,7 +4,7 @@
 
 StartFlow chỉ dùng chung máy chủ vật lý với các ứng dụng khác. Repository này tự sở hữu GitHub Actions workflow, Docker images, release script, Nginx templates và rollback của mình; không checkout, gọi hoặc sửa repository deployment nào khác.
 
-PostgreSQL 18 và Keycloak tiếp tục là external dependencies được cung cấp qua env. Workflow StartFlow không provision, restart hoặc thay đổi vòng đời của hai dịch vụ đó.
+PostgreSQL 18, Keycloak và Qdrant tiếp tục là external dependencies được cung cấp qua env. Workflow StartFlow không provision, restart hoặc thay đổi vòng đời của các dịch vụ đó.
 
 ## Cách ly trên droplet
 
@@ -36,6 +36,8 @@ Tạo GitHub Environment `development`, sau đó cấu hình đúng hai secrets:
 
 PostgreSQL được cấu hình bằng `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_SSL_MODE` và `DB_SSL_ROOT_CERT`. Không đặt `DATABASE_URL` hoặc `AI_DATABASE_URL` trong GitHub secret; backend và AI service tự tạo DSN đã URL-encode trong process runtime.
 
+Qdrant được cấu hình bằng `QDRANT_URL`, `QDRANT_API_KEY`, `QDRANT_COLLECTION` và `QDRANT_VECTOR_SIZE`. `ai-migrate` tự tạo collection nếu chưa có, kiểm tra collection dùng cosine với đúng kích thước vector rồi nạp lại knowledge seed theo cách idempotent. Các giá trị này phải nằm trong `STARTFLOW_DEV`/`STARTFLOW_PROD`, không tạo Qdrant container trên droplet StartFlow.
+
 Không cần tạo các secrets rời `DROPLET_HOST`, `DROPLET_USER`, `DROPLET_SSH_KNOWN_HOSTS` hoặc `POSTGRES_TLS_CA_BASE64`. Production được giữ tách biệt và chỉ dùng `STARTFLOW_PROD` cùng `SSH_PRIVATE_KEY_PROD` khi deploy branch `main`; workflow không fallback sang dev secrets.
 
 ## Pipeline độc lập
@@ -56,10 +58,10 @@ Không cần tạo các secrets rời `DROPLET_HOST`, `DROPLET_USER`, `DROPLET_S
 - Hai domain đã trỏ DNS tới droplet.
 - Certbot/TLS certificate đã có tại `/etc/letsencrypt/live/<domain>/`; deploy fail-closed nếu thiếu certificate/key.
 - Host ports đã được kiểm tra không xung đột.
-- Droplet được PostgreSQL/Keycloak cho phép kết nối.
+- Droplet được PostgreSQL/Keycloak/Qdrant cho phép kết nối.
 
 ## Kích hoạt
 
 Push vào `dev` deploy environment `development`; push vào `main` deploy `production`. Có thể chạy `workflow_dispatch` để thử thủ công trên branch đã chọn; branch khác `main` luôn dùng environment development.
 
-Trước lần đầu deploy, review domain/port, SSH known-hosts, DB grants/TLS, Keycloak redirect URI/web origin và backup/migration policy.
+Trước lần đầu deploy, review domain/port, SSH known-hosts, DB grants/TLS, Qdrant URL/API key/collection, Keycloak redirect URI/web origin và backup/migration policy.

@@ -45,7 +45,8 @@ for key in \
   DB_HOST DB_PORT DB_NAME DB_USER DB_PASSWORD KEYCLOAK_ISSUER KEYCLOAK_AUDIENCE \
   NEXT_PUBLIC_API_URL NEXT_PUBLIC_KEYCLOAK_URL NEXT_PUBLIC_KEYCLOAK_REALM \
   NEXT_PUBLIC_KEYCLOAK_CLIENT_ID CORS_ORIGINS INTERNAL_SERVICE_TOKEN \
-  LLM_MODE DROPLET_HOST DROPLET_USER DROPLET_SSH_KNOWN_HOSTS; do
+  LLM_MODE QDRANT_URL QDRANT_API_KEY QDRANT_COLLECTION QDRANT_VECTOR_SIZE \
+  DROPLET_HOST DROPLET_USER DROPLET_SSH_KNOWN_HOSTS; do
   require_key "$key"
 done
 
@@ -70,6 +71,10 @@ done
 (( 10#$(env_value DB_PORT) >= 1 && 10#$(env_value DB_PORT) <= 65535 )) || fail 'DB_PORT is invalid.'
 [[ "$(env_value DB_NAME)" =~ ^[A-Za-z0-9_.-]+$ ]] || fail 'DB_NAME is invalid.'
 [[ "$(env_value DB_USER)" =~ ^[A-Za-z0-9_.-]+$ ]] || fail 'DB_USER is invalid.'
+[[ "$(env_value QDRANT_URL)" =~ ^https?://[^[:space:]]+$ ]] || fail 'QDRANT_URL is invalid.'
+[[ "$(env_value QDRANT_COLLECTION)" =~ ^[A-Za-z0-9_.-]+$ ]] || fail 'QDRANT_COLLECTION is invalid.'
+[[ "$(env_value QDRANT_VECTOR_SIZE)" =~ ^[0-9]{1,4}$ ]] || fail 'QDRANT_VECTOR_SIZE is invalid.'
+(( 10#$(env_value QDRANT_VECTOR_SIZE) >= 1 && 10#$(env_value QDRANT_VECTOR_SIZE) <= 4096 )) || fail 'QDRANT_VECTOR_SIZE is invalid.'
 
 llm_mode="$(env_value LLM_MODE)"
 [[ "$llm_mode" == 'mock' || "$llm_mode" == 'openai-compatible' ]] || fail 'LLM_MODE is invalid.'

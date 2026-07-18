@@ -24,9 +24,9 @@ test('public event schema keeps the frozen vocabulary', async () => {
   assert.doesNotMatch(serialized, /chain.?of.?thought|reasoning_trace|scratchpad/i);
 });
 
-test('compose never provisions the existing PostgreSQL or Keycloak services', async () => {
+test('compose never provisions the existing PostgreSQL, Keycloak, or Qdrant services', async () => {
   const compose = await readFile('docker-compose.yml', 'utf8');
-  assert.doesNotMatch(compose, /^\s{2}(postgres|postgresql|keycloak):/m);
+  assert.doesNotMatch(compose, /^\s{2}(postgres|postgresql|keycloak|qdrant):/m);
   assert.match(compose, /^\s{2}backend:/m);
   assert.match(compose, /^\s{2}ai-service:/m);
   assert.match(compose, /^\s{2}frontend:/m);
@@ -39,6 +39,27 @@ test('deployment env examples keep database credentials split', async () => {
       assert.match(envExample, new RegExp(`^${key}=`, 'm'));
     }
     assert.doesNotMatch(envExample, /^(DATABASE_URL|AI_DATABASE_URL)=/m);
+  }
+});
+
+test('AI vector storage uses external Qdrant without a pgvector deployment gate', async () => {
+  const repository = await readFile('ai-service/src/rag/repository.py', 'utf8');
+  const uvLock = await readFile('ai-service/uv.lock', 'utf8');
+  const migration = await readFile(
+    'ai-service/alembic/versions/20260717_0001_ai_knowledge.py',
+    'utf8',
+  );
+
+  assert.match(repository, /\/points\/query/);
+  assert.match(repository, /api-key/);
+  assert.doesNotMatch(repository, /pgvector/);
+  assert.doesNotMatch(uvLock, /name = "pgvector"/);
+  assert.doesNotMatch(migration, /pg_extension|vector_cosine_ops|Vector\(/);
+  for (const path of ['.env.example', '.env.production.example']) {
+    const envExample = await readFile(path, 'utf8');
+    for (const key of ['QDRANT_URL', 'QDRANT_API_KEY', 'QDRANT_COLLECTION', 'QDRANT_VECTOR_SIZE']) {
+      assert.match(envExample, new RegExp(`^${key}=`, 'm'));
+    }
   }
 });
 

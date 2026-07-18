@@ -32,6 +32,13 @@ class Settings(BaseSettings):
     knowledge_seed_path: str = "/app/knowledge/seed"
     rag_top_k: int = Field(default=3, ge=1, le=20)
     embedding_dimensions: int = Field(default=1536, ge=1, le=4096)
+    qdrant_url: AnyHttpUrl | None = None
+    qdrant_api_key: SecretStr | None = None
+    qdrant_collection: str = Field(
+        default="startflow_knowledge", pattern=r"^[A-Za-z0-9._-]+$"
+    )
+    qdrant_vector_size: int = Field(default=1536, ge=1, le=4096)
+    qdrant_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
 
     llm_mode: Literal["mock", "openai-compatible"] = "mock"
     llm_api_key: SecretStr | None = None
@@ -73,6 +80,8 @@ class Settings(BaseSettings):
     def validate_secure_modes(self) -> Self:
         if self.llm_mode == "openai-compatible" and self.llm_api_key is None:
             raise ValueError("LLM_API_KEY is required when LLM_MODE=openai-compatible")
+        if self.qdrant_vector_size != self.embedding_dimensions:
+            raise ValueError("QDRANT_VECTOR_SIZE must match EMBEDDING_DIMENSIONS")
         if self.environment == "production":
             if self.internal_service_token.get_secret_value() == "development-only-change-me":
                 raise ValueError("INTERNAL_SERVICE_TOKEN must be changed in production")
@@ -82,6 +91,10 @@ class Settings(BaseSettings):
                 )
             if self.db_ssl_mode not in {"require", "verify-ca", "verify-full"}:
                 raise ValueError("DB_SSL_MODE must fail closed in production")
+            if self.qdrant_url is None:
+                raise ValueError("QDRANT_URL is required in production")
+            if self.qdrant_api_key is None or not self.qdrant_api_key.get_secret_value():
+                raise ValueError("QDRANT_API_KEY is required in production")
         return self
 
 

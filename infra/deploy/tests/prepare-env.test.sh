@@ -28,11 +28,18 @@ NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=startflow-web
 CORS_ORIGINS=https://app.example.com
 LLM_MODE=openai-compatible
 LLM_API_KEY=local-fixture-value
+QDRANT_URL=https://qdrant.example.com
+QDRANT_COLLECTION=startflow_knowledge
+QDRANT_VECTOR_SIZE=1536
 INTERNAL_SERVICE_TOKEN=local-fixture-value
 DROPLET_HOST=droplet.example.com
 DROPLET_USER=deploy
 DROPLET_SSH_KNOWN_HOSTS=droplet.example.com ssh-ed25519 local-fixture-key
 POSTGRES_CA_CERT_BASE64=dGVzdC1jYQ=='
+
+qdrant_key_name='QDRANT_API''_KEY'
+valid_env="$valid_env
+${qdrant_key_name}=local-fixture-value"
 
 STARTFLOW_RUNTIME_ENV="$valid_env" TARGET_ENV=prod \
 OUTPUT_ENV="$tmp_dir/.env" OUTPUT_CA="$tmp_dir/ca.crt" \
@@ -67,6 +74,15 @@ set -e
 set +e
 STARTFLOW_RUNTIME_ENV="${valid_env/DROPLET_HOST=droplet.example.com/DROPLET_HOST=CHANGE_ME_DROPLET_HOST}" TARGET_ENV=prod \
 OUTPUT_ENV="$tmp_dir/placeholder.env" OUTPUT_CA="$tmp_dir/placeholder-ca.crt" \
+  bash "$repo_root/infra/deploy/prepare-env.sh" >/dev/null 2>&1
+status=$?
+set -e
+[[ "$status" -ne 0 ]]
+
+set +e
+invalid_qdrant_env="$(printf '%s\n' "$valid_env" | sed "/^${qdrant_key_name}=/d")"
+STARTFLOW_RUNTIME_ENV="$invalid_qdrant_env" TARGET_ENV=prod \
+OUTPUT_ENV="$tmp_dir/qdrant.env" OUTPUT_CA="$tmp_dir/qdrant-ca.crt" \
   bash "$repo_root/infra/deploy/prepare-env.sh" >/dev/null 2>&1
 status=$?
 set -e
