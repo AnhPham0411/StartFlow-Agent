@@ -195,6 +195,18 @@ export class StartFlowApi {
 
   private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const token = await this.getAccessToken();
+    
+    // Inject dev-login mock headers from localStorage if present
+    const devHeaders: Record<string, string> = {};
+    if (typeof window !== 'undefined') {
+      const mockRole = window.localStorage.getItem('mock_role');
+      const mockBranch = window.localStorage.getItem('mock_branch');
+      const mockUserId = window.localStorage.getItem('mock_user_id');
+      if (mockRole) devHeaders['x-dev-roles'] = mockRole;
+      if (mockBranch) devHeaders['x-dev-branch'] = mockBranch;
+      if (mockUserId) devHeaders['x-dev-user-id'] = mockUserId;
+    }
+
     const response = await fetch(`${getApiBaseUrl()}${path}`, {
       ...init,
       cache: 'no-store',
@@ -202,6 +214,7 @@ export class StartFlowApi {
         Accept: 'application/json',
         Authorization: `Bearer ${token}`,
         ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+        ...devHeaders,
         ...init.headers,
       },
     });
@@ -319,6 +332,17 @@ export class StartFlowApi {
 
   async nbaCustomer(id: number) {
     return this.request<Record<string, unknown>>(`/nba/customer/${id}`);
+  }
+
+  async getCallNotes(customerId: number) {
+    return this.request<Array<{ id: number; note_text: string; created_at: string; sale_name?: string }>>(`/nba/notes/${customerId}`);
+  }
+
+  async saveCallNote(customerId: number, noteText: string) {
+    return this.request<{ ok: boolean; noteId: number }>('/nba/notes', {
+      method: 'POST',
+      body: JSON.stringify({ customer_id: customerId, note_text: noteText }),
+    });
   }
 
   async nbaFeedback(body: { rec_id: string; status: string; reject_reason?: string; note?: string }) {

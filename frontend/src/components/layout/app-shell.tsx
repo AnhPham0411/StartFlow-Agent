@@ -56,7 +56,7 @@ function Navigation({ mobile = false }: { mobile?: boolean }) {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { user, roles, logout } = useAuth();
+  const { user, roles, logout, setMockUser, mockBranch, mockUserId } = useAuth();
 
   return (
     <>
@@ -84,6 +84,28 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </Badge>
               ))}
             </div>
+            {process.env.NEXT_PUBLIC_AUTH_MODE === 'mock' && setMockUser && (
+              <div className="dev-switcher" style={{ margin: '8px 0', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px' }}>
+                <p style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 600, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Dev Role Switcher
+                </p>
+                <select
+                  style={{ width: '100%', fontSize: '12px', background: '#1e293b', color: '#f8fafc', border: '1px solid #475569', borderRadius: '4px', padding: '4px 8px', outline: 'none' }}
+                  value={`${roles[0] || 'admin'}|${mockBranch || 'Chi nhánh A'}|${mockUserId || 1}`}
+                  onChange={(e) => {
+                    const [r, b, u] = e.target.value.split('|');
+                    if (setMockUser && r && b && u) {
+                      setMockUser(r as any, b, Number(u));
+                    }
+                  }}
+                >
+                  <option value="sale|Chi nhánh A|1">Sale A (CN A)</option>
+                  <option value="manager|Chi nhánh A|2">Manager A (CN A)</option>
+                  <option value="sale|Chi nhánh B|3">Sale B (CN B)</option>
+                  <option value="admin|HO|4">Admin (HO)</option>
+                </select>
+              </div>
+            )}
             <button className="nav-link" type="button" onClick={() => void logout()}>
               <LogOut aria-hidden="true" />
               <span>Đăng xuất</span>

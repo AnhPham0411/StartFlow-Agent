@@ -22,6 +22,13 @@ export default function NbaCustomerPage() {
   const [error, setError] = useState<string | null>(null);
   const [showTrace, setShowTrace] = useState(false);
   const [runningMini, setRunningMini] = useState(false);
+  
+  // Call Notes State
+  const [notes, setNotes] = useState<Array<{ id: number; note_text: string; created_at: string; sale_name?: string }>>([]);
+  const [noteText, setNoteText] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
+  const [loadingNotes, setLoadingNotes] = useState(false);
+
   const api = new StartFlowApi(getAccessToken);
 
   const load = useCallback(async () => {
@@ -31,7 +38,37 @@ export default function NbaCustomerPage() {
     finally { setLoading(false); }
   }, [id]); // eslint-disable-line
 
-  useEffect(() => { void load(); }, [load]);
+  const loadNotes = useCallback(async () => {
+    setLoadingNotes(true);
+    try {
+      const res = await api.getCallNotes(Number(id));
+      setNotes(res);
+    } catch (e) {
+      console.error('Failed to load notes', e);
+    } finally {
+      setLoadingNotes(false);
+    }
+  }, [id]); // eslint-disable-line
+
+  const handleSaveNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!noteText.trim()) return;
+    setSavingNote(true);
+    try {
+      await api.saveCallNote(Number(id), noteText);
+      setNoteText('');
+      await loadNotes();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Lỗi khi lưu ghi chú');
+    } finally {
+      setSavingNote(false);
+    }
+  };
+
+  useEffect(() => {
+    void load();
+    void loadNotes();
+  }, [load, loadNotes]);
 
   const rec = data?.recommendation as Record<string, unknown> | null;
   const versions = (data?.versions ?? []) as Array<{ version: number; created_at: string; source: string }>;
@@ -69,7 +106,7 @@ export default function NbaCustomerPage() {
                   <div key={n} style={{ padding: '0.75rem', borderRadius: 8, background: n === '1' ? 'var(--accent-dim, #7c3aed22)' : 'var(--surface-2, #f3f4f6)', marginBottom: '0.5rem', border: '1px solid var(--border)' }}>
                     <strong>#{n} {PROD[String(prod)] ?? String(prod)}</strong>
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginLeft: 8 }}>
-                      {typeof rec[`score_rank${n}`] === 'number' ? (rec[`score_rank${n}`] as number).toFixed(3) : ''}
+                      {typeof rec[`score_rank${n}`] === 'number' ? `${((rec[`score_rank${n}`] as number) * 100).toFixed(1)}%` : ''}
                     </span>
                     <p style={{ margin: '0.4rem 0 0.2rem', fontSize: '0.9rem' }}>{String(rec[`hook${n}`] ?? '—')}</p>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>{String(rec[`explain${n}`] ?? '')}</p>
@@ -80,6 +117,87 @@ export default function NbaCustomerPage() {
           ) : (
             <Panel><p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>Chưa có đề xuất. Chạy batch nightly.</p></Panel>
           )}
+
+          {/* Ghi chú cuộc gọi (Call Notes) */}
+          <Panel>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Ghi chú cuộc gọi</h3>
+            </div>
+            
+            <form onSubmit={handleSaveNote} style={{ marginBottom: '1.5rem' }}>
+              <textarea
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                placeholder="Nhập nội dung trao đổi cuộc gọi (vd: Khách hàng đồng ý mở thẻ, hẹn chiều gửi hồ sơ...)"
+                rows={3}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border)',
+                  background: 'var(--surface-2, #f3f4f6)',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.875rem',
+                  resize: 'vertical',
+                  outline: 'none',
+                  marginBottom: '0.5rem'
+                }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  type="submit"
+                  disabled={savingNote || !noteText.trim()}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '6px',
+                    background: noteText.trim() ? 'var(--accent, #7c3aed)' : 'var(--border)',
+                    color: '#fff',
+                    border: 'none',
+                    cursor: noteText.trim() ? 'pointer' : 'not-allowed',
+                    fontWeight: 600,
+                    fontSize: '0.85rem'
+                  }}
+                >
+                  {savingNote ? 'Đang lưu...' : 'Lưu ghi chú'}
+                </button>
+              </div>
+            </form>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {loadingNotes ? (
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center' }}>Đang tải ghi chú...</p>
+              ) : notes.length === 0 ? (
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', fontStyle: 'italic' }}>
+                  Chưa có ghi chú cuộc gọi cho khách hàng này.
+                </p>
+              ) : (
+                notes.map((note) => (
+                  <div
+                    key={note.id}
+                    style={{
+                      padding: '0.75rem',
+                      borderRadius: '8px',
+                      background: 'var(--surface-2, #f3f4f6)',
+                      border: '1px solid var(--border)',
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                      <strong style={{ color: 'var(--text-primary)' }}>
+                        {note.sale_name || 'Nhân viên Sale'}
+                      </strong>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                        {new Date(note.created_at).toLocaleString('vi-VN')}
+                      </span>
+                    </div>
+                    <p style={{ margin: 0, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
+                      {note.note_text}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+          </Panel>
 
           {versions.length > 0 && (
             <Panel>

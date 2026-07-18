@@ -31,6 +31,9 @@ export interface AuthContextValue {
   logout: () => Promise<void>;
   getAccessToken: () => Promise<string>;
   hasRole: (...roles: UserRole[]) => boolean;
+  setMockUser?: (role: UserRole, branch: string, userId: number) => void;
+  mockBranch?: string;
+  mockUserId?: number;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
@@ -47,6 +50,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [roles, setRoles] = useState<UserRole[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [mockBranch, setMockBranch] = useState<string>('Chi nhánh A');
+  const [mockUserId, setMockUserId] = useState<number>(1);
 
   useEffect(() => {
     let active = true;
@@ -63,8 +68,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setStatus('error');
           return;
         }
+
+        const cachedRole = (window.localStorage.getItem('mock_role') || 'admin') as UserRole;
+        const cachedBranch = window.localStorage.getItem('mock_branch') || 'Chi nhánh A';
+        const cachedUserId = Number(window.localStorage.getItem('mock_user_id') || '1');
+
+        if (!window.localStorage.getItem('mock_role')) {
+          window.localStorage.setItem('mock_role', cachedRole);
+          window.localStorage.setItem('mock_branch', cachedBranch);
+          window.localStorage.setItem('mock_user_id', String(cachedUserId));
+        }
+
+        setMockBranch(cachedBranch);
+        setMockUserId(cachedUserId);
+
         setUser({ subject: 'demo-reviewer', name: 'Demo Reviewer', email: 'demo@startflow.local' });
-        setRoles(['analyst', 'approver', 'admin']);
+        setRoles([cachedRole]);
         setStatus('authenticated');
         return;
       }
@@ -136,8 +155,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async () => {
     if (process.env.NEXT_PUBLIC_AUTH_MODE === 'mock' && process.env.NODE_ENV !== 'production') {
+      const cachedRole = (window.localStorage.getItem('mock_role') || 'admin') as UserRole;
       setUser({ subject: 'demo-reviewer', name: 'Demo Reviewer', email: 'demo@startflow.local' });
-      setRoles(['analyst', 'approver']);
+      setRoles([cachedRole]);
       setStatus('authenticated');
       return;
     }
@@ -167,9 +187,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (...required: UserRole[]) => required.some((role) => roles.includes(role)),
     [roles],
   );
+
+  const setMockUser = useCallback((role: UserRole, branch: string, userId: number) => {
+    if (process.env.NEXT_PUBLIC_AUTH_MODE === 'mock') {
+      window.localStorage.setItem('mock_role', role);
+      window.localStorage.setItem('mock_branch', branch);
+      window.localStorage.setItem('mock_user_id', String(userId));
+      setMockBranch(branch);
+      setMockUserId(userId);
+      setRoles([role]);
+      window.location.reload();
+    }
+  }, []);
+
   const value = useMemo<AuthContextValue>(
-    () => ({ status, user, roles, error, login, logout, getAccessToken, hasRole }),
-    [status, user, roles, error, login, logout, getAccessToken, hasRole],
+    () => ({
+      status,
+      user,
+      roles,
+      error,
+      login,
+      logout,
+      getAccessToken,
+      hasRole,
+      setMockUser,
+      mockBranch,
+      mockUserId,
+    }),
+    [status, user, roles, error, login, logout, getAccessToken, hasRole, setMockUser, mockBranch, mockUserId],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
