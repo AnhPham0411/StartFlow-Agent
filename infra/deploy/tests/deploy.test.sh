@@ -52,4 +52,14 @@ if grep -Fq 'alembic upgrade head && python -m src.rag.ingest' "$compose"; then
   exit 1
 fi
 
+frontend_nginx="$repo_root/infra/deploy/nginx/frontend.conf.template"
+backend_nginx="$repo_root/infra/deploy/nginx/backend.conf.template"
+grep -Fq 'X-Frame-Options "SAMEORIGIN"' "$frontend_nginx"
+grep -Fq "Content-Security-Policy \"frame-ancestors 'self'\"" "$frontend_nginx"
+grep -Fq 'X-Frame-Options "DENY"' "$backend_nginx"
+if grep -Fq 'X-Frame-Options "DENY"' "$frontend_nginx"; then
+  printf 'Frontend DENY blocks the same-origin Keycloak silent SSO iframe.\n' >&2
+  exit 1
+fi
+
 printf 'standalone deploy static tests passed.\n'
