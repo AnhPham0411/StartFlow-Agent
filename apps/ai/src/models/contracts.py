@@ -30,7 +30,7 @@ class CustomerTag(BaseModel):
 class Profile(BaseModel):
     customer_id: int
     as_of_date: date
-    features: dict[str, float | int | bool | None]  # C3 — feature cứng
+    features: dict[str, object]  # C3 — feature cứng (product_flags là list[str])
     tags: list[CustomerTag] = Field(default_factory=list)
 
 

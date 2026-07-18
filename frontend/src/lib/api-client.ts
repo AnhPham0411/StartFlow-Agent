@@ -9,6 +9,7 @@ import {
   type CaseInput,
 } from '@startflow/contracts';
 import type { CaseDetail, CaseSummary, KnowledgeDocument, RunDetail } from './models';
+import type { NbaAssessment } from './nba-assessment.types';
 
 type AccessTokenProvider = () => Promise<string>;
 
@@ -196,14 +197,17 @@ export class StartFlowApi {
   private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const token = await this.getAccessToken();
     
-    // Inject dev-login mock headers from localStorage if present
+    // Dev-login: gửi danh tính mock qua header.
+    //
+    // KHÔNG gửi tên chi nhánh: header HTTP chỉ nhận ISO-8859-1, mà tên chi nhánh thật
+    // ("Hà Nội - Đống Đa") chứa ộ/Đ nằm ngoài bảng mã đó → fetch ném lỗi trước cả khi
+    // gửi đi. Guard vốn đã tra branch + role từ bảng `users` theo id, nên header branch
+    // là thừa. Chỉ role và id (đều ASCII) được gửi.
     const devHeaders: Record<string, string> = {};
     if (typeof window !== 'undefined') {
       const mockRole = window.localStorage.getItem('mock_role');
-      const mockBranch = window.localStorage.getItem('mock_branch');
       const mockUserId = window.localStorage.getItem('mock_user_id');
       if (mockRole) devHeaders['x-dev-roles'] = mockRole;
-      if (mockBranch) devHeaders['x-dev-branch'] = mockBranch;
       if (mockUserId) devHeaders['x-dev-user-id'] = mockUserId;
     }
 
@@ -330,8 +334,26 @@ export class StartFlowApi {
     return this.request<unknown[]>(`/nba/calllist?date=${d}`);
   }
 
+  async nbaCustomers(q?: string) {
+    const query = q?.trim() ? `?q=${encodeURIComponent(q.trim())}` : '';
+    return this.request<
+      Array<{
+        customer_id: number;
+        full_name: string;
+        cif_code: string;
+        product_rank1: string | null;
+        last_list_date: string | null;
+      }>
+    >(`/nba/customers${query}`);
+  }
+
   async nbaCustomer(id: number) {
     return this.request<Record<string, unknown>>(`/nba/customer/${id}`);
+  }
+
+  async nbaAssessment(customerId: number, asOf?: string) {
+    const q = asOf ? `?as_of=${asOf}` : '';
+    return this.request<NbaAssessment>(`/nba/customer/${customerId}/assessment${q}`);
   }
 
   async getCallNotes(customerId: number) {
@@ -345,14 +367,21 @@ export class StartFlowApi {
     });
   }
 
-  async nbaFeedback(body: { rec_id: string; status: string; reject_reason?: string; note?: string }) {
+  async nbaFeedback(body: {
+    rec_id: string;
+    status: 'success' | 'rejected' | 'no_contact' | 'callback';
+    /** Bỏ trống → BE lấy product_rank1 của đề xuất. */
+    product?: string;
+    reject_reason?: string;
+    note?: string;
+  }) {
     return this.request<{ ok: boolean; suppressed: boolean }>('/nba/feedback', {
       method: 'POST',
       body: JSON.stringify(body),
     });
   }
 
-  async nbaAssignCallList(date: string, assignments: Array<{ customer_id: number; sale_id: string }>) {
+  async nbaAssignCallList(date: string, assignments: Array<{ customer_id: number; sale_id: number }>) {
     return this.request<{ inserted: number }>('/nba/admin/calllist', {
       method: 'POST',
       body: JSON.stringify({ date, assignments }),

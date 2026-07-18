@@ -81,13 +81,24 @@ export class JwtAuthGuard implements CanActivate {
     }
   }
 
+  /**
+   * Dựng user demo. Nguồn sự thật là bảng `users` tra theo id — role và branch lấy từ DB,
+   * header chỉ dùng làm dự phòng khi id không tồn tại.
+   *
+   * Lưu ý: frontend KHÔNG gửi `x-dev-branch` nữa vì header HTTP chỉ nhận ISO-8859-1, mà tên
+   * chi nhánh thật ("Hà Nội - Đống Đa") chứa ký tự ngoài bảng mã đó. Tham số giữ lại cho
+   * tương thích nếu ai đó gọi bằng curl.
+   *
+   * Dự phòng để rỗng chứ không đặt tên giả: branch rỗng khiến manager không khớp user nào
+   * và bị chặn — sai theo hướng an toàn, hơn là mở nhầm dữ liệu chi nhánh khác.
+   */
   private async toDevUser(rolesHeader: string | undefined, branchHeader: string | undefined, idHeader: string | undefined) {
     const requested = (rolesHeader ?? '')
       .split(',')
       .map((role) => role.trim())
       .filter((role) => DEV_ROLES.includes(role));
     const roles = requested.length > 0 ? requested : DEV_ROLES;
-    const branch = branchHeader || 'Chi nhánh A';
+    const branch = branchHeader ?? '';
     let userId = idHeader ? Number(idHeader) : 1;
 
     try {

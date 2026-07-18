@@ -5,6 +5,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Param,
   ParseIntPipe,
@@ -17,17 +18,26 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { AuthenticatedUser } from '../../common/types/request-context';
 import { Roles } from '../auth/roles.decorator';
+import { AssessmentService } from './assessment/assessment.service';
 import { NbaService } from './nba.service';
 
-import { IsString, IsNumber, IsArray, ValidateNested, IsOptional } from 'class-validator';
+import { IsString, IsNumber, IsArray, ValidateNested, IsOptional, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
+
+const FEEDBACK_STATUSES = ['success', 'rejected', 'no_contact', 'callback'] as const;
+const PRODUCTS = ['the', 'vay', 'dautu', 'baohiem', 'taikhoan'] as const;
 
 class FeedbackDto {
   @IsString()
   rec_id!: string;
 
-  @IsString()
+  @IsIn(FEEDBACK_STATUSES as unknown as string[])
   status!: string;
+
+  /** Bỏ trống thì service lấy product_rank1 của đề xuất (cột feedback.product NOT NULL). */
+  @IsIn(PRODUCTS as unknown as string[])
+  @IsOptional()
+  product?: string;
 
   @IsString()
   @IsOptional()
@@ -42,8 +52,9 @@ class CallListAssignment {
   @IsNumber()
   customer_id!: number;
 
-  @IsString()
-  sale_id!: string;
+  /** call_lists.assigned_sale_id là BIGINT FK users(id). */
+  @IsNumber()
+  sale_id!: number;
 }
 
 class AssignCallListDto {
@@ -67,19 +78,34 @@ class SetKpiDto {
   multiplier!: number;
 }
 
+/** FE gửi snake_case (api-client.saveCallNote) — DTO phải khớp, nếu không ValidationPipe chặn. */
 class CreateNoteDto {
   @IsNumber()
-  customerId!: number;
+  customer_id!: number;
 
   @IsString()
-  noteText!: string;
+  note_text!: string;
+}
+
+/**
+ * Mọi bảng NBA tham chiếu users(id) kiểu BIGINT. Token không map được về user trong DB
+ * thì phải chặn thẳng, tránh fallback im lặng về id=1 (ghi nhầm dữ liệu sang sale khác).
+ */
+function requireUserId(user: AuthenticatedUser): number {
+  if (typeof user.id !== 'number' || !Number.isFinite(user.id)) {
+    throw new ForbiddenException('Tài khoản chưa được liên kết với user trong hệ thống NBA');
+  }
+  return user.id;
 }
 
 @ApiTags('nba')
 @ApiBearerAuth()
 @Controller('api/nba')
 export class NbaController {
-  constructor(private readonly nba: NbaService) {}
+  constructor(
+    private readonly nba: NbaService,
+    private readonly assessment: AssessmentService,
+  ) {}
 
   /** GET /api/nba/calllist?date=YYYY-MM-DD */
   @Get('calllist')
@@ -90,12 +116,37 @@ export class NbaController {
     return this.nba.getCallList(d, user);
   }
 
+  /** GET /api/nba/customers?q=&limit= — danh sách khách trong phạm vi được phép xem */
+  @Get('customers')
+  @Roles('sale', 'manager', 'admin')
+  @ApiOperation({ summary: 'Danh sách khách theo phạm vi của người dùng' })
+  listCustomers(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('q') q?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.nba.listCustomers(user, q, limit ? Number(limit) : undefined);
+  }
+
   /** GET /api/nba/customer/:id */
   @Get('customer/:id')
   @Roles('sale', 'manager', 'admin')
   @ApiOperation({ summary: 'Đề xuất + staleness + versions cho 1 khách' })
-  getCustomer(@Param('id', ParseIntPipe) id: number) {
-    return this.nba.getCustomer(id);
+  getCustomer(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthenticatedUser) {
+    return this.nba.getCustomer(id, user);
+  }
+
+  /** GET /api/nba/customer/:id/assessment?as_of=YYYY-MM-DD */
+  @Get('customer/:id/assessment')
+  @Roles('sale', 'manager', 'admin')
+  @ApiOperation({ summary: 'Tổng hợp 3/6 tháng + chấm policy từng gói + lý do phù hợp' })
+  async assessCustomer(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('as_of') asOf?: string,
+  ) {
+    await this.nba.authorizeAssessment(id, user);
+    return this.assessment.assess(id, asOf);
   }
 
   /** POST /api/feedback */
@@ -103,15 +154,17 @@ export class NbaController {
   @Roles('sale', 'manager', 'admin')
   @ApiOperation({ summary: 'Ghi feedback + kích suppression' })
   submitFeedback(@Body() body: FeedbackDto, @CurrentUser() user: AuthenticatedUser) {
-    return this.nba.submitFeedback({ ...body, sale_id: user.sub });
+    // feedback.sale_id là BIGINT FK users(id) — phải dùng user.id, không phải user.sub (chuỗi).
+    return this.nba.submitFeedback({ ...body, sale_id: requireUserId(user) });
   }
 
   /** POST /api/admin/calllist */
   @Post('/admin/calllist')
   @Roles('manager', 'admin')
   @ApiOperation({ summary: 'Assign call list T+1' })
-  assignCallList(@Body() body: AssignCallListDto) {
-    return this.nba.assignCallList(body.date, body.assignments);
+  assignCallList(@Body() body: AssignCallListDto, @CurrentUser() user: AuthenticatedUser) {
+    // created_by = người thực hiện assign (trước đây ghi nhầm thành sale được giao).
+    return this.nba.assignCallList(body.date, body.assignments, requireUserId(user));
   }
 
   /** PUT /api/admin/kpi */
@@ -126,8 +179,8 @@ export class NbaController {
   @Get('/audit/recommendation/:id')
   @Roles('sale', 'manager', 'admin')
   @ApiOperation({ summary: 'Truy vết đề xuất (version + snapshot + rules)' })
-  audit(@Param('id') id: string) {
-    return this.nba.auditRecommendation(id);
+  audit(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.nba.auditRecommendation(id, user);
   }
 
   /** POST /api/nba/notes */
@@ -135,15 +188,17 @@ export class NbaController {
   @Roles('sale', 'manager', 'admin')
   @ApiOperation({ summary: 'Lưu ghi chú cuộc gọi' })
   saveCallNote(@Body() body: CreateNoteDto, @CurrentUser() user: AuthenticatedUser) {
-    const saleId = user.id ? Number(user.id) : 1;
-    return this.nba.saveCallNote(body.customerId, saleId, body.noteText);
+    return this.nba.saveCallNote(body.customer_id, requireUserId(user), body.note_text, user);
   }
 
   /** GET /api/nba/notes/:customerId */
   @Get('notes/:customerId')
   @Roles('sale', 'manager', 'admin')
   @ApiOperation({ summary: 'Xem lịch sử ghi chú' })
-  getCallNotes(@Param('customerId', ParseIntPipe) customerId: number) {
-    return this.nba.getCallNotes(customerId);
+  getCallNotes(
+    @Param('customerId', ParseIntPipe) customerId: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.nba.getCallNotes(customerId, user);
   }
 }

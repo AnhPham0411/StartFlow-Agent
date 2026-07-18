@@ -47,6 +47,39 @@ Cách chuyển sang model riêng (sau này):
 > Cả hai provider đều trả `WorkflowState` nên `execute_run` (`src/api/runner.py`) dùng chung một
 > đường phát event — không rẽ nhánh. Đã kiểm chứng: 27 test ai-service pass + smoke test chọn đúng provider.
 
+## Seam thứ hai: lời giải thích "vì sao phù hợp SP" (EXPLAINER_MODE)
+
+Chức năng đánh giá 3/6 tháng (`GET /api/nba/customer/:id/assessment`) có seam riêng, cùng
+kiểu với `AGENT_MODE`. Điểm cắt: `backend/src/modules/nba/assessment/explainer/`.
+
+| `EXPLAINER_MODE` | Ai viết lời giải thích | Trạng thái |
+|------------------|------------------------|-----------|
+| `rules` | Không ai — chỉ chuỗi bằng chứng suy diễn xác định từ policy + R1..R12 | Luôn dùng được, miễn phí, tái lập 100% |
+| `llm` (đang bật) | `LlmExplainer` gọi OpenAI-compatible diễn đạt lại bảng tiêu chí | **Code TẠM**, xoá khi có model riêng |
+| `model` | `ModelExplainer` gọi `EXTERNAL_MODEL_URL` | Dùng SAU; bật lên là nhánh `llm` không còn được nạp |
+
+**Bất biến quan trọng:** bảng tiêu chí đạt/không đạt LUÔN do `PolicyService` tính bằng code.
+LLM chỉ nhận bảng đã chấm rồi viết thành câu — **không bao giờ được quyết định đạt hay trượt**.
+Nhờ vậy tắt LLM thì chức năng vẫn đủ nghĩa, chỉ mất phần câu chữ mượt.
+
+Chuyển sang model riêng:
+1. Đặt `EXPLAINER_MODE=model` + `EXTERNAL_MODEL_URL=<url>` trong `.env`.
+2. Hiện thực `ModelExplainer.explain()` — hợp đồng `ExplainInput → ExplainOutput` giữ nguyên,
+   không phải sửa service hay UI.
+3. Xoá `explainer/llm.explainer.ts` và gỡ khỏi `assessment.module.ts`.
+
+> Chặn bịa số: `LlmExplainer.postCheck` từ chối câu chứa số không truy được về `evidence`,
+> và từ chối từ ngữ hứa hẹn ("cam kết", "đảm bảo", "100%"). Hỏng thì trả `degraded_reason`,
+> KHÔNG ném lỗi — sale vẫn xem được bảng tiêu chí.
+
+### Nợ kỹ thuật đã biết: R1..R12 tồn tại ở hai nơi
+
+Theo yêu cầu "viết ở BE", bộ rule được chép sang TypeScript trong `assessment/policy.service.ts`,
+trong khi bản gốc vẫn ở `apps/ai/src/ranker/rules.py` + `core/config.py`. **Hai bản có thể lệch nhau.**
+Ngưỡng gom hết vào `RULE_PARAMS` và có `backend/test/policy-parity.spec.ts` đọc thẳng file Python
+để so — sửa một bên mà quên bên kia thì test đỏ. Đây là giảm nhẹ, không phải xoá bỏ rủi ro:
+test chỉ bắt được lệch **ngưỡng**, không bắt được lệch **logic**.
+
 ## `.env` recipe cho preview
 
 Copy `.env.example` → `.env` rồi đặt các biến sau (những chỗ `<...>` bạn tự điền):

@@ -25,7 +25,8 @@ def compute_features(
     transactions: list[dict],
     customer_tags: list[dict],
     as_of: date,
-) -> dict[str, float | int | bool | None]:
+    held_products: list[str] | None = None,
+) -> dict[str, object]:
     """Trả feature cứng cho 1 khách tại `as_of`. Input là bản ghi thô từ DB.
 
     - customer: {dob, cif_married, cif_occupation_risk, monthly_income, ...}
@@ -62,6 +63,7 @@ def compute_features(
 
     # E6 has_loan / E7 has_card (has_card suy từ customer_products ở tầng gọi; ở đây từ loans)
     has_loan = len(loans) > 0
+    total_debt = round(sum(_num(loan.get("outstanding")) for loan in loans), 2) if loans else None
 
     # E8 txn_per_month
     txn_per_month = round(len(txns_window) / _months_span(s.tag_window_d), 2)
@@ -78,7 +80,7 @@ def compute_features(
     partners = {(_norm(t.get("counterparty"))) for t in in_txns if t.get("counterparty")}
     biz_cashflow = inflow_per_month >= s.biz_inflow_min and len(partners) >= s.biz_partner_min
 
-    features: dict[str, float | int | bool | None] = {
+    features: dict[str, object] = {
         "age": age,
         "dti": _round(dti, 4),
         "casa_avg": _round(casa_avg, 2),
@@ -86,6 +88,9 @@ def compute_features(
         "casa_trend_3m": casa_trend_3m,
         "salary_regular": salary_regular,
         "has_loan": has_loan,
+        # Hai feature dưới là "chỉ số neo" BE dùng để so staleness (B4) — phải luôn có mặt.
+        "total_debt": total_debt,
+        "product_flags": sorted({str(p) for p in (held_products or [])}),
         "txn_per_month": txn_per_month,
         "days_since_big_txn": days_since_big_txn,
         "biz_cashflow": biz_cashflow,

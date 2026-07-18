@@ -1,60 +1,129 @@
 'use client';
-import { useState, useEffect } from 'react';
+
+/**
+ * /nba/customers — tra cứu khách trong phạm vi được phép xem.
+ *
+ * Gọi thẳng BE qua StartFlowApi (có kèm header dev-login). Trước đây trang này fetch
+ * `/api/nba-customers` — một route proxy KHÔNG chuyển tiếp header xác thực và nuốt lỗi
+ * thành `[]` + status 200, nên hỏng cũng trông như "chưa có dữ liệu". Route đó đã bị xoá.
+ */
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Search } from 'lucide-react';
+import { Search, Users } from 'lucide-react';
+
+import { useAuth } from '@/src/auth/auth-context';
+import { StartFlowApi } from '@/src/lib/api-client';
 import { PageHeader } from '@/src/components/ui/page-header';
-import { Panel } from '@/src/components/ui/panel';
+import { Badge } from '@/src/components/ui/badge';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { ErrorState } from '@/src/components/ui/error-state';
 
-type Customer = { customer_id: number; name: string; cif_code: string; phone: string };
+const PROD: Record<string, string> = {
+  the: 'Thẻ tín dụng', vay: 'Khoản vay', dautu: 'Đầu tư', baohiem: 'Bảo hiểm', taikhoan: 'Tài khoản',
+};
+
+interface CustomerRow {
+  customer_id: number;
+  full_name: string;
+  cif_code: string;
+  product_rank1: string | null;
+  last_list_date: string | null;
+}
 
 export default function NbaCustomersPage() {
-  const [all, setAll] = useState<Customer[]>([]);
+  const { getAccessToken } = useAuth();
+  const [rows, setRows] = useState<CustomerRow[]>([]);
   const [q, setQ] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = () => {
-    setLoading(true);
-    fetch('/api/nba-customers')
-      .then(r => r.json() as Promise<Customer[]>)
-      .then(d => setAll(Array.isArray(d) ? d : []))
-      .catch(e => setError(String(e)))
-      .finally(() => setLoading(false));
-  };
+  const api = new StartFlowApi(getAccessToken);
 
-  useEffect(() => { load(); }, []);
+  const load = useCallback(async (search: string) => {
+    setLoading(true); setError(null);
+    try {
+      setRows(await api.nbaCustomers(search));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Không tải được danh sách khách hàng');
+    } finally { setLoading(false); }
+  }, []); // eslint-disable-line
 
-  const filtered = q
-    ? all.filter(c => c.cif_code.toLowerCase().includes(q.toLowerCase()) || String(c.customer_id).includes(q))
-    : all;
+  // Trễ 300ms để gõ tìm kiếm không bắn request mỗi ký tự.
+  useEffect(() => {
+    const timer = setTimeout(() => void load(q), q ? 300 : 0);
+    return () => clearTimeout(timer);
+  }, [q, load]);
 
   return (
-    <div>
-      <PageHeader eyebrow="NBA" title="Khách hàng" description="Toàn bộ khách trong hệ thống" />
-      <div style={{ position: 'relative', marginBottom: '1rem' }}>
-        <Search size={16} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Tìm theo CIF hoặc ID..."
-          style={{ width: '100%', padding: '0.5rem 0.75rem 0.5rem 2rem', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', boxSizing: 'border-box' }} />
+    <>
+      <PageHeader
+        eyebrow="NBA"
+        title="Khách hàng"
+        description="Khách được phân công cho bạn — sale xem khách của mình, quản lý xem cả chi nhánh"
+        actions={rows.length > 0 ? <Badge tone="neutral">{rows.length} khách</Badge> : undefined}
+      />
+
+      <div className="toolbar">
+        <Search size={16} aria-hidden="true" style={{ color: 'var(--audit-slate)' }} />
+        <label className="visually-hidden" htmlFor="q">Tìm khách hàng</label>
+        <input
+          id="q"
+          className="input"
+          style={{ flex: 1, minWidth: 220 }}
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Tìm theo tên hoặc mã CIF…"
+        />
       </div>
+
       {loading && <LoadingState />}
-      {error && <ErrorState message={error} onRetry={load} />}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        {filtered.map(c => (
-          <Link key={c.customer_id} href={`/nba/customers/${c.customer_id}`} style={{ textDecoration: 'none' }}>
-            <Panel>
-              <span style={{ fontWeight: 600 }}>KH-{c.customer_id} (CIF: ...{c.cif_code?.slice(-3) || '???'})</span>
-              {c.phone && <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginLeft: 8 }}>{c.phone}</span>}
-            </Panel>
-          </Link>
-        ))}
-        {!loading && !error && filtered.length === 0 && (
-          <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '2rem' }}>
-            {q ? 'Không tìm thấy.' : 'Chưa có dữ liệu. Chạy batch nightly hoặc seed data.'}
+      {error && <ErrorState message={error} onRetry={() => load(q)} />}
+
+      {!loading && !error && rows.length === 0 && (
+        <div className="banner banner--info">
+          <Users aria-hidden="true" />
+          <p>
+            {q
+              ? `Không tìm thấy khách nào khớp “${q}”.`
+              : 'Chưa có khách nào được phân công cho bạn. Liên hệ quản lý để được thêm vào call list.'}
           </p>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+
+      {!loading && !error && rows.length > 0 && (
+        <div className="panel">
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Khách hàng</th>
+                  <th>Mã CIF</th>
+                  <th>Nên chào</th>
+                  <th>Lần gần nhất trong call list</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((c) => (
+                  <tr key={c.customer_id}>
+                    <td>
+                      <Link href={`/nba/customers/${c.customer_id}`} className="call-row__name">
+                        {c.full_name}
+                      </Link>
+                    </td>
+                    <td className="utility muted">{c.cif_code}</td>
+                    <td>
+                      {c.product_rank1
+                        ? <span className="offer offer--top">{PROD[c.product_rank1] ?? c.product_rank1}</span>
+                        : <span className="muted">—</span>}
+                    </td>
+                    <td className="utility muted">{c.last_list_date ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

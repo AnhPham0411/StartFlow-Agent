@@ -11,8 +11,26 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
+import type { UserRole } from '@startflow/contracts';
 import { useAuth } from '@/src/auth/auth-context';
 import { Badge } from '@/src/components/ui/badge';
+
+/**
+ * Tài khoản demo cho dev-login — phải là user CÓ THẬT trong bảng `users`.
+ * Guard đọc role/branch từ DB theo id (jwt-auth.guard.ts → toDevUser), nên nếu ở đây
+ * ghi sai role thì nhãn sẽ nói dối: chọn "Admin" mà thực tế vào bằng quyền sale.
+ *
+ * Chọn user nào có khách trong call list, nếu không mọi trang đều trống hoặc 403.
+ * Kiểm tra lại bằng:
+ *   SELECT assigned_sale_id, count(*) FROM call_lists WHERE list_date=CURRENT_DATE GROUP BY 1;
+ */
+const DEV_USERS: Array<{ id: number; role: UserRole; branch: string; label: string }> = [
+  { id: 10, role: 'sale', branch: 'Hà Nội - Đống Đa', label: 'Sale · Đặng Hoàng Thu (HN-Đống Đa)' },
+  { id: 12, role: 'sale', branch: 'Hà Nội - Đống Đa', label: 'Sale · Trần Hoàng Xuân (HN-Đống Đa)' },
+  { id: 8, role: 'sale', branch: 'Huế', label: 'Sale · Dương Thanh Chi (Huế)' },
+  { id: 7, role: 'manager', branch: 'Hà Nội - Đống Đa', label: 'Manager · Đỗ Anh Quân (HN-Đống Đa)' },
+  { id: 17, role: 'admin', branch: 'Đà Nẵng', label: 'Admin · Lê Anh Nam' },
+];
 
 const navigation = [
   { href: '/nba/calllist', label: 'Tổng quan (Call List)', icon: ListTodo },
@@ -91,19 +109,24 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </p>
                 <select
                   style={{ width: '100%', fontSize: '12px', background: '#1e293b', color: '#f8fafc', border: '1px solid #475569', borderRadius: '4px', padding: '4px 8px', outline: 'none' }}
-                  value={`${roles[0] || 'admin'}|${mockBranch || 'Chi nhánh A'}|${mockUserId || 1}`}
+                  value={`${roles[0] ?? 'sale'}|${mockBranch ?? ''}|${mockUserId ?? 10}`}
                   onChange={(e) => {
                     const [r, b, u] = e.target.value.split('|');
                     if (setMockUser && r && b && u) {
-                      setMockUser(r as any, b, Number(u));
+                      setMockUser(r as UserRole, b, Number(u));
                     }
                   }}
                 >
-                  <option value="sale|Chi nhánh A|1">Sale A (CN A)</option>
-                  <option value="manager|Chi nhánh A|2">Manager A (CN A)</option>
-                  <option value="sale|Chi nhánh B|3">Sale B (CN B)</option>
-                  <option value="admin|HO|4">Admin (HO)</option>
+                  {DEV_USERS.map((u) => (
+                    <option key={u.id} value={`${u.role}|${u.branch}|${u.id}`}>
+                      {u.label}
+                    </option>
+                  ))}
                 </select>
+                <p style={{ fontSize: '10px', color: '#64748b', marginTop: '5px', lineHeight: 1.4 }}>
+                  Role và chi nhánh lấy từ bảng <code>users</code> theo id — lựa chọn ở đây chỉ
+                  quyết định đăng nhập bằng user nào.
+                </p>
               </div>
             )}
             <button className="nav-link" type="button" onClick={() => void logout()}>

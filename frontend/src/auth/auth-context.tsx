@@ -50,8 +50,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [roles, setRoles] = useState<UserRole[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [mockBranch, setMockBranch] = useState<string>('Chi nhánh A');
-  const [mockUserId, setMockUserId] = useState<number>(1);
+  const [mockBranch, setMockBranch] = useState<string>('Hà Nội - Đống Đa');
+  const [mockUserId, setMockUserId] = useState<number>(10);
 
   useEffect(() => {
     let active = true;
@@ -69,9 +69,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        const cachedRole = (window.localStorage.getItem('mock_role') || 'admin') as UserRole;
-        const cachedBranch = window.localStorage.getItem('mock_branch') || 'Chi nhánh A';
-        const cachedUserId = Number(window.localStorage.getItem('mock_user_id') || '1');
+        // Mặc định là user CÓ THẬT và CÓ KHÁCH trong call list (users.id=10, xem DEV_USERS
+        // ở app-shell.tsx). Trước đây mặc định id=1 / "Chi nhánh A" — user 1 không được giao
+        // khách nào nên mọi trang đều trống hoặc 403.
+        const cachedRole = (window.localStorage.getItem('mock_role') || 'sale') as UserRole;
+        const cachedBranch = window.localStorage.getItem('mock_branch') || 'Hà Nội - Đống Đa';
+        const cachedUserId = Number(window.localStorage.getItem('mock_user_id') || '10');
 
         if (!window.localStorage.getItem('mock_role')) {
           window.localStorage.setItem('mock_role', cachedRole);
@@ -155,7 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async () => {
     if (process.env.NEXT_PUBLIC_AUTH_MODE === 'mock' && process.env.NODE_ENV !== 'production') {
-      const cachedRole = (window.localStorage.getItem('mock_role') || 'admin') as UserRole;
+      const cachedRole = (window.localStorage.getItem('mock_role') || 'sale') as UserRole;
       setUser({ subject: 'demo-reviewer', name: 'Demo Reviewer', email: 'demo@startflow.local' });
       setRoles([cachedRole]);
       setStatus('authenticated');

@@ -1,54 +1,96 @@
 'use client';
+
+/**
+ * Trang khách hàng NBA — màn hình sale mở ra khi chuẩn bị gọi.
+ *
+ * Dùng design system trong app/globals.css. Project KHÔNG cài Tailwind, nên mọi class
+ * tiện ích kiểu `bg-white rounded-xl` sẽ không có tác dụng — đừng dùng.
+ *
+ * Bố cục: cột trái là thứ cần khi đang nói chuyện (kịch bản, lý do, số liệu),
+ * cột phải là tra cứu nhanh (hồ sơ, ghi chú, lịch sử).
+ */
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { AlertTriangle, ArrowLeft, History, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Send, Zap } from 'lucide-react';
+
 import { useAuth } from '@/src/auth/auth-context';
 import { StartFlowApi } from '@/src/lib/api-client';
 import { PageHeader } from '@/src/components/ui/page-header';
-import { Panel } from '@/src/components/ui/panel';
+import { Panel, PanelBody, PanelHeader } from '@/src/components/ui/panel';
+import { Badge } from '@/src/components/ui/badge';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { ErrorState } from '@/src/components/ui/error-state';
+import { AssessmentPanel, CustomerSnapshot } from '@/src/features/nba/assessment-panel';
+import type { NbaAssessment } from '@/src/lib/nba-assessment.types';
 
 const PROD: Record<string, string> = {
-  the: 'Thẻ', vay: 'Vay', dautu: 'Đầu tư', baohiem: 'Bảo hiểm', taikhoan: 'Tài khoản',
+  the: 'Thẻ tín dụng', vay: 'Khoản vay', dautu: 'Đầu tư', baohiem: 'Bảo hiểm', taikhoan: 'Tài khoản',
 };
+
+interface CallNote {
+  id: number;
+  note_text: string;
+  created_at: string;
+  sale_name?: string;
+}
 
 export default function NbaCustomerPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { getAccessToken } = useAuth();
+
   const [data, setData] = useState<Record<string, unknown> | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showTrace, setShowTrace] = useState(false);
   const [runningMini, setRunningMini] = useState(false);
-  
-  // Call Notes State
-  const [notes, setNotes] = useState<Array<{ id: number; note_text: string; created_at: string; sale_name?: string }>>([]);
+
+  const [assessment, setAssessment] = useState<NbaAssessment | null>(null);
+  const [assessError, setAssessError] = useState<string | null>(null);
+
+  const [notes, setNotes] = useState<CallNote[]>([]);
   const [noteText, setNoteText] = useState('');
   const [savingNote, setSavingNote] = useState(false);
-  const [loadingNotes, setLoadingNotes] = useState(false);
+  const [notesError, setNotesError] = useState<string | null>(null);
 
   const api = new StartFlowApi(getAccessToken);
 
-  const load = useCallback(async () => {
+  /** Trả true nếu tải được — quyết định có gọi tiếp ghi chú/đánh giá hay không. */
+  const load = useCallback(async (): Promise<boolean> => {
     setLoading(true); setError(null);
-    try { setData(await api.nbaCustomer(Number(id))); }
-    catch (e) { setError(e instanceof Error ? e.message : 'Lỗi'); }
-    finally { setLoading(false); }
+    try {
+      setData(await api.nbaCustomer(Number(id)));
+      return true;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Không tải được dữ liệu khách hàng');
+      return false;
+    } finally { setLoading(false); }
   }, [id]); // eslint-disable-line
 
   const loadNotes = useCallback(async () => {
-    setLoadingNotes(true);
     try {
-      const res = await api.getCallNotes(Number(id));
-      setNotes(res);
+      setNotes(await api.getCallNotes(Number(id)));
+      setNotesError(null);
     } catch (e) {
-      console.error('Failed to load notes', e);
-    } finally {
-      setLoadingNotes(false);
+      // Không dùng console.error: Next.js dev overlay bắt nó và bung màn hình lỗi che cả trang.
+      setNotesError(e instanceof Error ? e.message : 'Không tải được ghi chú');
     }
   }, [id]); // eslint-disable-line
+
+  const loadAssessment = useCallback(async () => {
+    setAssessError(null);
+    try {
+      setAssessment(await api.nbaAssessment(Number(id)));
+    } catch (e) {
+      setAssessError(e instanceof Error ? e.message : 'Không tải được phần đánh giá');
+    }
+  }, [id]); // eslint-disable-line
+
+  useEffect(() => {
+    // Tuần tự: không có quyền xem khách này thì đừng bắn thêm 2 request để nhận 3 lần 403.
+    void (async () => {
+      if (await load()) await Promise.all([loadNotes(), loadAssessment()]);
+    })();
+  }, [load, loadNotes, loadAssessment]);
 
   const handleSaveNote = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,179 +100,168 @@ export default function NbaCustomerPage() {
       await api.saveCallNote(Number(id), noteText);
       setNoteText('');
       await loadNotes();
-    } catch (e) {
-      alert(e instanceof Error ? e.message : 'Lỗi khi lưu ghi chú');
-    } finally {
-      setSavingNote(false);
-    }
+    } catch (err) {
+      setNotesError(err instanceof Error ? err.message : 'Không lưu được ghi chú');
+    } finally { setSavingNote(false); }
   };
 
-  useEffect(() => {
-    void load();
-    void loadNotes();
-  }, [load, loadNotes]);
+  const handleMiniBatch = async () => {
+    setRunningMini(true);
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_AI_URL ?? 'http://localhost:8000'}/batch/mini/${id}`, { method: 'POST' });
+      await Promise.all([load(), loadAssessment()]);
+    } finally { setRunningMini(false); }
+  };
 
-  const rec = data?.recommendation as Record<string, unknown> | null;
-  const versions = (data?.versions ?? []) as Array<{ version: number; created_at: string; source: string }>;
-  const staleness = (data?.staleness ?? { flag: false, fields: [] }) as { flag: boolean; fields: string[] };
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={load} />;
+  if (!data) return null;
+
+  const rec = data.recommendation as Record<string, unknown> | null;
+  const versions = (data.versions ?? []) as Array<{ version: number; created_at: string; source: string }>;
+  const staleness = (data.staleness ?? { flag: false, fields: [] }) as { flag: boolean; fields: string[] };
 
   return (
-    <div>
-      <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-        <ArrowLeft size={14} /> Quay lại
+    <>
+      <button type="button" className="button button--ghost" onClick={() => router.back()} style={{ marginBottom: 12 }}>
+        <ArrowLeft aria-hidden="true" /> Quay lại
       </button>
-      <PageHeader eyebrow="NBA · Khách hàng" title={data ? (data.full_name as string) : `Khách #${id}`} description={data ? `CIF: ${data.cif_code as string} · Đề xuất + staleness + version history` : "Đề xuất + staleness + version history"} />
-      {loading && <LoadingState />}
-      {error && <ErrorState message={error} onRetry={load} />}
-      {!loading && !error && data && (
-        <>
-          {staleness.flag && (
-            <div style={{ display: 'flex', gap: 8, padding: '0.75rem 1rem', borderRadius: 8, background: '#f59e0b18', border: '1px solid #f59e0b44', marginBottom: '1rem' }}>
-              <AlertTriangle size={16} color="#f59e0b" />
-              <span style={{ fontSize: '0.85rem', color: '#f59e0b' }}>
-                Lỗi thời: <strong>{staleness.fields.join(', ')}</strong>
-              </span>
-            </div>
-          )}
 
-          {rec ? (
-            <Panel>
-              <div style={{ marginBottom: '1rem' }}>
-                <span style={{ fontWeight: 700 }}>Đề xuất v{String(rec.version)}</span>
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginLeft: 8 }}>{String(rec.source)}</span>
-              </div>
-              {(['1', '2'] as const).map(n => {
-                const prod = rec[`product_rank${n}`];
-                if (!prod) return null;
-                return (
-                  <div key={n} style={{ padding: '0.75rem', borderRadius: 8, background: n === '1' ? 'var(--accent-dim, #7c3aed22)' : 'var(--surface-2, #f3f4f6)', marginBottom: '0.5rem', border: '1px solid var(--border)' }}>
-                    <strong>#{n} {PROD[String(prod)] ?? String(prod)}</strong>
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginLeft: 8 }}>
-                      {typeof rec[`score_rank${n}`] === 'number' ? `${((rec[`score_rank${n}`] as number) * 100).toFixed(1)}%` : ''}
-                    </span>
-                    <p style={{ margin: '0.4rem 0 0.2rem', fontSize: '0.9rem' }}>{String(rec[`hook${n}`] ?? '—')}</p>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>{String(rec[`explain${n}`] ?? '')}</p>
-                  </div>
-                );
-              })}
-            </Panel>
-          ) : (
-            <Panel><p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>Chưa có đề xuất. Chạy batch nightly.</p></Panel>
-          )}
+      <PageHeader
+        eyebrow="NBA · Khách hàng"
+        title={String(data.full_name)}
+        description={`CIF ${String(data.cif_code)}`}
+        actions={
+          <button type="button" className="button button--primary" disabled={runningMini} onClick={handleMiniBatch}>
+            <Zap aria-hidden="true" />
+            {runningMini ? 'Đang tính lại…' : 'Cập nhật chỉ số'}
+          </button>
+        }
+      />
 
-          {/* Ghi chú cuộc gọi (Call Notes) */}
+      {staleness.flag && (
+        <div className="banner banner--warning">
+          <AlertTriangle aria-hidden="true" />
+          <p>Số liệu <strong>{staleness.fields.join(', ')}</strong> đã thay đổi kể từ khi tạo đề xuất. Cân nhắc chạy lại trước khi gọi.</p>
+        </div>
+      )}
+
+      <div className="section-grid">
+        {/* ── Cột chính: dùng khi đang nói chuyện ─────────────────────── */}
+        <div className="stack">
           <Panel>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>
-              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Ghi chú cuộc gọi</h3>
+            <PanelHeader
+              eyebrow="Kịch bản"
+              title="Mục tiêu tiếp cận"
+              action={rec ? <Badge tone="neutral">{String(rec.source)} · v{String(rec.version)}</Badge> : undefined}
+            />
+            <PanelBody>
+              {rec ? (
+                (['1', '2'] as const).map((n) => {
+                  const product = rec[`product_rank${n}`];
+                  if (!product) return null;
+                  const score = rec[`score_rank${n}`];
+                  return (
+                    <article key={n} className={`pitch${n === '1' ? ' pitch--primary' : ''}`}>
+                      <header className="pitch__head">
+                        <span className="pitch__rank">
+                          <span className="pitch__ord">{n}</span>
+                          {PROD[String(product)] ?? String(product)}
+                        </span>
+                        {typeof score === 'number' && (
+                          <span className="pitch__score">{(score * 100).toFixed(1)}% phù hợp</span>
+                        )}
+                      </header>
+                      <div className="pitch__body">
+                        <p className="pitch__hook">{String(rec[`hook${n}`] ?? '—')}</p>
+                        {rec[`explain${n}`] ? <p className="pitch__why">{String(rec[`explain${n}`])}</p> : null}
+                      </div>
+                    </article>
+                  );
+                })
+              ) : (
+                <p className="muted">Chưa có đề xuất cho khách này. Bấm “Cập nhật chỉ số” để chạy tính toán.</p>
+              )}
+            </PanelBody>
+          </Panel>
+
+          {assessment && <AssessmentPanel data={assessment} />}
+          {assessError && (
+            <div className="banner banner--info">
+              <AlertTriangle aria-hidden="true" />
+              <p>Không tải được phần đánh giá: {assessError}</p>
             </div>
-            
-            <form onSubmit={handleSaveNote} style={{ marginBottom: '1.5rem' }}>
-              <textarea
-                value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
-                placeholder="Nhập nội dung trao đổi cuộc gọi (vd: Khách hàng đồng ý mở thẻ, hẹn chiều gửi hồ sơ...)"
-                rows={3}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border)',
-                  background: 'var(--surface-2, #f3f4f6)',
-                  color: 'var(--text-primary)',
-                  fontSize: '0.875rem',
-                  resize: 'vertical',
-                  outline: 'none',
-                  marginBottom: '0.5rem'
-                }}
-              />
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          )}
+        </div>
+
+        {/* ── Cột phụ: tra cứu nhanh ──────────────────────────────────── */}
+        <div className="stack">
+          {assessment && <CustomerSnapshot data={assessment} />}
+
+          <Panel>
+            <PanelHeader
+              eyebrow="Nhật ký"
+              title="Ghi chú cuộc gọi"
+              action={notes.length > 0 ? <Badge tone="neutral">{notes.length}</Badge> : undefined}
+            />
+            <PanelBody>
+              <form onSubmit={handleSaveNote} style={{ marginBottom: 14 }}>
+                <label className="visually-hidden" htmlFor="note">Nội dung trao đổi</label>
+                <textarea
+                  id="note"
+                  className="textarea"
+                  rows={3}
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  placeholder="Khách hẹn gọi lại chiều mai, quan tâm gói tích luỹ…"
+                />
                 <button
                   type="submit"
+                  className="button button--secondary button--full"
                   disabled={savingNote || !noteText.trim()}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    borderRadius: '6px',
-                    background: noteText.trim() ? 'var(--accent, #7c3aed)' : 'var(--border)',
-                    color: '#fff',
-                    border: 'none',
-                    cursor: noteText.trim() ? 'pointer' : 'not-allowed',
-                    fontWeight: 600,
-                    fontSize: '0.85rem'
-                  }}
+                  style={{ marginTop: 8 }}
                 >
-                  {savingNote ? 'Đang lưu...' : 'Lưu ghi chú'}
+                  <Send aria-hidden="true" />
+                  {savingNote ? 'Đang lưu…' : 'Lưu ghi chú'}
                 </button>
-              </div>
-            </form>
+              </form>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {loadingNotes ? (
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center' }}>Đang tải ghi chú...</p>
-              ) : notes.length === 0 ? (
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', fontStyle: 'italic' }}>
-                  Chưa có ghi chú cuộc gọi cho khách hàng này.
-                </p>
+              {notesError && <p className="field-error">{notesError}</p>}
+
+              {notes.length === 0 && !notesError ? (
+                <p className="muted" style={{ margin: 0, fontSize: '0.86rem' }}>Chưa có ghi chú nào.</p>
               ) : (
                 notes.map((note) => (
-                  <div
-                    key={note.id}
-                    style={{
-                      padding: '0.75rem',
-                      borderRadius: '8px',
-                      background: 'var(--surface-2, #f3f4f6)',
-                      border: '1px solid var(--border)',
-                      fontSize: '0.85rem'
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                      <strong style={{ color: 'var(--text-primary)' }}>
-                        {note.sale_name || 'Nhân viên Sale'}
-                      </strong>
-                      <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-                        {new Date(note.created_at).toLocaleString('vi-VN')}
-                      </span>
-                    </div>
-                    <p style={{ margin: 0, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-                      {note.note_text}
-                    </p>
-                  </div>
+                  <article key={note.id} className="note">
+                    <header className="note__head">
+                      <span className="note__who">{note.sale_name ?? 'Nhân viên'}</span>
+                      <time className="note__when">{new Date(note.created_at).toLocaleString('vi-VN')}</time>
+                    </header>
+                    <p className="note__text">{note.note_text}</p>
+                  </article>
                 ))
               )}
-            </div>
+            </PanelBody>
           </Panel>
 
           {versions.length > 0 && (
             <Panel>
-              <button onClick={() => setShowTrace(t => !t)}
-                style={{ display: 'flex', gap: 6, alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-primary)', fontWeight: 600, width: '100%', justifyContent: 'space-between' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <History size={14} /> {versions.length} version
-                </span>
-                {showTrace ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              </button>
-              {showTrace && versions.map(v => (
-                <div key={v.version} style={{ display: 'flex', gap: 8, padding: '0.4rem 0', borderBottom: '1px solid var(--border)', marginTop: 4, fontSize: '0.82rem', alignItems: 'center' }}>
-                  <strong>v{v.version}</strong>
-                  <span style={{ color: 'var(--text-muted)' }}>{new Date(v.created_at).toLocaleString('vi-VN')}</span>
-                  <span style={{ color: 'var(--text-muted)', background: 'var(--surface-2)', padding: '1px 6px', borderRadius: 4 }}>{v.source}</span>
-                </div>
-              ))}
+              <PanelHeader eyebrow="Truy vết" title={`${versions.length} phiên bản`} />
+              <PanelBody>
+                {versions.map((v) => (
+                  <div key={v.version} className="ver">
+                    <span className="ver__no">v{v.version}</span>
+                    <time className="muted" style={{ flex: 1, fontSize: '0.8rem' }}>
+                      {new Date(v.created_at).toLocaleString('vi-VN')}
+                    </time>
+                    <span className="chip">{v.source}</span>
+                  </div>
+                ))}
+              </PanelBody>
             </Panel>
           )}
-
-          <div style={{ marginTop: '1rem' }}>
-            <button disabled={runningMini} onClick={async () => {
-              setRunningMini(true);
-              try {
-                await fetch(`${process.env.NEXT_PUBLIC_AI_URL ?? 'http://localhost:8000'}/batch/mini/${id}`, { method: 'POST' });
-                await load();
-              } finally { setRunningMini(false); }
-            }} style={{ padding: '0.6rem 1.25rem', borderRadius: 8, background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
-              {runningMini ? 'Đang chạy...' : '⚡ Trigger mini batch'}
-            </button>
-          </div>
-        </>
-      )}
-    </div>
+        </div>
+      </div>
+    </>
   );
 }

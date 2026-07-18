@@ -118,7 +118,8 @@ describe('Dev-login (AUTH_MODE=mock)', () => {
       roles: ['analyst', 'approver', 'admin', 'sale', 'manager'],
       sub: 'demo-reviewer',
       username: 'demo-reviewer',
-      branch: 'Chi nhánh A',
+      // Không có x-dev-branch và id không có trong DB → branch rỗng (sai theo hướng chặn).
+      branch: '',
     });
   });
 
@@ -132,7 +133,8 @@ describe('Dev-login (AUTH_MODE=mock)', () => {
       roles: ['approver'],
       sub: 'demo-reviewer',
       username: 'demo-reviewer',
-      branch: 'Chi nhánh A',
+      // Không có x-dev-branch và id không có trong DB → branch rỗng (sai theo hướng chặn).
+      branch: '',
     });
   });
 });

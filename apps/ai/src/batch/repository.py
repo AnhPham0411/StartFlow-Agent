@@ -44,7 +44,7 @@ def _by_customer(rows: list[dict]) -> dict[int, list[dict]]:
 
 def load_related(customer_ids: list[int]) -> dict:
     if not customer_ids:
-        return {"accounts": {}, "loans": {}, "transactions": {}, "tags": {}, "cic": {}}
+        return {"accounts": {}, "loans": {}, "transactions": {}, "tags": {}, "cic": {}, "products": {}}
     ids = tuple(customer_ids)
     with get_conn() as conn, conn.cursor() as cur:
         cur.execute("SELECT customer_id, acct_type, balance FROM accounts WHERE customer_id = ANY(%s)", (list(ids),))
@@ -63,7 +63,13 @@ def load_related(customer_ids: list[int]) -> dict:
         tags = _by_customer(cur.fetchall())
         cur.execute("SELECT customer_id, cic_group FROM credit_bureau WHERE customer_id = ANY(%s)", (list(ids),))
         cic = {r["customer_id"]: r["cic_group"] for r in cur.fetchall()}
-    return {"accounts": accounts, "loans": loans, "transactions": txns, "tags": tags, "cic": cic}
+        # product đang giữ — vào feature `product_flags` để BE so staleness (B4).
+        cur.execute(
+            "SELECT customer_id, product FROM customer_products "
+            "WHERE customer_id = ANY(%s) AND status='active'", (list(ids),))
+        products = _by_customer(cur.fetchall())
+    return {"accounts": accounts, "loans": loans, "transactions": txns, "tags": tags,
+            "cic": cic, "products": products}
 
 
 def load_call_list(list_date: date) -> list[int]:

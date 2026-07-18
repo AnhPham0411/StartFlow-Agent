@@ -50,6 +50,7 @@ def _build_profiles(customers: list[dict], related: dict, as_of: date) -> list[P
             transactions=related["transactions"].get(cid, []),
             customer_tags=tags,
             as_of=as_of,
+            held_products=[p["product"] for p in related.get("products", {}).get(cid, [])],
         )
         profiles.append(
             Profile(
