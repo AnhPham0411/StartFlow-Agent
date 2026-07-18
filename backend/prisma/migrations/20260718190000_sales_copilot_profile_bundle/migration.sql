@@ -389,7 +389,7 @@ FROM tag_reviews
 GROUP BY tag;
 
 -- ========================== GEO EXTENSION (v1.1) ==========================
-\set ON_ERROR_STOP on
+-- Prisma already stops and rolls back the migration on the first SQL error.
 CREATE TYPE zone_type AS ENUM ('lang_nghe','khu_xuong','kcn','cho_dau_moi');
 CREATE TYPE geo_match_method AS ENUM ('ward_match','llm_normalized','manual');
 
