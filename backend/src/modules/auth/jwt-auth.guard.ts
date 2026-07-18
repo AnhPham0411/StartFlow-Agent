@@ -19,9 +19,18 @@ interface RealmAccess {
 
 type ResourceAccess = Record<string, RealmAccess | undefined>;
 
+// Deployment contract: the API always authenticates to Keycloak with this confidential client.
+const INTEGRATION_API_CLIENT_ID = 'INTEGRATION_API';
+
+interface TokenIntrospection {
+  active?: unknown;
+  sub?: unknown;
+}
+
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-  private readonly audience: string;
+  private readonly clientSecret: string;
+  private readonly introspectionUrl: string;
   private readonly issuer: string;
   private readonly jwks: ReturnType<typeof createRemoteJWKSet>;
 
@@ -30,8 +39,9 @@ export class JwtAuthGuard implements CanActivate {
     private readonly reflector: Reflector,
     private readonly prisma: PrismaService,
   ) {
-    this.audience = config.get('KEYCLOAK_AUDIENCE', { infer: true });
+    this.clientSecret = config.get('KEYCLOAK_SECRET', { infer: true });
     this.issuer = config.get('KEYCLOAK_ISSUER', { infer: true });
+    this.introspectionUrl = `${this.issuer}/protocol/openid-connect/token/introspect`;
     this.jwks = createRemoteJWKSet(new URL(`${this.issuer}/protocol/openid-connect/certs`));
   }
 
@@ -51,11 +61,15 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     try {
+      const introspection = await this.introspect(token);
       const { payload } = await jwtVerify(token, this.jwks, {
         algorithms: ['RS256'],
-        audience: this.audience,
+        audience: INTEGRATION_API_CLIENT_ID,
         issuer: this.issuer,
       });
+      if (typeof introspection.sub === 'string' && introspection.sub !== payload.sub) {
+        throw new Error('Introspection subject does not match the signed token');
+      }
       request.user = await this.toUser(payload);
       return true;
     } catch {
@@ -69,6 +83,27 @@ export class JwtAuthGuard implements CanActivate {
     return scheme?.toLowerCase() === 'bearer' && token && !extra ? token : undefined;
   }
 
+  private async introspect(token: string): Promise<TokenIntrospection> {
+    const body = new URLSearchParams({
+      client_id: INTEGRATION_API_CLIENT_ID,
+      client_secret: this.clientSecret,
+      token,
+      token_type_hint: 'access_token',
+    });
+    const response = await fetch(this.introspectionUrl, {
+      body,
+      cache: 'no-store',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      method: 'POST',
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!response.ok) throw new Error('Keycloak introspection request failed');
+
+    const result = (await response.json()) as TokenIntrospection;
+    if (result.active !== true) throw new Error('Keycloak token is inactive');
+    return result;
+  }
+
   private async toUser(payload: JWTPayload) {
     if (typeof payload.sub !== 'string' || payload.sub.length === 0) {
       throw new Error('Token subject is missing');
@@ -78,11 +113,24 @@ export class JwtAuthGuard implements CanActivate {
       ? realmAccess.roles.filter((role): role is string => typeof role === 'string')
       : [];
     const resourceAccess = payload.resource_access as ResourceAccess | undefined;
-    const clientAccess = resourceAccess?.[this.audience];
-    const clientRoles = Array.isArray(clientAccess?.roles)
-      ? clientAccess.roles.filter((role): role is string => typeof role === 'string')
+    const authorizedParty = typeof payload.azp === 'string' ? payload.azp : undefined;
+    const clientIds = [...new Set([INTEGRATION_API_CLIENT_ID, authorizedParty])].filter(
+      (clientId): clientId is string => Boolean(clientId),
+    );
+    const clientRoles = clientIds.flatMap((clientId) => {
+      const access = resourceAccess?.[clientId];
+      return Array.isArray(access?.roles)
+        ? access.roles.filter((role): role is string => typeof role === 'string')
+        : [];
+    });
+    const realmManagementAccess = resourceAccess?.['realm-management'];
+    const realmManagementRoles = Array.isArray(realmManagementAccess?.roles)
+      ? realmManagementAccess.roles.filter((role): role is string => typeof role === 'string')
       : [];
-    const roles = [...new Set([...realmRoles, ...clientRoles])];
+    const roles = [...new Set([...realmRoles, ...clientRoles, ...realmManagementRoles])];
+    if (realmManagementRoles.includes('realm-admin') && !roles.includes('admin')) {
+      roles.push('admin');
+    }
     const username =
       typeof payload.preferred_username === 'string' ? payload.preferred_username : undefined;
 

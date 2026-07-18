@@ -31,6 +31,11 @@ const approver: AuthenticatedUser = {
   username: 'manager.demo',
 };
 
+const realmAdmin: AuthenticatedUser = {
+  roles: ['realm-admin', 'admin'],
+  sub: 'realm-admin-subject',
+};
+
 describe('NbaService authorization scope', () => {
   it('keeps legacy analyst call lists scoped to the linked sale id', async () => {
     const { query, service } = createSubject();
@@ -58,6 +63,28 @@ describe('NbaService authorization scope', () => {
       '2026-07-18',
       'HN-01',
     );
+  });
+
+  it('lets a realm admin without a linked NBA user view the complete call list', async () => {
+    const { query, service } = createSubject();
+    query.mockResolvedValue([]);
+
+    await service.getCallList('2026-07-18', realmAdmin);
+
+    expect(query).toHaveBeenNthCalledWith(
+      1,
+      expect.not.stringContaining('assigned_sale_id = $2::bigint'),
+      '2026-07-18',
+    );
+  });
+
+  it('lets a realm admin without a linked NBA user list every customer', async () => {
+    const { query, service } = createSubject();
+    query.mockResolvedValue([]);
+
+    await service.listCustomers(realmAdmin);
+
+    expect(query).toHaveBeenCalledWith(expect.not.stringContaining('WHERE c.id IN'), 200);
   });
 
   it('rejects feedback for a recommendation outside the caller scope', async () => {

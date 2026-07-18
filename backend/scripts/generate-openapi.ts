@@ -14,8 +14,8 @@ const defaults: Record<string, string> = {
   DB_SSL_MODE: 'disable',
   DB_USER: 'openapi',
   INTERNAL_SERVICE_TOKEN: 'openapi-generation-token',
-  KEYCLOAK_AUDIENCE: 'startflow-api',
   KEYCLOAK_ISSUER: 'https://auth.example.invalid/realms/startflow',
+  KEYCLOAK_SECRET: 'openapi-generation-client-secret',
   NODE_ENV: 'test',
 };
 

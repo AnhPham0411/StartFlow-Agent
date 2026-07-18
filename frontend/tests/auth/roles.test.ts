@@ -20,4 +20,17 @@ describe('resolveRoles', () => {
   it('returns no roles for an absent token', () => {
     expect(resolveRoles(undefined, 'startflow-web')).toEqual([]);
   });
+
+  it('maps the Keycloak realm administrator without requiring an application profile', () => {
+    expect(
+      resolveRoles(
+        {
+          resource_access: {
+            'realm-management': { roles: ['realm-admin'] },
+          },
+        },
+        'portal-ops',
+      ),
+    ).toEqual(['admin']);
+  });
 });

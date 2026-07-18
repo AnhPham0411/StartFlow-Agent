@@ -10,8 +10,8 @@ const validEnvironment = {
   DB_SSL_MODE: 'require',
   DB_USER: 'demo',
   INTERNAL_SERVICE_TOKEN: 'a-demo-token-with-safe-length',
-  KEYCLOAK_AUDIENCE: 'startflow-api',
   KEYCLOAK_ISSUER: 'https://auth.example.test/realms/startflow',
+  KEYCLOAK_SECRET: 'fixture-client-secret',
 };
 
 describe('environment validation', () => {
@@ -30,6 +30,13 @@ describe('environment validation', () => {
     expect(() =>
       validateEnvironment({ ...validEnvironment, INTERNAL_SERVICE_TOKEN: 'short' }),
     ).toThrow('INTERNAL_SERVICE_TOKEN');
+  });
+
+  it('requires only the confidential Keycloak secret', () => {
+    expect(() => validateEnvironment({ ...validEnvironment, KEYCLOAK_SECRET: '' })).toThrow(
+      'KEYCLOAK_SECRET',
+    );
+    expect(() => validateEnvironment(validEnvironment)).not.toThrow();
   });
 
   it('requires provider configuration for non-rule explainers', () => {

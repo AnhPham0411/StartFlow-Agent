@@ -1,8 +1,8 @@
 const issuer = process.env.KEYCLOAK_ISSUER;
-const audience = process.env.KEYCLOAK_AUDIENCE;
+const audience = 'INTEGRATION_API';
 
-if (!issuer || !audience) {
-  console.error('KEYCLOAK_ISSUER and KEYCLOAK_AUDIENCE are required.');
+if (!issuer) {
+  console.error('KEYCLOAK_ISSUER is required.');
   process.exit(2);
 }
 

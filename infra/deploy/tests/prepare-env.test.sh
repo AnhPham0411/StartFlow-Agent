@@ -19,12 +19,12 @@ DB_USER=startflow
 DB_PASSWORD=fixture]password;=value
 AUTH_MODE=keycloak
 KEYCLOAK_ISSUER=https://auth.example.com/realms/startflow
-KEYCLOAK_AUDIENCE=startflow-api
+KEYCLOAK_SECRET=fixture-client-secret
 NEXT_PUBLIC_API_URL=https://api.example.com/api
 NEXT_PUBLIC_AUTH_MODE=keycloak
 NEXT_PUBLIC_KEYCLOAK_URL=https://auth.example.com
 NEXT_PUBLIC_KEYCLOAK_REALM=startflow
-NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=startflow-web
+NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=portal-ops
 CORS_ORIGINS=https://app.example.com
 LLM_MODE=openai-compatible
 LLM_API_KEY=local-fixture-value
@@ -74,6 +74,15 @@ set -e
 set +e
 STARTFLOW_RUNTIME_ENV="${valid_env/DROPLET_HOST=droplet.example.com/DROPLET_HOST=CHANGE_ME_DROPLET_HOST}" TARGET_ENV=prod \
 OUTPUT_ENV="$tmp_dir/placeholder.env" OUTPUT_CA="$tmp_dir/placeholder-ca.crt" \
+  bash "$repo_root/infra/deploy/prepare-env.sh" >/dev/null 2>&1
+status=$?
+set -e
+[[ "$status" -ne 0 ]]
+
+set +e
+missing_keycloak_secret_env="$(printf '%s\n' "$valid_env" | sed '/^KEYCLOAK_SECRET=/d')"
+STARTFLOW_RUNTIME_ENV="$missing_keycloak_secret_env" TARGET_ENV=prod \
+OUTPUT_ENV="$tmp_dir/keycloak.env" OUTPUT_CA="$tmp_dir/keycloak-ca.crt" \
   bash "$repo_root/infra/deploy/prepare-env.sh" >/dev/null 2>&1
 status=$?
 set -e

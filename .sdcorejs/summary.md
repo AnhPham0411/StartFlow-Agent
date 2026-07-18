@@ -1,11 +1,20 @@
 ---
-generated_at: 2026-07-18T12:05:00+07:00
+generated_at: 2026-07-18T20:51:00+07:00
 generator: sdcorejs-explore
 target_root: C:/Users/nghiatt15_onemount/Documents/StartFlow-Agent
 target_root_kind: target-project
-git_head: 8dd66771243775af8d55653f8a3256de99885b96
+git_head: f8ae8830ae0e8bbb0a1af946a2edb4a69dec8a51
 dirty: true
-relevant_dirty_paths: [backend, ai-service, infra, docker-compose.yml, env examples, docs]
+relevant_dirty_paths:
+  [
+    backend/src/modules/auth,
+    backend/src/config,
+    backend/test,
+    frontend/src/auth,
+    frontend/tests/auth,
+    infra/deploy,
+    env examples,
+  ]
 tracks: [nestjs, nextjs, node, workflow]
 stack_profiles: [plain-nestjs, plain-nextjs, general]
 profile: simple
@@ -30,7 +39,7 @@ StartFlow is a pnpm monorepo with a plain NestJS/Prisma backend, a plain Next.js
 
 - `backend/`: NestJS 11 API, Prisma persistence, Keycloak JWT validation, internal callbacks from the AI service.
 - `frontend/`: Next.js 16 standalone application using Keycloak public configuration at build time.
-- `ai-service/`: FastAPI service using SQLAlchemy/asyncpg, Alembic, pgvector, and an OpenAI-compatible LLM client.
+- `ai-service/`: FastAPI service using SQLAlchemy/asyncpg, Alembic, external Qdrant vector storage, and an OpenAI-compatible LLM client.
 - `infra/deploy/`: standalone GitHub Actions-to-droplet deployment, release directories, Nginx templates, and environment validation.
 
 ## Deployment constraints

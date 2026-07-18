@@ -10,8 +10,8 @@ export interface AppEnvironment {
   EXPLAINER_MODE: ExplainerMode;
   EXTERNAL_MODEL_URL?: string;
   INTERNAL_SERVICE_TOKEN: string;
-  KEYCLOAK_AUDIENCE: string;
   KEYCLOAK_ISSUER: string;
+  KEYCLOAK_SECRET: string;
   LOG_LEVEL: string;
   LLM_API_KEY?: string;
   LLM_BASE_URL: string;
@@ -24,8 +24,8 @@ const required = [
   'AI_SERVICE_URL',
   'CORS_ORIGINS',
   'INTERNAL_SERVICE_TOKEN',
-  'KEYCLOAK_AUDIENCE',
   'KEYCLOAK_ISSUER',
+  'KEYCLOAK_SECRET',
 ] as const;
 
 function requireUrl(value: string, key: string): string {
@@ -88,8 +88,8 @@ export function validateEnvironment(input: Record<string, unknown>): AppEnvironm
     EXTERNAL_MODEL_URL:
       externalModelUrl.length > 0 ? requireUrl(externalModelUrl, 'EXTERNAL_MODEL_URL') : undefined,
     INTERNAL_SERVICE_TOKEN: serviceToken,
-    KEYCLOAK_AUDIENCE: String(input.KEYCLOAK_AUDIENCE),
     KEYCLOAK_ISSUER: requireUrl(String(input.KEYCLOAK_ISSUER), 'KEYCLOAK_ISSUER'),
+    KEYCLOAK_SECRET: String(input.KEYCLOAK_SECRET),
     LOG_LEVEL: String(input.LOG_LEVEL ?? 'info'),
     LLM_API_KEY: llmApiKey.length > 0 ? llmApiKey : undefined,
     LLM_BASE_URL: requireUrl(
