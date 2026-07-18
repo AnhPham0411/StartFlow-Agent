@@ -1,0 +1,64 @@
+<sd-page>
+  <div headerLeft class="d-flex flex-column">
+    <h1 class="T20M m-0">Hồ sơ doanh nghiệp</h1>
+    <p class="T14R text-secondary mt-4 mb-0">
+      Tìm kiếm và mở hồ sơ tín dụng demo theo tên doanh nghiệp hoặc mã đăng ký.
+    </p>
+  </div>
+  <sd-button
+    headerRight
+    autoId="case-list-create"
+    type="fill"
+    color="primary"
+    size="md"
+    prefixIcon="add"
+    title="Tạo hồ sơ demo"
+    (click)="createCase()"
+  ></sd-button>
+
+  <sd-section
+    title="Danh sách hồ sơ"
+    subTitle="Toàn bộ dữ liệu được gắn nhãn DEMO_DATA, không chứa thông tin khách hàng thật."
+    icon="folder_open"
+  >
+    <div class="p-16 pb-0">
+      <div class="row justify-content-end">
+        <div class="col-12 col-lg-6">
+          <sd-input
+            autoId="case-search"
+            size="sm"
+            label="Tìm hồ sơ"
+            placeholder="Tên doanh nghiệp hoặc mã đăng ký"
+            [model]="query()"
+            (modelChange)="updateQuery($event)"
+          ></sd-input>
+        </div>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <app-loading-state label="Đang tải danh sách hồ sơ…"></app-loading-state>
+    } @else if (error()) {
+      <div class="p-16">
+        <app-error-state
+          title="Không tải được hồ sơ"
+          [description]="error() ?? ''"
+          (retry)="load()"
+        ></app-error-state>
+      </div>
+    } @else if (filteredCases().length === 0) {
+      <div class="p-16">
+        <app-empty-state
+          [title]="emptyState().title"
+          [description]="emptyState().description"
+          [actionLabel]="emptyState().actionLabel"
+          (primaryAction)="handleEmptyAction()"
+        ></app-empty-state>
+      </div>
+    } @else {
+      <div class="overflow-x-auto">
+        <sd-table autoId="case-list" [option]="tableOption"></sd-table>
+      </div>
+    }
+  </sd-section>
+</sd-page>

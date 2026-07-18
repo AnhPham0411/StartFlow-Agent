@@ -1,0 +1,80 @@
+<sd-side-drawer
+  title="Ingest tài liệu demo"
+  width="min(520px, 100vw)"
+  autoId="knowledge-ingest"
+  [disableBackdropClose]="saving()"
+  (sdClosed)="handleClosed()"
+>
+  <div class="p-16 d-flex flex-column gap-16">
+    <sd-inform
+      warning
+      title="Chỉ dùng dữ liệu mô phỏng"
+      description="Nội dung sẽ được chia đoạn và tạo embedding bởi AI service. Không tải lên dữ liệu ngân hàng thật."
+    />
+
+    <form class="d-flex flex-column gap-16" [formGroup]="form" (ngSubmit)="submit()">
+      <sd-input
+        autoId="knowledge-title"
+        name="title"
+        label="Tiêu đề"
+        placeholder="Ví dụ: Chính sách tín dụng demo"
+        [form]="form"
+        [model]="title()"
+        (modelChange)="setTitle($event)"
+        required
+        [minlength]="3"
+        [maxlength]="200"
+        [inlineError]="titleError()"
+      />
+
+      <sd-select
+        autoId="knowledge-domain"
+        name="domain"
+        label="Lĩnh vực"
+        [form]="form"
+        [items]="domainOptions"
+        valueField="value"
+        displayField="label"
+        [model]="domain()"
+        (modelChange)="setDomain($event)"
+        required
+      />
+
+      <sd-textarea
+        autoId="knowledge-content"
+        name="content"
+        label="Nội dung mô phỏng"
+        helperText="Tối thiểu 20 ký tự, tối đa 50.000 ký tự."
+        [form]="form"
+        [model]="content()"
+        (modelChange)="setContent($event)"
+        [rows]="10"
+        [maxlength]="50000"
+        [inlineError]="contentError()"
+        required
+      />
+    </form>
+  </div>
+
+  <div sdFooterLeft>
+    <sd-button
+      autoId="cancel-ingest"
+      title="Hủy"
+      type="text"
+      color="secondary"
+      [disabled]="saving()"
+      (click)="close()"
+    />
+  </div>
+  <div sdFooterRight>
+    <sd-button
+      autoId="submit-ingest"
+      title="Ingest tài liệu demo"
+      prefixIcon="upload"
+      color="primary"
+      [loading]="saving()"
+      [disabled]="saving()"
+      (click)="submit()"
+    />
+  </div>
+</sd-side-drawer>

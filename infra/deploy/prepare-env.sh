@@ -42,8 +42,7 @@ done < "$output_env"
 for key in \
   DEPLOY_ENV APP_DOMAIN API_DOMAIN FRONTEND_PORT BACKEND_PORT STARTFLOW_NETWORK \
   DATABASE_URL AI_DATABASE_URL KEYCLOAK_ISSUER KEYCLOAK_AUDIENCE \
-  NEXT_PUBLIC_API_URL NEXT_PUBLIC_KEYCLOAK_URL NEXT_PUBLIC_KEYCLOAK_REALM \
-  NEXT_PUBLIC_KEYCLOAK_CLIENT_ID CORS_ORIGINS INTERNAL_SERVICE_TOKEN; do
+  CORS_ORIGINS INTERNAL_SERVICE_TOKEN; do
   require_key "$key"
 done
 
@@ -53,10 +52,8 @@ done
 [[ "$(env_value FRONTEND_PORT)" =~ ^[0-9]{2,5}$ ]] || fail 'FRONTEND_PORT is invalid.'
 [[ "$(env_value BACKEND_PORT)" =~ ^[0-9]{2,5}$ ]] || fail 'BACKEND_PORT is invalid.'
 [[ "$(env_value STARTFLOW_NETWORK)" =~ ^[A-Za-z0-9_.-]+$ ]] || fail 'STARTFLOW_NETWORK is invalid.'
-
 if [[ "$target_env" == 'prod' ]]; then
   [[ "$(env_value AUTH_MODE)" == 'keycloak' ]] || fail 'production AUTH_MODE must be keycloak.'
-  [[ "$(env_value NEXT_PUBLIC_AUTH_MODE)" == 'keycloak' ]] || fail 'production NEXT_PUBLIC_AUTH_MODE must be keycloak.'
   [[ "$(env_value LLM_MODE)" == 'openai-compatible' ]] || fail 'production LLM_MODE must be openai-compatible.'
   require_key LLM_API_KEY
 fi

@@ -1,0 +1,49 @@
+@if (canApprove) {
+  <div class="d-flex flex-column gap-12" data-testid="approval-actions">
+    <sd-textarea
+      autoId="approval-reason"
+      label="Lý do quyết định"
+      helperText="Bắt buộc, tối thiểu 5 ký tự"
+      placeholder="Nêu rõ căn cứ của quyết định"
+      required
+      [maxlength]="1000"
+      [rows]="4"
+      [inlineError]="reasonError()"
+      [model]="reason"
+      (modelChange)="updateReason($event)"
+    >
+    </sd-textarea>
+
+    <div class="d-flex flex-wrap justify-content-end gap-8">
+      <sd-button
+        autoId="reject-run"
+        title="Từ chối"
+        prefixIcon="close"
+        type="outline"
+        color="error"
+        size="lg"
+        [loading]="submitting()"
+        (click)="submit('REJECT')"
+      >
+      </sd-button>
+      <sd-button
+        autoId="approve-run"
+        title="Phê duyệt"
+        prefixIcon="check"
+        type="fill"
+        color="success"
+        size="lg"
+        [loading]="submitting()"
+        (click)="submit('APPROVE')"
+      >
+      </sd-button>
+    </div>
+  </div>
+} @else {
+  <sd-inform
+    warning
+    title="Cần quyền phê duyệt"
+    description="Bạn vẫn có thể xem toàn bộ căn cứ, nhưng chỉ người có quyền approver mới được ghi nhận quyết định."
+  >
+  </sd-inform>
+}

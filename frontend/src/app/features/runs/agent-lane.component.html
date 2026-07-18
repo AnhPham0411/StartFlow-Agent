@@ -1,0 +1,51 @@
+@let lane = view();
+<section [attr.aria-label]="lane.accessibleLabel">
+  <sd-section
+    [title]="lane.label"
+    [subTitle]="lane.eventCount + ' sự kiện đã ghi nhận'"
+    [icon]="lane.icon"
+  >
+    <div class="d-flex flex-column gap-12 p-16">
+      <div class="d-flex align-items-center justify-content-between gap-8">
+        <sd-badge type="round" [color]="lane.statusColor" [title]="lane.statusLabel"></sd-badge>
+        <sd-view label="Độ tin cậy" [display]="lane.confidenceDisplay"></sd-view>
+      </div>
+
+      @if (lane.isActive) {
+        <sd-inform
+          info
+          title="Chuyên gia đang phân tích"
+          description="Kết quả sẽ được cập nhật trực tiếp vào lane này."
+        ></sd-inform>
+      } @else if (lane.isFailed) {
+        <sd-inform
+          error
+          title="Chuyên gia chưa hoàn tất"
+          [description]="lane.errorCode ? 'Mã lỗi: ' + lane.errorCode : lane.summary"
+        ></sd-inform>
+      }
+
+      <sd-view label="Mục tiêu" [display]="lane.objective"></sd-view>
+      <sd-view label="Tóm tắt" [display]="lane.summary"></sd-view>
+
+      @if (lane.toolNames.length > 0) {
+        <div class="d-flex flex-wrap gap-8" aria-label="Công cụ đã sử dụng">
+          @for (toolName of lane.toolNames; track toolName) {
+            <sd-badge type="tag" color="info" icon="build" [title]="toolName"></sd-badge>
+          }
+        </div>
+      }
+
+      @if (lane.findings.length > 0) {
+        <div class="d-flex flex-column gap-8" aria-label="Phát hiện của chuyên gia">
+          @for (finding of lane.findings; track finding.code) {
+            <sd-view
+              [label]="finding.title + ' · ' + finding.severity"
+              [display]="finding.detail"
+            ></sd-view>
+          }
+        </div>
+      }
+    </div>
+  </sd-section>
+</section>

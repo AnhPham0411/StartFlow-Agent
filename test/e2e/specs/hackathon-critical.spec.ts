@@ -13,9 +13,14 @@ test('US-01 · AC-002/004: mock analyst can open the protected dashboard', async
   await page.route('**/api/cases', (route) => route.fulfill({ json: [] }));
   await page.goto('/dashboard');
 
-  await expect(page.getByRole('heading', { name: 'Trung tâm đánh giá tín dụng' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Tạo hồ sơ demo' }).first()).toBeVisible();
-  await expect(page.getByText('Chưa có hồ sơ')).toBeVisible();
+  const main = page.getByRole('main', { name: 'Nội dung chính' });
+  await expect(
+    main.getByRole('heading', { level: 1, name: 'Trung tâm đánh giá tín dụng' }),
+  ).toBeVisible();
+  const createCase = page.locator('[data-autoid="components-button-dashboard-create-case"]');
+  await expect(createCase).toBeVisible();
+  await expect(createCase).toHaveAccessibleName('Tạo hồ sơ demo');
+  await expect(main.getByText('Chưa có hồ sơ', { exact: true })).toBeVisible();
 });
 
 test('US-06 · AC-017: comparison renders all six frozen metrics', async ({ page }) => {
@@ -25,11 +30,11 @@ test('US-06 · AC-017: comparison renders all six frozen metrics', async ({ page
       json: {
         id: 'cmp-demo-001',
         metrics: [
-          ['completeness', 55, 90, '%'],
-          ['citationCoverage', 25, 88, '%'],
-          ['toolUse', 1, 4, 'count'],
-          ['conflictDetection', 0, 2, 'count'],
           ['latency', 2.1, 3.6, 's'],
+          ['conflictDetection', 0, 2, 'count'],
+          ['toolUse', 1, 4, 'count'],
+          ['citationCoverage', 25, 88, 'percent'],
+          ['completeness', 55, 90, '%'],
           ['rubricScore', 48, 91, 'points'],
         ].map(([name, singleAgent, multiAgent, unit]) => ({ name, singleAgent, multiAgent, unit })),
       },
@@ -37,9 +42,18 @@ test('US-06 · AC-017: comparison renders all six frozen metrics', async ({ page
   );
 
   await page.goto('/comparisons');
-  await page.getByRole('button', { name: 'Chạy phép so sánh' }).click();
+  await page.locator('[data-autoid="components-button-run-comparison"]').click();
 
-  await expect(page.getByRole('table', { name: 'So sánh sáu metric' })).toBeVisible();
-  await expect(page.getByText('Điểm rubric')).toBeVisible();
-  await expect(page.getByText('Phát hiện xung đột')).toBeVisible();
+  const table = page.locator('[data-autoid="components-table-comparison-metrics"]');
+  await expect(table).toBeVisible();
+  for (const label of [
+    'Độ đầy đủ',
+    'Phủ căn cứ',
+    'Sử dụng công cụ',
+    'Phát hiện xung đột',
+    'Độ trễ',
+    'Điểm rubric',
+  ]) {
+    await expect(table.getByText(label, { exact: true })).toBeVisible();
+  }
 });

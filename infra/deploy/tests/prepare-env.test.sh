@@ -17,11 +17,6 @@ AI_DATABASE_URL=postgresql://db.example.com:5432/ai
 AUTH_MODE=keycloak
 KEYCLOAK_ISSUER=https://auth.example.com/realms/startflow
 KEYCLOAK_AUDIENCE=startflow-api
-NEXT_PUBLIC_API_URL=https://api.example.com/api
-NEXT_PUBLIC_AUTH_MODE=keycloak
-NEXT_PUBLIC_KEYCLOAK_URL=https://auth.example.com
-NEXT_PUBLIC_KEYCLOAK_REALM=startflow
-NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=startflow-web
 CORS_ORIGINS=https://app.example.com
 LLM_MODE=openai-compatible
 LLM_API_KEY=local-fixture-value
@@ -31,7 +26,13 @@ STARTFLOW_RUNTIME_ENV="$valid_env" TARGET_ENV=prod \
 OUTPUT_ENV="$tmp_dir/.env" OUTPUT_CA="$tmp_dir/ca.crt" \
   bash "$repo_root/infra/deploy/prepare-env.sh" >/dev/null
 grep -Fxq 'STARTFLOW_NETWORK=startflow-prod' "$tmp_dir/.env"
-[[ "$(stat -c '%a' "$tmp_dir/.env")" == '600' ]]
+if grep -Eq 'STARTFLOW_(API_URL|AUTH_MODE|KEYCLOAK_)' "$tmp_dir/.env"; then
+  echo 'Prepared server environment unexpectedly contains retired Angular runtime variables.' >&2
+  exit 1
+fi
+if [[ "${OSTYPE:-}" != msys* && "${OSTYPE:-}" != cygwin* ]]; then
+  [[ "$(stat -c '%a' "$tmp_dir/.env")" == '600' ]]
+fi
 
 set +e
 STARTFLOW_RUNTIME_ENV="${valid_env/DEPLOY_ENV=prod/DEPLOY_ENV=dev}" TARGET_ENV=prod \
@@ -41,4 +42,4 @@ status=$?
 set -e
 [[ "$status" -ne 0 ]]
 
-printf 'standalone prepare-env tests passed.\n'
+printf 'standalone server environment preparation tests passed.\n'

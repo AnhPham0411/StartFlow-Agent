@@ -1,0 +1,123 @@
+<sd-page>
+  <div headerLeft class="d-flex flex-column">
+    <h1 class="T20M m-0">{{ header().title }}</h1>
+    <p class="T14R text-secondary mt-4 mb-0">{{ header().description }}</p>
+  </div>
+  @if (data()) {
+    <div headerRight *sdPermission="permissions.runStart">
+      <sd-button
+        autoId="case-start-run"
+        type="fill"
+        color="primary"
+        size="md"
+        prefixIcon="play_arrow"
+        title="Bắt đầu đánh giá"
+        [loading]="starting()"
+        [disabled]="starting()"
+        (click)="startRun()"
+      ></sd-button>
+    </div>
+  }
+
+  @if (loading()) {
+    <app-loading-state label="Đang dựng lại hồ sơ…"></app-loading-state>
+  } @else if (loadError()) {
+    <app-error-state
+      title="Không mở được hồ sơ"
+      [description]="loadError() ?? ''"
+      (retry)="load()"
+    ></app-error-state>
+  } @else if (data(); as item) {
+    @if (actionError()) {
+      <div class="mb-16">
+        <sd-inform
+          error
+          title="Chưa khởi tạo được lượt đánh giá"
+          [description]="actionError() ?? ''"
+        ></sd-inform>
+      </div>
+    }
+
+    <div class="row gap-y-16">
+      <section class="col-12 col-xl-8" aria-labelledby="run-history-title">
+        <h2 id="run-history-title" class="d-none">Lịch sử đánh giá</h2>
+        <sd-section
+          title="Lịch sử đánh giá"
+          subTitle="Mỗi lượt chạy sử dụng một ảnh chụp hồ sơ bất biến."
+          icon="history"
+        >
+          @if (item.runs.length === 0) {
+            <div class="p-16">
+              <app-empty-state
+                title="Hồ sơ chưa được đánh giá"
+                description="Bắt đầu đánh giá để Planner tạo ba luồng chuyên gia."
+                [actionLabel]="canStart ? 'Bắt đầu đánh giá' : ''"
+                (primaryAction)="startRun()"
+              ></app-empty-state>
+            </div>
+          } @else {
+            <div class="overflow-x-auto">
+              <sd-table autoId="case-run-history" [option]="runHistoryTable"></sd-table>
+            </div>
+          }
+        </sd-section>
+      </section>
+
+      <div class="col-12 col-xl-4 d-flex flex-column gap-16">
+        <section aria-labelledby="case-snapshot-title">
+          <h2 id="case-snapshot-title" class="d-none">Thông tin hồ sơ</h2>
+          <sd-section title="Thông tin hồ sơ" icon="business">
+            <div class="grid-container grid-cols-2 gap-y-16 p-16">
+              <div class="col-span-1">
+                <sd-view label="Mã đăng ký" [display]="header().registrationNumber"></sd-view>
+              </div>
+              <div class="col-span-1">
+                <sd-view label="Ngày tạo" [display]="header().createdAt"></sd-view>
+              </div>
+              <div class="col-span-full">
+                <sd-view label="Người tạo" [display]="item.createdBy"></sd-view>
+              </div>
+            </div>
+          </sd-section>
+        </section>
+
+        <section aria-labelledby="financial-snapshot-title">
+          <h2 id="financial-snapshot-title" class="d-none">Ảnh chụp tài chính</h2>
+          <sd-section title="Ảnh chụp tài chính" icon="account_balance">
+            <div class="grid-container grid-cols-2 gap-y-16 p-16">
+              @for (field of financialSnapshot(); track field.key) {
+                <div class="col-span-1">
+                  <sd-view [label]="field.label" [display]="field.display"></sd-view>
+                </div>
+              }
+            </div>
+          </sd-section>
+        </section>
+
+        <section aria-labelledby="submitted-documents-title">
+          <h2 id="submitted-documents-title" class="d-none">Tài liệu đã nộp</h2>
+          <sd-section
+            title="Tài liệu đã nộp"
+            [subTitle]="item.submittedDocuments.length + ' tài liệu'"
+            icon="description"
+          >
+            @if (item.submittedDocuments.length === 0) {
+              <div class="p-16 text-muted">Chưa có tài liệu nào được ghi nhận.</div>
+            } @else {
+              <div class="d-flex flex-column gap-8 p-16">
+                @for (document of item.submittedDocuments; track document) {
+                  <sd-badge
+                    type="tag"
+                    color="info"
+                    icon="description"
+                    [title]="document"
+                  ></sd-badge>
+                }
+              </div>
+            }
+          </sd-section>
+        </section>
+      </div>
+    </div>
+  }
+</sd-page>

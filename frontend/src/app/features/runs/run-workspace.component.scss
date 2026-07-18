@@ -1,0 +1,66 @@
+// why: The three specialist outputs must remain visually parallel until the narrow-screen convergence point.
+.agent-lanes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+// why: The synthesis rail is a distinct decision stage, not another equal-width specialist lane.
+.run-convergence {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(288px, 34%);
+  gap: 16px;
+  align-items: start;
+}
+
+// why: Timeline and evidence need equal reading priority on wide screens and a deterministic collapse below.
+.run-lower-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+// why: Planner tasks form an ordered cross-agent handoff that the generic row utility cannot express.
+.planner-flow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 32px;
+  list-style: none;
+}
+
+.planner-flow__task {
+  position: relative;
+  min-width: 0;
+}
+
+.planner-flow__arrow {
+  position: absolute;
+  top: 50%;
+  right: -24px;
+  transform: translateY(-50%);
+}
+
+// why: The decision rail must converge beneath specialist work before either column becomes cramped.
+@media (max-width: 1100px) {
+  .run-convergence {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+// why: Mobile presents one continuous evidence path with no horizontal scrolling or hidden agent output.
+@media (max-width: 760px) {
+  .agent-lanes,
+  .run-lower-grid,
+  .planner-flow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .planner-flow {
+    gap: 16px;
+  }
+
+  .planner-flow__arrow {
+    display: none;
+  }
+}

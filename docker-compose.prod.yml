@@ -1,7 +1,7 @@
 services:
   backend:
     pull_policy: never
-    ports:
+    ports: !override
       - '127.0.0.1:${BACKEND_PORT:-3101}:3001'
     volumes:
       - type: bind
@@ -19,7 +19,10 @@ services:
 
   frontend:
     pull_policy: never
-    ports:
+    build:
+      args:
+        STARTFLOW_BUILD_CONFIGURATION: production
+    ports: !override
       - '127.0.0.1:${FRONTEND_PORT:-3100}:3000'
 
   backend-migrate:

@@ -1,0 +1,44 @@
+.intake-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+  gap: 16px;
+  align-items: start;
+}
+
+.intake-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  padding: 16px;
+}
+
+.intake-wide {
+  grid-column: 1 / -1;
+}
+
+.intake-documents {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+
+.intake-documents legend {
+  grid-column: 1 / -1;
+}
+
+.intake-summary {
+  position: sticky;
+  top: 16px;
+}
+
+@media (max-width: 767px) {
+  .intake-layout,
+  .intake-fields,
+  .intake-documents {
+    grid-template-columns: 1fr;
+  }
+
+  .intake-summary {
+    position: static;
+  }
+}

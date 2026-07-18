@@ -1,0 +1,29 @@
+// why: Core utilities do not provide data-driven horizontal comparison bars.
+.comparison-value {
+  display: grid;
+  gap: 4px;
+}
+
+.comparison-bar-track {
+  display: block;
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--sd-secondary-light, #e5e7eb);
+}
+
+.comparison-bar {
+  display: block;
+  width: var(--comparison-bar-width);
+  height: 100%;
+  border-radius: inherit;
+}
+
+.comparison-bar--single {
+  background: var(--sd-secondary, #64748b);
+}
+
+.comparison-bar--multi {
+  background: var(--sd-primary, #005cbb);
+}

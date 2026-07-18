@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './specs',
+  timeout: 90_000,
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
@@ -16,13 +17,10 @@ export default defineConfig({
     ...devices['Desktop Chrome'],
   },
   webServer: {
-    command: 'pnpm --filter @startflow/frontend dev --port 3100',
-    url: 'http://127.0.0.1:3100/api/health',
+    command:
+      'corepack pnpm --filter @startflow/frontend exec ng serve --host 127.0.0.1 --port 3100',
+    url: 'http://127.0.0.1:3100/',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
-    env: {
-      NEXT_PUBLIC_AUTH_MODE: 'mock',
-      NEXT_PUBLIC_API_URL: 'http://127.0.0.1:3999/api',
-    },
   },
 });

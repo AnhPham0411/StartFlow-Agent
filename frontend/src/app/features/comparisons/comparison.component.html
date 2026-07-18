@@ -1,0 +1,125 @@
+<sd-page>
+  <div headerLeft class="d-flex flex-column">
+    <h1 class="T20M m-0">Single-agent và Multi-agent</h1>
+    <p class="T14R text-secondary mt-4 mb-0">
+      So sánh hai cách xử lý trên cùng ảnh chụp hồ sơ theo sáu metric cố định.
+    </p>
+  </div>
+  @if (loading()) {
+    <app-loading-state label="Đang tải hồ sơ để so sánh…" />
+  } @else if (errorKind() === 'cases') {
+    <app-error-state title="Không tải được hồ sơ" [description]="error() ?? ''" (retry)="retry()" />
+  } @else if (cases().length === 0) {
+    <app-empty-state
+      title="Chưa có hồ sơ để so sánh"
+      description="Tạo và chạy một hồ sơ demo trước khi mở phép so sánh."
+    />
+  } @else {
+    <div class="d-flex flex-column gap-16">
+      <sd-section title="Chọn hồ sơ" icon="tune" iconColor="primary">
+        <div class="p-16">
+          <div class="row align-items-end">
+            <div class="col-12 col-md-8 mb-12 mb-md-0">
+              <sd-select
+                autoId="comparison-case"
+                label="Hồ sơ nguồn"
+                placeholder="Chọn hồ sơ"
+                [items]="cases()"
+                valueField="id"
+                displayField="companyName"
+                [model]="selectedCaseId()"
+                (modelChange)="selectCase($event)"
+              />
+            </div>
+            <div class="col-12 col-md-4">
+              <sd-button
+                autoId="run-comparison"
+                title="Chạy phép so sánh"
+                prefixIcon="play_arrow"
+                color="primary"
+                [block]="true"
+                [loading]="running()"
+                [disabled]="!selectedCaseId() || running()"
+                (click)="compare()"
+              />
+            </div>
+          </div>
+        </div>
+      </sd-section>
+
+      @if (errorKind() === 'comparison') {
+        <app-error-state
+          title="Không thể chạy phép so sánh"
+          [description]="error() ?? ''"
+          (retry)="retry()"
+        />
+      }
+
+      @if (result(); as comparison) {
+        <sd-section
+          title="Kết quả cùng snapshot"
+          [subTitle]="'Comparison #' + comparison.id"
+          icon="compare_arrows"
+          iconColor="primary"
+        >
+          <div class="p-16 d-flex flex-column gap-16">
+            @if (metricRows().length > 0) {
+              <sd-table
+                role="table"
+                aria-label="So sánh sáu metric"
+                autoId="comparison-metrics"
+                [option]="comparisonTableOption"
+              >
+                <ng-template sdTableCellDef="singleDisplay" let-row="item">
+                  <div class="comparison-value" [attr.aria-label]="row.singleAriaLabel">
+                    <span>{{ row.singleDisplay }}</span>
+                    <span class="comparison-bar-track" aria-hidden="true">
+                      <span
+                        class="comparison-bar comparison-bar--single"
+                        [style.--comparison-bar-width]="row.singleWidth"
+                      ></span>
+                    </span>
+                  </div>
+                </ng-template>
+                <ng-template sdTableCellDef="multiDisplay" let-row="item">
+                  <div class="comparison-value" [attr.aria-label]="row.multiAriaLabel">
+                    <span>{{ row.multiDisplay }}</span>
+                    <span class="comparison-bar-track" aria-hidden="true">
+                      <span
+                        class="comparison-bar comparison-bar--multi"
+                        [style.--comparison-bar-width]="row.multiWidth"
+                      ></span>
+                    </span>
+                  </div>
+                </ng-template>
+              </sd-table>
+            } @else {
+              <sd-inform
+                info
+                title="Đã khởi tạo hai lượt chạy"
+                description="Bảng metric sẽ xuất hiện khi backend hoàn tất đánh giá."
+              />
+            }
+
+            @if (comparison.singleAgentRunId || comparison.multiAgentRunId) {
+              <nav class="d-flex flex-wrap gap-16" aria-label="Mở lượt chạy so sánh">
+                @if (comparison.singleAgentRunId; as singleRunId) {
+                  <a [routerLink]="['/runs', singleRunId]">Mở lượt chạy Single-agent</a>
+                }
+                @if (comparison.multiAgentRunId; as multiRunId) {
+                  <a [routerLink]="['/runs', multiRunId]">Mở lượt chạy Multi-agent</a>
+                }
+              </nav>
+            }
+
+            <sd-inform
+              info
+              title="Cách đọc kết quả"
+              description="Metric chất lượng cao hơn là tốt hơn; riêng độ trễ cần đọc cùng đơn vị thời gian. Đây là phép đo demo, không phải mô hình phê duyệt tín dụng."
+            />
+          </div>
+        </sd-section>
+      }
+    </div>
+  }
+</sd-page>
