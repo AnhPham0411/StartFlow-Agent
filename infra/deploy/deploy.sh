@@ -77,8 +77,8 @@ curl --fail --silent --show-error --max-time 10 \
   "${issuer%/}/.well-known/openid-configuration" >/dev/null
 
 # Migrations finish before any long-running StartFlow container is replaced.
-"${compose[@]}" run --rm backend-migrate
-"${compose[@]}" run --rm ai-migrate
+"${compose[@]}" run --interactive=false --no-TTY --rm backend-migrate
+"${compose[@]}" run --interactive=false --no-TTY --rm ai-migrate
 "${compose[@]}" up -d backend ai-service frontend
 
 frontend_port="$(env_value FRONTEND_PORT)"
@@ -192,14 +192,17 @@ sudo systemctl reload nginx
 
 verify_nginx_route() {
   local name="$1" domain="$2" path="$3" marker="$4"
-  local response
-  if ! response="$(curl --fail --silent --show-error --max-time 10 --noproxy '*' \
-    --resolve "$domain:443:127.0.0.1" "https://$domain$path")"; then
-    fail "$name is not reachable through its local Nginx virtual host."
-  fi
-  grep -Fq "$marker" <<<"$response" \
-    || fail "$name is handled by the wrong Nginx virtual host."
-  printf '%s Nginx route is active.\n' "$name"
+  local attempt response
+  for attempt in $(seq 1 10); do
+    if response="$(curl --fail --silent --max-time 10 --noproxy '*' \
+      --resolve "$domain:443:127.0.0.1" "https://$domain$path")" \
+      && grep -Fq "$marker" <<<"$response"; then
+      printf '%s Nginx route is active.\n' "$name"
+      return 0
+    fi
+    sleep 1
+  done
+  fail "$name is not reachable through the expected local Nginx virtual host."
 }
 
 verify_nginx_route frontend "$app_domain" '/api/health' '"service":"startflow-frontend"'
@@ -212,7 +215,10 @@ rm -f -- "$archive"
 # Seed data improves the demo but an unavailable vector store must not take the
 # website, API, and Nginx routes offline. Qdrant readiness remains observable at
 # the AI service /ready endpoint and the seed can be retried manually.
-if timeout --foreground --kill-after=10s 90s "${compose[@]}" run --rm ai-seed; then
+seed_output=''
+if seed_output="$(timeout --foreground --kill-after=10s 90s \
+  "${compose[@]}" run --interactive=false --no-TTY --rm ai-seed 2>&1)"; then
+  [[ -z "$seed_output" ]] || printf '%s\n' "$seed_output"
   printf 'AI knowledge seed is ready.\n'
 else
   seed_status=$?
