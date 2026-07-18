@@ -2,7 +2,7 @@
 
 ## Bối cảnh và quyết định
 
-StartFlow tách web, application API và AI orchestration thành ba service để mỗi phần có contract và failure boundary rõ. PostgreSQL 18 cùng Keycloak là dependency có sẵn và chỉ được tham chiếu qua env.
+StartFlow tách web, application API và AI orchestration thành ba service để mỗi phần có contract và failure boundary rõ. PostgreSQL 18, Keycloak và Qdrant là dependency có sẵn và chỉ được tham chiếu qua env.
 
 | Component                        | Trách nhiệm                                                       | Entrypoint                            |
 | -------------------------------- | ----------------------------------------------------------------- | ------------------------------------- |
@@ -10,8 +10,8 @@ StartFlow tách web, application API và AI orchestration thành ba service đ�
 | Nginx unprivileged               | Phục vụ Angular static, SPA fallback và `/health`                 | container port `3000`                 |
 | NestJS                           | auth/roles, cases/snapshots, lifecycle, SSE, approvals, audit     | `backend/src/main.ts`, port `3001`    |
 | FastAPI/LangGraph                | planner, specialists, tools, RAG, synthesis                       | `ai-service/src/main.py`, port `8000` |
-| PostgreSQL app DB                | case, snapshot, run, event, approval, audit, comparison           | Prisma migrations                     |
-| PostgreSQL AI DB                 | knowledge documents/chunks/embeddings                             | Alembic migrations                    |
+| PostgreSQL 18                    | app data, AI ingestion jobs và evaluation results                 | Prisma + Alembic migrations           |
+| Qdrant                           | knowledge chunks, payload metadata và vector similarity           | external REST API                     |
 | Keycloak                         | browser login, JWT issuer/audience và realm roles                 | external OIDC                         |
 
 Angular dùng standalone components, signals, OnPush và lazy feature routes. `@sdcorejs/angular` cung cấp layout, page, table, form, badge, loading, notify và confirmation controls; `@startflow/contracts` vẫn là public domain vocabulary dùng chung với backend.
@@ -52,7 +52,7 @@ Backend dùng hai uniqueness constraint quan trọng:
 ## Failure model
 
 - Frontend Nginx `/health` chứng minh static runtime sống; backend `/health` kiểm tra process và `/ready` kiểm tra dependencies.
-- Runtime config hoặc production auth không hợp lệ làm frontend container fail trước khi Nginx nhận traffic.
+- Public frontend configuration không hợp lệ làm Angular build/test fail trước khi tạo image; server secrets được backend và AI service kiểm tra ở runtime.
 - Một specialist lỗi tạo kết quả `PARTIAL`; lane lỗi vẫn hiển thị và confidence không được tăng.
 - Callback có retry/idempotency; SSE client resume từ event cuối và giữ persisted timeline khi reconnect.
 - Migration deploy chạy trước khi thay long-running container; rollback application không rollback database migration.
@@ -60,5 +60,5 @@ Backend dùng hai uniqueness constraint quan trọng:
 ## Trade-off hackathon
 
 - Knowledge/demo rubric deterministic ưu tiên khả năng trình diễn lặp lại hơn đánh giá tín dụng thực.
-- PostgreSQL/pgvector giảm số datastore phải vận hành trong 48 giờ.
+- Qdrant có sẵn tách vector search khỏi PostgreSQL và loại bỏ yêu cầu cài extension pgvector.
 - Background run endpoint trả `202`; UI quan sát tiến trình qua persisted events thay vì giữ HTTP request dài.

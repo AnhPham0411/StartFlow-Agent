@@ -12,17 +12,37 @@ production_environment="$repo_root/frontend/src/environments/environment.product
 root_dockerignore="$repo_root/.dockerignore"
 readme="$repo_root/ReadMe.md"
 deployment_docs="$repo_root/docs/deployment.md"
+ci_workflow="$repo_root/.github/workflows/ci.yml"
+
+grep -Fq 'workflow_call:' "$workflow"
+grep -Fq 'workflow_dispatch:' "$workflow"
+if grep -Fq 'workflow_run:' "$workflow"; then
+  echo 'Deploy must use the caller branch workflow, not workflow_run from the default branch.' >&2
+  exit 1
+fi
+grep -Fq 'target_env:' "$workflow"
+grep -Fq 'release_sha:' "$workflow"
+grep -Fq "github.ref_name == 'main' && 'prod' || 'dev'" "$workflow"
+grep -Fq 'dev:dev|main:prod)' "$workflow"
+
+grep -Fq 'uses: ./.github/workflows/deploy.yml' "$ci_workflow"
+grep -Fq 'needs: [node, python, e2e, docker, secret-safety, deployment-assets]' "$ci_workflow"
+grep -Fq "if: github.event_name == 'push'" "$ci_workflow"
+grep -Fq 'release_sha: ${{ github.sha }}' "$ci_workflow"
+grep -Fq 'secrets: inherit' "$ci_workflow"
 
 grep -Fq 'DROPLET_SSH_KNOWN_HOSTS' "$workflow"
+grep -Fq 'secrets.STARTFLOW_DEV' "$workflow"
+grep -Fq 'secrets.SSH_PRIVATE_KEY_DEV' "$workflow"
+grep -Fq 'env_value DROPLET_HOST' "$workflow"
+grep -Fq "'/^DROPLET_HOST=/d'" "$workflow"
 grep -Fq 'startflow-backend:$IMAGE_TAG' "$workflow"
 grep -Fq 'startflow-frontend:$IMAGE_TAG' "$workflow"
 grep -Fq 'infra/deploy/prepare-env.sh' "$workflow"
 grep -Fq 'infra/deploy/deploy.sh' "$workflow"
 grep -Fq 'STARTFLOW_DROPLET_ROOT' "$workflow"
 grep -Fq 'DROPLET_PATH=%s/%s' "$workflow"
-grep -Fq "github.event.workflow_run.event == 'push'" "$workflow"
-grep -Fq "github.event_name == 'workflow_run' &&" "$workflow"
-grep -Fq 'github.event.workflow_run.head_repository.full_name == github.repository' "$workflow"
+grep -Fq 'FRONTEND_BUILD_CONFIGURATION:' "$workflow"
 grep -Fq 'is_safe_absolute_path "$DROPLET_ROOT"' "$workflow"
 grep -Fq 'is_safe_absolute_path "$droplet_path"' "$workflow"
 grep -Fq 'is_safe_absolute_path "$DROPLET_PATH"' "$workflow"
@@ -46,6 +66,12 @@ grep -Fq 'try_files $uri $uri/ /index.html;' "$nginx_config"
 grep -Fq 'location ~* "/[^/]+-[a-z0-9]{8,}' "$nginx_config"
 grep -Fq 'Cache-Control "public, max-age=3600"' "$nginx_config"
 grep -Fq 'Content-Security-Policy' "$nginx_config"
+grep -Fq 'X-Frame-Options "SAMEORIGIN"' "$nginx_config"
+grep -Fq "frame-ancestors 'self'" "$nginx_config"
+if grep -Fq 'X-Frame-Options "DENY"' "$nginx_config"; then
+  echo 'Angular Nginx must allow the same-origin Keycloak silent-renew iframe.' >&2
+  exit 1
+fi
 grep -Fq 'Content-Security-Policy' "$frontend_proxy_config"
 grep -Fq 'src/environments/environment.production.ts' "$angular_config"
 grep -Fq "apiUrl: 'https://startflow-api.cloudsolution.vn/api'" "$production_environment"
@@ -109,5 +135,18 @@ if grep -Fq 'ssh-keyscan' "$workflow"; then
   echo 'Workflow must not trust ssh-keyscan output at deploy time.' >&2
   exit 1
 fi
+
+for old_secret in \
+  'secrets.STARTFLOW_ENV }}' \
+  'secrets.SSH_PRIVATE_KEY }}' \
+  'secrets.DROPLET_HOST' \
+  'secrets.DROPLET_USER' \
+  'secrets.DROPLET_SSH_KNOWN_HOSTS' \
+  'secrets.POSTGRES_TLS_CA_BASE64'; do
+  if grep -Fq "$old_secret" "$workflow"; then
+    echo "Workflow still references obsolete secret: $old_secret" >&2
+    exit 1
+  fi
+done
 
 printf 'standalone Angular/Nginx workflow static tests passed.\n'

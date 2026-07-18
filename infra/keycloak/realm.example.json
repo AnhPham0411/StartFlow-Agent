@@ -13,33 +13,35 @@
   },
   "clients": [
     {
-      "clientId": "startflow-api",
-      "name": "StartFlow API audience",
+      "clientId": "INTEGRATION_API",
+      "name": "StartFlow Integration API",
       "enabled": true,
-      "bearerOnly": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
       "protocol": "openid-connect"
     },
     {
-      "clientId": "startflow-web",
+      "clientId": "portal-ops",
       "name": "StartFlow Web",
       "enabled": true,
       "publicClient": true,
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
       "protocol": "openid-connect",
-      "redirectUris": ["http://localhost:3000/*"],
-      "webOrigins": ["http://localhost:3000"],
+      "redirectUris": ["http://localhost:3200/*"],
+      "webOrigins": ["http://localhost:3200"],
       "attributes": {
         "pkce.code.challenge.method": "S256"
       },
       "protocolMappers": [
         {
-          "name": "startflow-api-audience",
+          "name": "integration-api-audience",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-audience-mapper",
           "consentRequired": false,
           "config": {
-            "included.client.audience": "startflow-api",
+            "included.client.audience": "INTEGRATION_API",
             "id.token.claim": "false",
             "access.token.claim": "true"
           }

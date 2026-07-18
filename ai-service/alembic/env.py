@@ -16,7 +16,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 settings = get_settings()
 if not settings.ai_database_url:
-    raise RuntimeError("AI_DATABASE_URL is required to run migrations")
+    raise RuntimeError("Split database configuration is required to run migrations")
 database_url, connect_args = prepare_asyncpg_connection(
     settings.ai_database_url, settings.db_ssl_mode, settings.db_ssl_root_cert
 )

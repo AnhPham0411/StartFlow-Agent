@@ -29,4 +29,24 @@ describe('realm role authorization', () => {
 
     expect(() => guard.canActivate(contextWithRoles(['analyst']))).toThrow(ForbiddenException);
   });
+
+  it('maps existing Keycloak analyst and approver roles onto NBA permissions', () => {
+    const saleReflector = {
+      getAllAndOverride: jest.fn().mockReturnValueOnce(false).mockReturnValueOnce(['sale']),
+    };
+    const managerReflector = {
+      getAllAndOverride: jest.fn().mockReturnValueOnce(false).mockReturnValueOnce(['manager']),
+    };
+
+    expect(
+      new RolesGuard(saleReflector as unknown as Reflector).canActivate(
+        contextWithRoles(['analyst']),
+      ),
+    ).toBe(true);
+    expect(
+      new RolesGuard(managerReflector as unknown as Reflector).canActivate(
+        contextWithRoles(['approver']),
+      ),
+    ).toBe(true);
+  });
 });

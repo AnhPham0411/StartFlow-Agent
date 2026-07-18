@@ -6,7 +6,7 @@ describe('Angular build environments', () => {
   it('uses the local API with mock authentication for local development', () => {
     expect(localEnvironment).toEqual({
       production: false,
-      apiUrl: 'http://localhost:3001/api',
+      apiUrl: 'http://localhost:3201/api',
       authMode: 'mock',
       keycloakUrl: '',
       keycloakRealm: '',

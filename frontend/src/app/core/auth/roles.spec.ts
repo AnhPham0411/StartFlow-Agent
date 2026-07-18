@@ -13,7 +13,7 @@ describe('resolveRoles', () => {
         },
         'startflow-web',
       ),
-    ).toEqual(['analyst', 'approver']);
+    ).toEqual(['analyst', 'approver', 'sale', 'manager']);
   });
 
   it('returns no roles for an absent or malformed token', () => {
@@ -21,5 +21,18 @@ describe('resolveRoles', () => {
     expect(resolveRoles({ realm_access: { roles: ['admin', 42] } }, 'startflow-web')).toEqual([
       'admin',
     ]);
+  });
+
+  it('maps the Keycloak realm administrator without requiring an application profile', () => {
+    expect(
+      resolveRoles(
+        {
+          resource_access: {
+            'realm-management': { roles: ['realm-admin'] },
+          },
+        },
+        'portal-ops',
+      ),
+    ).toEqual(['admin']);
   });
 });

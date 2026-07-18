@@ -27,12 +27,12 @@ NestJS API :3001 ─────────► PostgreSQL 18 có sẵn
         ▼
 FastAPI + LangGraph :8000 ─► Planner / Credit / Compliance / Operations / Synthesizer
         │                    └► calculator, mock KYC/AML, checklist, RAG
-        └──────────────────► PostgreSQL 18 + pgvector có sẵn
+        └──────────────────► Qdrant có sẵn (knowledge chunks + embeddings)
 
 Browser ── Authorization Code + PKCE ──► Keycloak có sẵn
 ```
 
-Repository chỉ chạy ba application containers: `frontend`, `backend`, `ai-service`. Docker Compose và deploy workflow không provision hoặc restart PostgreSQL/Keycloak.
+Repository chỉ chạy ba application containers: `frontend`, `backend`, `ai-service`. Docker Compose và deploy workflow không provision hoặc restart PostgreSQL, Keycloak hay Qdrant.
 
 ## Cấu trúc
 
@@ -52,11 +52,11 @@ docs/                kiến trúc, security, deploy và demo script
 
 ## Chạy local bằng Docker Compose
 
-Yêu cầu Node.js 22, pnpm 10, Docker Compose và quyền truy cập PostgreSQL 18/Keycloak có sẵn.
+Yêu cầu Node.js 22, pnpm 10, Docker Compose và quyền truy cập PostgreSQL 18/Keycloak/Qdrant có sẵn.
 
 ```powershell
 Copy-Item .env.example .env
-# Điền URL/credential thật vào .env; không commit file này.
+# Điền các biến DB_*, QDRANT_* và credential thật vào .env; không commit file này.
 
 pnpm install --frozen-lockfile
 docker compose build
@@ -65,7 +65,7 @@ docker compose run --rm ai-migrate
 docker compose up -d backend ai-service frontend
 ```
 
-Mở `http://localhost:3000`. Frontend Nginx health ở `http://localhost:3000/health`; API readiness ở `http://localhost:3001/ready`; AI readiness được kiểm tra nội bộ tại `http://ai-service:8000/ready`.
+Mở `http://localhost:3200`. Frontend Nginx health ở `http://localhost:3200/health`; API readiness ở `http://localhost:3201/ready`; AI readiness được kiểm tra nội bộ tại `http://ai-service:8000/ready`.
 
 Không có tài khoản mặc định trong repository. Tạo/gán user với role `analyst`, `approver` hoặc `admin` trong Keycloak hiện hữu. Hướng dẫn chi tiết nằm ở [START.md](START.md).
 

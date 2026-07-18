@@ -23,7 +23,10 @@ def test_health_is_process_only(monkeypatch) -> None:
 
 def test_ready_reports_seed_mode_when_database_is_not_configured(monkeypatch) -> None:
     monkeypatch.setenv("ENVIRONMENT", "test")
-    monkeypatch.delenv("AI_DATABASE_URL", raising=False)
+    for key in ("DB_HOST", "DB_NAME", "DB_USER", "DB_PASSWORD"):
+        monkeypatch.delenv(key, raising=False)
+    for key in ("QDRANT_URL", "QDRANT_API_KEY"):
+        monkeypatch.delenv(key, raising=False)
     monkeypatch.setenv(
         "KNOWLEDGE_SEED_PATH", str(Path(__file__).resolve().parents[2] / "knowledge" / "seed")
     )
@@ -31,4 +34,4 @@ def test_ready_reports_seed_mode_when_database_is_not_configured(monkeypatch) ->
     with TestClient(create_app()) as client:
         response = client.get("/ready")
     assert response.status_code == 200
-    assert response.json()["checks"]["postgresAndPgvector"] == "not-configured-seed-mode"
+    assert response.json()["checks"]["qdrant"] == "not-configured-seed-mode"

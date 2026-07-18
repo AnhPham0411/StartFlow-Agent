@@ -9,7 +9,10 @@ from src.main import create_app
 def configure(monkeypatch) -> None:
     monkeypatch.setenv("ENVIRONMENT", "test")
     monkeypatch.setenv("INTERNAL_SERVICE_TOKEN", "test-service-token")
-    monkeypatch.delenv("AI_DATABASE_URL", raising=False)
+    for key in ("DB_HOST", "DB_NAME", "DB_USER", "DB_PASSWORD"):
+        monkeypatch.delenv(key, raising=False)
+    for key in ("QDRANT_URL", "QDRANT_API_KEY"):
+        monkeypatch.delenv(key, raising=False)
     monkeypatch.setenv(
         "KNOWLEDGE_SEED_PATH", str(Path(__file__).resolve().parents[2] / "knowledge" / "seed")
     )
@@ -37,7 +40,7 @@ def test_list_knowledge_uses_seed_fallback(monkeypatch) -> None:
     }
 
 
-def test_ingest_requires_configured_database(monkeypatch) -> None:
+def test_ingest_requires_configured_qdrant(monkeypatch) -> None:
     configure(monkeypatch)
     with TestClient(create_app()) as client:
         response = client.post(

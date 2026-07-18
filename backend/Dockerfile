@@ -23,7 +23,9 @@ RUN corepack enable \
   && adduser -S startflow -G startflow
 
 COPY --from=builder --chown=startflow:startflow /app /app
+RUN chmod +x /app/backend/entrypoint.sh
 USER startflow
 EXPOSE 3001
 
+ENTRYPOINT ["/app/backend/entrypoint.sh"]
 CMD ["node", "backend/dist/main.js"]

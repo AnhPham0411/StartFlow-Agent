@@ -1,38 +1,52 @@
 name: Deploy StartFlow
 
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [dev, main]
+  workflow_call:
+    inputs:
+      target_env:
+        description: Validated deployment target selected by the caller branch
+        required: true
+        type: string
+      release_sha:
+        description: Full Git SHA that passed the caller CI workflow
+        required: true
+        type: string
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: startflow-deploy-${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref_name }}
+  group: startflow-deploy-${{ inputs.target_env || (github.ref_name == 'main' && 'prod' || 'dev') }}
   cancel-in-progress: false
 
 jobs:
   deploy:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (
-        github.event_name == 'workflow_run' &&
-        github.event.workflow_run.event == 'push' &&
-        github.event.workflow_run.head_repository.full_name == github.repository &&
-        github.event.workflow_run.conclusion == 'success'
-      )
-    name: Deploy ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'main' && 'production' || 'development' }}
+    name: Deploy ${{ (inputs.target_env || (github.ref_name == 'main' && 'prod' || 'dev')) == 'prod' && 'production' || 'development' }}
     runs-on: ubuntu-latest
-    environment: ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'main' && 'production' || 'development' }}
+    environment: ${{ (inputs.target_env || (github.ref_name == 'main' && 'prod' || 'dev')) == 'prod' && 'production' || 'development' }}
     env:
-      TARGET_ENV: ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'main' && 'prod' || 'dev' }}
-      FRONTEND_BUILD_CONFIGURATION: ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'main' && 'production' || 'development' }}
-      RELEASE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      TARGET_ENV: ${{ inputs.target_env || (github.ref_name == 'main' && 'prod' || 'dev') }}
+      FRONTEND_BUILD_CONFIGURATION: ${{ (inputs.target_env || (github.ref_name == 'main' && 'prod' || 'dev')) == 'prod' && 'production' || 'development' }}
+      RELEASE_SHA: ${{ inputs.release_sha || github.sha }}
       DROPLET_ROOT: ${{ vars.STARTFLOW_DROPLET_ROOT || '/opt/startflow-agent' }}
     steps:
+      - name: Validate deployment target
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$GITHUB_REF_NAME:$TARGET_ENV" in
+            dev:dev|main:prod) ;;
+            *)
+              echo "Branch $GITHUB_REF_NAME cannot deploy target $TARGET_ENV." >&2
+              exit 2
+              ;;
+          esac
+          [[ "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]] || {
+            echo 'RELEASE_SHA must be a full Git SHA.' >&2
+            exit 2
+          }
+
       - name: Checkout StartFlow
         uses: actions/checkout@v5
         with:
@@ -77,14 +91,45 @@ jobs:
       - name: Prepare runtime environment
         shell: bash
         env:
-          STARTFLOW_RUNTIME_ENV: ${{ secrets.STARTFLOW_ENV }}
-          POSTGRES_CA_CERT_BASE64: ${{ secrets.POSTGRES_TLS_CA_BASE64 }}
+          STARTFLOW_DEV_SECRET: ${{ secrets.STARTFLOW_DEV }}
+          STARTFLOW_PROD_SECRET: ${{ secrets.STARTFLOW_PROD }}
         run: |
           set -euo pipefail
+          case "$TARGET_ENV" in
+            dev) runtime_env="$STARTFLOW_DEV_SECRET" ;;
+            prod) runtime_env="$STARTFLOW_PROD_SECRET" ;;
+            *) exit 2 ;;
+          esac
+          [[ -n "$runtime_env" ]] || {
+            echo "STARTFLOW_${TARGET_ENV^^} GitHub secret is empty." >&2
+            exit 2
+          }
           mkdir -p .deploy
+          STARTFLOW_RUNTIME_ENV="$runtime_env" \
           OUTPUT_ENV="$GITHUB_WORKSPACE/.deploy/.env" \
           OUTPUT_CA="$GITHUB_WORKSPACE/.deploy/postgres-ca.crt" \
             bash infra/deploy/prepare-env.sh
+
+          env_value() {
+            local key="$1"
+            sed -n "s/^${key}=//p" .deploy/.env | tail -n 1
+          }
+          deploy_host="$(env_value DROPLET_HOST)"
+          deploy_user="$(env_value DROPLET_USER)"
+          deploy_known_hosts="$(env_value DROPLET_SSH_KNOWN_HOSTS)"
+          for value in "$deploy_host" "$deploy_user" "$deploy_known_hosts"; do
+            printf '::add-mask::%s\n' "$value"
+          done
+          {
+            printf 'DROPLET_HOST=%s\n' "$deploy_host"
+            printf 'DROPLET_USER=%s\n' "$deploy_user"
+            printf 'DROPLET_SSH_KNOWN_HOSTS=%s\n' "$deploy_known_hosts"
+          } >> "$GITHUB_ENV"
+          sed -i \
+            -e '/^DROPLET_HOST=/d' \
+            -e '/^DROPLET_USER=/d' \
+            -e '/^DROPLET_SSH_KNOWN_HOSTS=/d' \
+            .deploy/.env
 
           image_tag="${RELEASE_SHA::12}"
           {
@@ -125,12 +170,21 @@ jobs:
       - name: Configure strict SSH
         shell: bash
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          DROPLET_SSH_KNOWN_HOSTS: ${{ secrets.DROPLET_SSH_KNOWN_HOSTS }}
+          SSH_PRIVATE_KEY_DEV_SECRET: ${{ secrets.SSH_PRIVATE_KEY_DEV }}
+          SSH_PRIVATE_KEY_PROD_SECRET: ${{ secrets.SSH_PRIVATE_KEY_PROD }}
         run: |
           set -euo pipefail
+          case "$TARGET_ENV" in
+            dev) ssh_private_key="$SSH_PRIVATE_KEY_DEV_SECRET" ;;
+            prod) ssh_private_key="$SSH_PRIVATE_KEY_PROD_SECRET" ;;
+            *) exit 2 ;;
+          esac
+          [[ -n "$ssh_private_key" ]] || {
+            echo "SSH_PRIVATE_KEY_${TARGET_ENV^^} GitHub secret is empty." >&2
+            exit 2
+          }
           install -d -m 700 ~/.ssh
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$ssh_private_key" > ~/.ssh/id_ed25519
           printf '%s\n' "$DROPLET_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
           test -s ~/.ssh/id_ed25519
@@ -139,9 +193,6 @@ jobs:
       - name: Upload release bundle
         id: upload_release
         shell: bash
-        env:
-          DROPLET_HOST: ${{ secrets.DROPLET_HOST }}
-          DROPLET_USER: ${{ secrets.DROPLET_USER }}
         run: |
           set -euo pipefail
           is_safe_absolute_path() {
@@ -180,9 +231,6 @@ jobs:
 
       - name: Migrate, deploy, and verify
         shell: bash
-        env:
-          DROPLET_HOST: ${{ secrets.DROPLET_HOST }}
-          DROPLET_USER: ${{ secrets.DROPLET_USER }}
         run: |
           set -euo pipefail
           ssh -o BatchMode=yes "$DROPLET_USER@$DROPLET_HOST" \
@@ -192,9 +240,6 @@ jobs:
       - name: Remove uploaded release archive
         if: always() && steps.upload_release.outcome == 'success'
         shell: bash
-        env:
-          DROPLET_HOST: ${{ secrets.DROPLET_HOST }}
-          DROPLET_USER: ${{ secrets.DROPLET_USER }}
         run: |
           set -euo pipefail
           [[ "$DROPLET_PATH" =~ ^/[A-Za-z0-9._/-]+$ ]]

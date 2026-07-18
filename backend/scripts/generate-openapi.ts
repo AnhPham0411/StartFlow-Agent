@@ -7,10 +7,15 @@ import { SwaggerModule } from '@nestjs/swagger';
 const defaults: Record<string, string> = {
   AI_SERVICE_URL: 'http://ai-service:8000',
   CORS_ORIGINS: 'http://localhost:3000',
-  DATABASE_URL: 'postgresql://openapi:openapi@localhost:5432/openapi',
+  DB_HOST: 'localhost',
+  DB_NAME: 'openapi',
+  DB_PASSWORD: 'openapi',
+  DB_PORT: '5432',
+  DB_SSL_MODE: 'disable',
+  DB_USER: 'openapi',
   INTERNAL_SERVICE_TOKEN: 'openapi-generation-token',
-  KEYCLOAK_AUDIENCE: 'startflow-api',
   KEYCLOAK_ISSUER: 'https://auth.example.invalid/realms/startflow',
+  KEYCLOAK_SECRET: 'openapi-generation-client-secret',
   NODE_ENV: 'test',
 };
 

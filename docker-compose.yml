@@ -59,7 +59,7 @@ services:
           'CMD',
           'python',
           '-c',
-          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=3)",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)",
         ]
       interval: 10s
       timeout: 5s
@@ -108,7 +108,13 @@ services:
   ai-migrate:
     <<: *ai-service
     profiles: [tools]
-    command: ['sh', '-c', 'alembic upgrade head && python -m src.rag.ingest']
+    command: ['alembic', 'upgrade', 'head']
+    restart: 'no'
+
+  ai-seed:
+    <<: *ai-service
+    profiles: [tools]
+    command: ['python', '-m', 'src.rag.ingest']
     restart: 'no'
 
 networks:

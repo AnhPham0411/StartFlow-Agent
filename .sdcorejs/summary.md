@@ -1,6 +1,6 @@
 ---
-generated_at: 2026-07-19T03:54:00+07:00
-git_head: c103b91fb02372f3b5906727ea5ddfd4ef27b1ab
+generated_at: 2026-07-19T04:45:00+07:00
+git_head: 200d429f179729d4e19036343d507b7d29eded96 + origin/dev
 branch: feat/angular-core-ui-migration
 tracks: [angular, nestjs, test, generic]
 generator: sdcorejs-explore
@@ -73,8 +73,16 @@ StartFlow là demo hackathon đánh giá tín dụng bằng multi-agent. Planner
 - Core UI vẫn có hạn chế upstream ở mobile navigation semantics; application-level repairs đã xử lý form controls và knowledge drawer.
 - Build còn cảnh báo CommonJS từ các dependency bắc cầu của Core UI (ExcelJS, PrismJS, fuzzysort, extend).
 - Hosted development và production hiện dùng chung public API/Keycloak endpoints đã được xác nhận; chưa thêm UAT/QC vì chưa có endpoint/pipeline tương ứng.
-- Toàn bộ migration vẫn là worktree chưa commit; branch hygiene không thể báo ready-to-commit cho tới khi người dùng quyết định lưu thay đổi.
+- Angular migration đã được commit và đang hợp nhất với `origin/dev` trước khi push fast-forward lên nhánh `dev`.
 
 ## Freshness
 
-Generated from Git HEAD `c103b91fb02372f3b5906727ea5ddfd4ef27b1ab` plus the completed Angular build-environment worktree on `feat/angular-core-ui-migration`.
+Generated from Angular commit `200d429` merged with `origin/dev` at `36dd5ce` on `feat/angular-core-ui-migration`.
+
+## Merged dev capabilities
+
+- Backend giữ NBA assessment/profile seed, integration-client token validation và role `sale`/`manager` từ `origin/dev`.
+- AI service giữ external Qdrant repository, database runtime settings và health/readiness checks mới.
+- `dev` deploy độc lập dưới `/opt/startflow-agent/dev` bằng `STARTFLOW_DEV` và `SSH_PRIVATE_KEY_DEV`; `main` dùng production secrets tương ứng.
+- Runtime `.env`, database credentials, private keys và generated certificates vẫn untracked; Prisma/SQLAlchemy DSN được tạo từ split `DB_*` bên trong process.
+- React-only Sales Copilot pages không được giữ vì Angular 20 là frontend runtime duy nhất; port UI đó sang Angular là phạm vi riêng.

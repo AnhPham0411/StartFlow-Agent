@@ -1,46 +1,36 @@
 from __future__ import annotations
 
-from datetime import datetime
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 
-from pgvector.sqlalchemy import Vector
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, func
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy import DateTime, Float, Integer, String, Text, func
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 SCHEMA = "startflow_ai"
 
 
+@dataclass(frozen=True, slots=True)
+class KnowledgeDocument:
+    id: str
+    title: str
+    domain: str
+    source_path: str
+    checksum: str
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+
+@dataclass(frozen=True, slots=True)
+class KnowledgeChunk:
+    id: str
+    document_id: str
+    section: str
+    content: str
+    position: int
+    embedding: list[float]
+
+
 class Base(DeclarativeBase):
     pass
-
-
-class KnowledgeDocument(Base):
-    __tablename__ = "knowledge_documents"
-    __table_args__: dict[str, str] = {"schema": SCHEMA}  # noqa: RUF012
-
-    id: Mapped[str] = mapped_column(String(120), primary_key=True)
-    title: Mapped[str] = mapped_column(String(240))
-    domain: Mapped[str] = mapped_column(String(40), index=True)
-    source_path: Mapped[str] = mapped_column(String(500), unique=True)
-    checksum: Mapped[str] = mapped_column(String(64))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    chunks: Mapped[list[KnowledgeChunk]] = relationship(
-        back_populates="document", cascade="all, delete-orphan"
-    )
-
-
-class KnowledgeChunk(Base):
-    __tablename__ = "knowledge_chunks"
-    __table_args__: dict[str, str] = {"schema": SCHEMA}  # noqa: RUF012
-
-    id: Mapped[str] = mapped_column(String(160), primary_key=True)
-    document_id: Mapped[str] = mapped_column(
-        ForeignKey(f"{SCHEMA}.knowledge_documents.id", ondelete="CASCADE"), index=True
-    )
-    section: Mapped[str] = mapped_column(String(240))
-    content: Mapped[str] = mapped_column(Text)
-    position: Mapped[int] = mapped_column(Integer)
-    embedding: Mapped[list[float]] = mapped_column(Vector(1536))
-    document: Mapped[KnowledgeDocument] = relationship(back_populates="chunks")
 
 
 class IngestionJob(Base):
