@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import {
   PROFILE_SEED_COUNTS,
   PROFILE_SEED_SHA256,
@@ -34,6 +37,28 @@ describe('Sales Copilot profile seed', () => {
       expect(sql).toContain('ON CONFLICT');
       expect(sql).not.toMatch(/\bDELETE\b|\bTRUNCATE\b/i);
       expect(sql).toContain('jsonb_populate_recordset');
+    }
+  });
+
+  it('migrates every geo enum value contained in the profile bundle', () => {
+    const bundle = decodeProfileSeed();
+    const migrationSql = [
+      '../prisma/migrations/20260718190000_sales_copilot_profile_bundle/migration.sql',
+      '../prisma/migrations/20260718200000_extend_zone_type_for_profile_seed/migration.sql',
+    ]
+      .map((path) => readFileSync(join(__dirname, path), 'utf8'))
+      .join('\n');
+    const zoneTypes = new Set([
+      ...bundle.tables.zone_registry.map((row) => row.zone_type),
+      ...bundle.tables.customer_geo.map((row) => row.zone_type),
+    ]);
+
+    for (const zoneType of zoneTypes) {
+      expect(migrationSql).toContain(`'${String(zoneType)}'`);
+    }
+
+    for (const matchMethod of new Set(bundle.tables.customer_geo.map((row) => row.match_method))) {
+      expect(migrationSql).toContain(`'${String(matchMethod)}'`);
     }
   });
 });
