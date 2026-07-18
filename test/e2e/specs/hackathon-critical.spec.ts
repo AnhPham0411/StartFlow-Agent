@@ -9,13 +9,14 @@ const demoCase = {
   createdAt: '2026-07-17T08:00:00.000Z',
 };
 
-test('US-01 · AC-002/004: mock analyst can open the protected dashboard', async ({ page }) => {
-  await page.route('**/api/cases', (route) => route.fulfill({ json: [] }));
+test('Sales Copilot: mock analyst lands on the protected call list', async ({ page }) => {
+  await page.route('**/api/nba/calllist**', (route) => route.fulfill({ json: [] }));
   await page.goto('/dashboard');
 
-  await expect(page.getByRole('heading', { name: 'Trung tâm đánh giá tín dụng' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Tạo hồ sơ demo' }).first()).toBeVisible();
-  await expect(page.getByText('Chưa có hồ sơ')).toBeVisible();
+  await expect(page).toHaveURL(/\/nba\/calllist$/);
+  await expect(page.getByRole('heading', { name: 'Call List' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Khách hàng' })).toBeVisible();
+  await expect(page.getByText(/Không có khách nào trong call list ngày/)).toBeVisible();
 });
 
 test('US-06 · AC-017: comparison renders all six frozen metrics', async ({ page }) => {
