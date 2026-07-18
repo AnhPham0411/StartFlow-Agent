@@ -66,3 +66,11 @@ test('CI prepares workspace-generated types before quality checks and e2e', asyn
   assert.ok(nodeJob.indexOf('pnpm ci:prepare') < nodeJob.indexOf('pnpm lint'));
   assert.ok(e2eJob.indexOf('pnpm ci:prepare') < e2eJob.indexOf('playwright install'));
 });
+
+test('AI image keeps its builder on Bookworm and installs pinned uv binaries', async () => {
+  const dockerfile = await readFile('ai-service/Dockerfile', 'utf8');
+
+  assert.match(dockerfile, /^FROM python:3\.12\.11-slim-bookworm AS builder$/m);
+  assert.match(dockerfile, /^COPY --from=ghcr\.io\/astral-sh\/uv:0\.11\.29 \/uv \/uvx \/bin\/$/m);
+  assert.doesNotMatch(dockerfile, /^FROM ghcr\.io\/astral-sh\/uv:.*bookworm.*$/m);
+});
