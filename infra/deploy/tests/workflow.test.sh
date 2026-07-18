@@ -3,6 +3,24 @@ set -Eeuo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 workflow="$repo_root/.github/workflows/deploy.yml"
+ci_workflow="$repo_root/.github/workflows/ci.yml"
+
+grep -Fq 'workflow_call:' "$workflow"
+grep -Fq 'workflow_dispatch:' "$workflow"
+if grep -Fq 'workflow_run:' "$workflow"; then
+  echo 'Deploy must use the caller branch workflow, not workflow_run from the default branch.' >&2
+  exit 1
+fi
+grep -Fq 'target_env:' "$workflow"
+grep -Fq 'release_sha:' "$workflow"
+grep -Fq "github.ref_name == 'main' && 'prod' || 'dev'" "$workflow"
+grep -Fq 'dev:dev|main:prod)' "$workflow"
+
+grep -Fq 'uses: ./.github/workflows/deploy.yml' "$ci_workflow"
+grep -Fq 'needs: [node, python, e2e, docker, secret-safety, deployment-assets]' "$ci_workflow"
+grep -Fq "if: github.event_name == 'push'" "$ci_workflow"
+grep -Fq 'release_sha: ${{ github.sha }}' "$ci_workflow"
+grep -Fq 'secrets: inherit' "$ci_workflow"
 
 grep -Fq 'DROPLET_SSH_KNOWN_HOSTS' "$workflow"
 grep -Fq 'secrets.STARTFLOW_DEV' "$workflow"

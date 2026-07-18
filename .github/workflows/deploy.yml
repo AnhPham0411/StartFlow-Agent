@@ -1,30 +1,51 @@
 name: Deploy StartFlow
 
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [dev, main]
+  workflow_call:
+    inputs:
+      target_env:
+        description: Validated deployment target selected by the caller branch
+        required: true
+        type: string
+      release_sha:
+        description: Full Git SHA that passed the caller CI workflow
+        required: true
+        type: string
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: startflow-deploy-${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref_name }}
+  group: startflow-deploy-${{ inputs.target_env || (github.ref_name == 'main' && 'prod' || 'dev') }}
   cancel-in-progress: false
 
 jobs:
   deploy:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
-    name: Deploy ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'main' && 'production' || 'development' }}
+    name: Deploy ${{ (inputs.target_env || (github.ref_name == 'main' && 'prod' || 'dev')) == 'prod' && 'production' || 'development' }}
     runs-on: ubuntu-latest
-    environment: ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'main' && 'production' || 'development' }}
+    environment: ${{ (inputs.target_env || (github.ref_name == 'main' && 'prod' || 'dev')) == 'prod' && 'production' || 'development' }}
     env:
-      TARGET_ENV: ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'main' && 'prod' || 'dev' }}
-      RELEASE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      TARGET_ENV: ${{ inputs.target_env || (github.ref_name == 'main' && 'prod' || 'dev') }}
+      RELEASE_SHA: ${{ inputs.release_sha || github.sha }}
       DROPLET_ROOT: ${{ vars.STARTFLOW_DROPLET_ROOT || '/opt/startflow-agent' }}
     steps:
+      - name: Validate deployment target
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$GITHUB_REF_NAME:$TARGET_ENV" in
+            dev:dev|main:prod) ;;
+            *)
+              echo "Branch $GITHUB_REF_NAME cannot deploy target $TARGET_ENV." >&2
+              exit 2
+              ;;
+          esac
+          [[ "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]] || {
+            echo 'RELEASE_SHA must be a full Git SHA.' >&2
+            exit 2
+          }
+
       - name: Checkout StartFlow
         uses: actions/checkout@v5
         with:
