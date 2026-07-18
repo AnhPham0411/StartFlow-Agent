@@ -117,12 +117,69 @@ sed -e "s/__APP_DOMAIN__/$app_domain/g" -e "s/__FRONTEND_PORT__/$frontend_port/g
   nginx/frontend.conf.template > "/tmp/startflow-$target_env-frontend.conf"
 sed -e "s/__API_DOMAIN__/$api_domain/g" -e "s/__BACKEND_PORT__/$backend_port/g" \
   nginx/backend.conf.template > "/tmp/startflow-$target_env-backend.conf"
-sudo install -m 644 "/tmp/startflow-$target_env-frontend.conf" "/etc/nginx/sites-available/startflow-$target_env-frontend.conf"
-sudo install -m 644 "/tmp/startflow-$target_env-backend.conf" "/etc/nginx/sites-available/startflow-$target_env-backend.conf"
-sudo ln -sfn "/etc/nginx/sites-available/startflow-$target_env-frontend.conf" "/etc/nginx/sites-enabled/startflow-$target_env-frontend.conf"
-sudo ln -sfn "/etc/nginx/sites-available/startflow-$target_env-backend.conf" "/etc/nginx/sites-enabled/startflow-$target_env-backend.conf"
-sudo nginx -t
+
+if ! nginx_dump="$(sudo nginx -T 2>&1)"; then
+  fail 'Nginx configuration cannot be inspected.'
+fi
+
+sites_enabled_glob='/etc/nginx/sites-enabled/*'
+conf_d_glob='/etc/nginx/conf.d/*.conf'
+frontend_name="startflow-$target_env-frontend.conf"
+backend_name="startflow-$target_env-backend.conf"
+
+if grep -Fq "include $sites_enabled_glob;" <<<"$nginx_dump"; then
+  sudo install -d -m 755 /etc/nginx/sites-available /etc/nginx/sites-enabled
+  sudo install -m 644 "/tmp/$frontend_name" "/etc/nginx/sites-available/$frontend_name"
+  sudo install -m 644 "/tmp/$backend_name" "/etc/nginx/sites-available/$backend_name"
+  sudo ln -sfn "/etc/nginx/sites-available/$frontend_name" "/etc/nginx/sites-enabled/$frontend_name"
+  sudo ln -sfn "/etc/nginx/sites-available/$backend_name" "/etc/nginx/sites-enabled/$backend_name"
+  sudo rm -f -- "/etc/nginx/conf.d/$frontend_name" "/etc/nginx/conf.d/$backend_name"
+elif grep -Fq "include $conf_d_glob;" <<<"$nginx_dump"; then
+  sudo install -d -m 755 /etc/nginx/conf.d
+  sudo install -m 644 "/tmp/$frontend_name" "/etc/nginx/conf.d/$frontend_name"
+  sudo install -m 644 "/tmp/$backend_name" "/etc/nginx/conf.d/$backend_name"
+  sudo rm -f -- \
+    "/etc/nginx/sites-enabled/$frontend_name" "/etc/nginx/sites-enabled/$backend_name" \
+    "/etc/nginx/sites-available/$frontend_name" "/etc/nginx/sites-available/$backend_name"
+else
+  fail 'Nginx does not include /etc/nginx/sites-enabled/* or /etc/nginx/conf.d/*.conf.'
+fi
+
+if ! nginx_test_output="$(sudo nginx -t 2>&1)"; then
+  fail 'Nginx rejected the StartFlow virtual hosts.'
+fi
+if grep -F 'conflicting server name' <<<"$nginx_test_output" \
+  | grep -Fq -e "$app_domain" -e "$api_domain"; then
+  fail 'Another active Nginx virtual host already owns a StartFlow domain.'
+fi
+if ! active_nginx_dump="$(sudo nginx -T 2>&1)"; then
+  fail 'Nginx rejected the active StartFlow configuration.'
+fi
+grep -Fq "server_name $app_domain;" <<<"$active_nginx_dump" \
+  || fail 'The StartFlow frontend virtual host is not loaded by Nginx.'
+grep -Fq "proxy_pass http://127.0.0.1:$frontend_port;" <<<"$active_nginx_dump" \
+  || fail 'The StartFlow frontend upstream is not loaded by Nginx.'
+grep -Fq "server_name $api_domain;" <<<"$active_nginx_dump" \
+  || fail 'The StartFlow backend virtual host is not loaded by Nginx.'
+grep -Fq "proxy_pass http://127.0.0.1:$backend_port;" <<<"$active_nginx_dump" \
+  || fail 'The StartFlow backend upstream is not loaded by Nginx.'
+
 sudo systemctl reload nginx
+
+verify_nginx_route() {
+  local name="$1" domain="$2" path="$3" marker="$4"
+  local response
+  if ! response="$(curl --fail --silent --show-error --max-time 10 --noproxy '*' \
+    --resolve "$domain:443:127.0.0.1" "https://$domain$path")"; then
+    fail "$name is not reachable through its local Nginx virtual host."
+  fi
+  grep -Fq "$marker" <<<"$response" \
+    || fail "$name is handled by the wrong Nginx virtual host."
+  printf '%s Nginx route is active.\n' "$name"
+}
+
+verify_nginx_route frontend "$app_domain" '/api/health' '"service":"startflow-frontend"'
+verify_nginx_route backend "$api_domain" '/health' '"service":"startflow-backend"'
 
 ln -sfn "$release_dir" "$current_link"
 deployment_succeeded=true
