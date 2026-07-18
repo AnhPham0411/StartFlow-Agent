@@ -23,8 +23,8 @@ async function bootstrap(): Promise<void> {
     }),
   );
   app.enableCors({
-    credentials: false,
-    methods: ['GET', 'POST', 'OPTIONS'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     origin: config.get('CORS_ORIGINS', { infer: true }).split(','),
   });
   app.enableShutdownHooks();

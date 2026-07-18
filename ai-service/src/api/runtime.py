@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from src.agents import ComplianceAgent, CreditAgent, OperationsAgent
+from src.api.agent_runner import AgentRunner, ExternalAgentRunner
 from src.clients.callback import CallbackClient
 from src.clients.llm import build_llm_client
 from src.core.settings import Settings
@@ -19,7 +20,7 @@ from src.rag.retrieval import (
 @dataclass(slots=True)
 class Runtime:
     settings: Settings
-    workflow: WorkflowRunner
+    agent_runner: AgentRunner
     callback: CallbackClient
     repository: KnowledgeRepository | None
 
@@ -29,7 +30,12 @@ class Runtime:
             await self.repository.close()
 
 
-def build_runtime(settings: Settings) -> Runtime:
+def _build_simulated_runner(
+    settings: Settings,
+) -> tuple[WorkflowRunner, KnowledgeRepository | None]:
+    """Luồng MÔ PHỎNG (AGENT_MODE=simulate) — LangGraph + LLM. Ẩn khi chuyển sang external.
+
+    Trả kèm repository để runtime.close() đóng đúng kết nối DB (nếu có)."""
     repository = (
         KnowledgeRepository(
             settings.ai_database_url,
@@ -49,15 +55,30 @@ def build_runtime(settings: Settings) -> Runtime:
             seed_path = project_seed
         retriever = SeedKnowledgeRetriever(seed_path)
     llm = build_llm_client(settings)
-    workflow = WorkflowRunner(
+    runner = WorkflowRunner(
         CreditAgent(retriever, llm, settings.rag_top_k),
         ComplianceAgent(retriever, llm, settings.rag_top_k),
         OperationsAgent(retriever, llm, settings.rag_top_k),
     )
+    return runner, repository
+
+
+def build_runtime(settings: Settings) -> Runtime:
+    # Chọn "bộ não" theo AGENT_MODE. Backend/frontend không thay đổi khi chuyển mode.
+    agent_runner: AgentRunner
+    repository: KnowledgeRepository | None = None
+    if settings.agent_mode == "external":
+        agent_runner = ExternalAgentRunner(
+            str(settings.external_model_url),
+            settings.internal_service_token.get_secret_value(),
+            settings.external_model_timeout_seconds,
+        )
+    else:
+        agent_runner, repository = _build_simulated_runner(settings)
     callback = CallbackClient(
         settings.internal_callback_url,
         settings.internal_service_token.get_secret_value(),
         settings.callback_timeout_seconds,
         settings.callback_max_attempts,
     )
-    return Runtime(settings, workflow, callback, repository)
+    return Runtime(settings, agent_runner, callback, repository)

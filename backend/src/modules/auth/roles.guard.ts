@@ -11,9 +11,11 @@ import { IS_PUBLIC_KEY } from './public.decorator';
 import { ROLES_KEY, type ApplicationRole } from './roles.decorator';
 
 const allowedByRequirement: Record<ApplicationRole, ApplicationRole[]> = {
-  analyst: ['analyst', 'approver'],
-  approver: ['approver'],
+  analyst: ['analyst', 'approver', 'admin'],
+  approver: ['approver', 'admin'],
   admin: ['admin'],
+  sale: ['sale', 'manager', 'admin'],
+  manager: ['manager', 'admin'],
 };
 
 @Injectable()

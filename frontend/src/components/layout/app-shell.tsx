@@ -2,11 +2,11 @@
 
 import {
   BookOpenText,
-  GitCompareArrows,
   LayoutDashboard,
+  ListTodo,
   LogOut,
-  PlusCircle,
-  ScrollText,
+  Settings,
+  Users,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -15,17 +15,19 @@ import { useAuth } from '@/src/auth/auth-context';
 import { Badge } from '@/src/components/ui/badge';
 
 const navigation = [
-  { href: '/dashboard', label: 'Tổng quan', icon: LayoutDashboard },
-  { href: '/cases', label: 'Hồ sơ', icon: ScrollText },
-  { href: '/cases/new', label: 'Tạo mới', icon: PlusCircle },
-  { href: '/comparisons', label: 'So sánh', icon: GitCompareArrows },
+  { href: '/nba/calllist', label: 'Tổng quan (Call List)', icon: ListTodo },
+  { href: '/nba/customers', label: 'Khách hàng', icon: Users },
+  { href: '/nba/admin', label: 'Quản lý', icon: Settings, managerOnly: true },
   { href: '/knowledge', label: 'Tri thức', icon: BookOpenText, adminOnly: true },
 ];
 
 function Navigation({ mobile = false }: { mobile?: boolean }) {
   const pathname = usePathname();
   const { hasRole } = useAuth();
-  const items = navigation.filter((item) => !item.adminOnly || hasRole('admin'));
+  const items = navigation.filter(
+    (item) =>
+      (!item.adminOnly || hasRole('admin')) && (!item.managerOnly || hasRole('manager') || hasRole('admin')),
+  );
   const visible = mobile ? items.slice(0, 4) : items;
 
   return (
@@ -63,13 +65,13 @@ export function AppShell({ children }: { children: ReactNode }) {
       </a>
       <div className="app-layout">
         <aside className="sidebar">
-          <Link className="brand" href="/dashboard" aria-label="StartFlow - Tổng quan">
+          <Link className="brand" href="/nba/calllist" aria-label="StartFlow - Tổng quan">
             <span className="brand-mark" aria-hidden="true">
               <span>SF</span>
             </span>
             <span className="brand-copy">
               <strong>STARTFLOW</strong>
-              <small>AI CREDIT WORKSPACE</small>
+              <small>AI SALES COPILOT</small>
             </span>
           </Link>
           <Navigation />

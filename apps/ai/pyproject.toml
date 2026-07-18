@@ -1,0 +1,25 @@
+[project]
+name = "shb-nba-engine"
+version = "0.1.0"
+description = "SHB Next Best Action Engine — batch pipeline A1..A7 (ETL, scoring, ranker, scripting, validator)"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "psycopg[binary]>=3.2",
+    "numpy>=1.26",
+    "scikit-learn>=1.5",
+    "python-dotenv>=1.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.2",
+    "pytest-asyncio>=0.23",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+asyncio_mode = "auto"

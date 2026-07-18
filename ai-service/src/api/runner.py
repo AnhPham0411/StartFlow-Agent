@@ -35,7 +35,7 @@ async def execute_run(runtime: Runtime, request: StartRunRequest) -> None:
             None,
             {"status": RunStatus.PLANNING, "demoData": True, "mode": request.mode},
         )
-        state = await runtime.workflow.run(request.case_snapshot, request.mode)
+        state = await runtime.agent_runner.run(request.case_snapshot, request.mode)
         await emit(
             PublicRunEventType.PLAN_CREATED,
             AgentKind.PLANNER,

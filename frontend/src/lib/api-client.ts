@@ -309,4 +309,46 @@ export class StartFlowApi {
       }),
     );
   }
+
+  // ─── NBA ──────────────────────────────────────────────────────────────────
+
+  async nbaCallList(date?: string) {
+    const d = date ?? new Date().toISOString().slice(0, 10);
+    return this.request<unknown[]>(`/nba/calllist?date=${d}`);
+  }
+
+  async nbaCustomer(id: number) {
+    return this.request<Record<string, unknown>>(`/nba/customer/${id}`);
+  }
+
+  async nbaFeedback(body: { rec_id: string; status: string; reject_reason?: string; note?: string }) {
+    return this.request<{ ok: boolean; suppressed: boolean }>('/nba/feedback', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
+  async nbaAssignCallList(date: string, assignments: Array<{ customer_id: number; sale_id: string }>) {
+    return this.request<{ inserted: number }>('/nba/admin/calllist', {
+      method: 'POST',
+      body: JSON.stringify({ date, assignments }),
+    });
+  }
+
+  async nbaSetKpi(month: string, product: string, multiplier: number) {
+    return this.request<{ ok: boolean }>('/nba/admin/kpi', {
+      method: 'PUT',
+      body: JSON.stringify({ month, product, multiplier }),
+    });
+  }
+
+  async nbaAudit(recId: string) {
+    return this.request<Record<string, unknown>>(`/nba/audit/recommendation/${recId}`);
+  }
+
+  async aiBatchNightly() {
+    return this.request<{ run_id: number; status: string; stats: Record<string, number> }>(
+      '/ai/batch/nightly', { method: 'POST' },
+    );
+  }
 }

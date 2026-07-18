@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
         setUser({ subject: 'demo-reviewer', name: 'Demo Reviewer', email: 'demo@startflow.local' });
-        setRoles(['analyst', 'approver']);
+        setRoles(['analyst', 'approver', 'admin']);
         setStatus('authenticated');
         return;
       }

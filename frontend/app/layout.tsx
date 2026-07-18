@@ -5,8 +5,8 @@ import { ProtectedApp } from '@/src/auth/protected-app';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'StartFlow · AI Credit Workspace',
-  description: 'Không gian điều phối đánh giá hồ sơ vay doanh nghiệp đa tác nhân.',
+  title: 'StartFlow · AI Sales Copilot',
+  description: 'Hệ thống gợi ý Next Best Action (NBA) hỗ trợ bán chéo kênh quầy.',
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

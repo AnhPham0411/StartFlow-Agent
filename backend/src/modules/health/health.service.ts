@@ -36,6 +36,10 @@ export class HealthService {
   }
 
   private async checkIdentityProvider(): Promise<void> {
+    const authMode = this.config.get('AUTH_MODE', { infer: true });
+    if (authMode === 'mock') {
+      return;
+    }
     const issuer = this.config.get('KEYCLOAK_ISSUER', { infer: true });
     const response = await fetch(`${issuer}/.well-known/openid-configuration`, {
       headers: { accept: 'application/json' },

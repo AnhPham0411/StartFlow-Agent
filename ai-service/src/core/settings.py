@@ -34,6 +34,13 @@ class Settings(BaseSettings):
     llm_model: str = "gpt-4.1-mini"
     embedding_model: str = "text-embedding-3-small"
 
+    # AGENT_MODE quyết định ai xử lý luồng agent:
+    #   simulate = luồng mô phỏng nội bộ gọi LLM (TẠM — xem src/graph + agent_runner.py)
+    #   external = ủy quyền cho model riêng ở EXTERNAL_MODEL_URL (dùng SAU; ẩn code mô phỏng)
+    agent_mode: Literal["simulate", "external"] = "simulate"
+    external_model_url: AnyHttpUrl | None = None
+    external_model_timeout_seconds: float = Field(default=120.0, gt=0, le=600)
+
     internal_service_token: SecretStr = SecretStr("development-only-change-me")
     internal_callback_url: str = "http://backend:3001/internal/ai/events"
     callback_timeout_seconds: float = Field(default=5.0, gt=0, le=30)
@@ -43,6 +50,8 @@ class Settings(BaseSettings):
     def validate_secure_modes(self) -> Self:
         if self.llm_mode == "openai-compatible" and self.llm_api_key is None:
             raise ValueError("LLM_API_KEY is required when LLM_MODE=openai-compatible")
+        if self.agent_mode == "external" and self.external_model_url is None:
+            raise ValueError("EXTERNAL_MODEL_URL is required when AGENT_MODE=external")
         if self.environment == "production":
             if self.internal_service_token.get_secret_value() == "development-only-change-me":
                 raise ValueError("INTERNAL_SERVICE_TOKEN must be changed in production")

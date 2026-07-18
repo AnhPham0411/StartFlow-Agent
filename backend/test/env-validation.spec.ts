@@ -23,4 +23,18 @@ describe('environment validation', () => {
       validateEnvironment({ ...validEnvironment, INTERNAL_SERVICE_TOKEN: 'short' }),
     ).toThrow('INTERNAL_SERVICE_TOKEN');
   });
+
+  it('allows dev-login (AUTH_MODE=mock) without any Keycloak config', () => {
+    const { KEYCLOAK_AUDIENCE, KEYCLOAK_ISSUER, ...withoutKeycloak } = validEnvironment;
+    const result = validateEnvironment({ ...withoutKeycloak, AUTH_MODE: 'mock' });
+
+    expect(result.AUTH_MODE).toBe('mock');
+    expect(result.KEYCLOAK_ISSUER).toBe('');
+  });
+
+  it('rejects dev-login in production', () => {
+    expect(() =>
+      validateEnvironment({ ...validEnvironment, AUTH_MODE: 'mock', NODE_ENV: 'production' }),
+    ).toThrow('production');
+  });
 });

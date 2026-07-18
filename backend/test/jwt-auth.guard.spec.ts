@@ -31,6 +31,7 @@ function executionContext(authorization?: string): {
 describe('Keycloak access-token verification', () => {
   const config = {
     get: jest.fn((key: keyof AppEnvironment) => {
+      if (key === 'AUTH_MODE') return 'keycloak';
       if (key === 'KEYCLOAK_AUDIENCE') return 'startflow-api';
       if (key === 'KEYCLOAK_ISSUER') return 'https://auth.example.test/realms/startflow';
       return undefined;
@@ -72,5 +73,56 @@ describe('Keycloak access-token verification', () => {
 
     await expect(guard.canActivate(context)).rejects.toBeInstanceOf(UnauthorizedException);
     expect(jwtVerify).not.toHaveBeenCalled();
+  });
+});
+
+describe('Dev-login (AUTH_MODE=mock)', () => {
+  const config = {
+    get: jest.fn((key: keyof AppEnvironment) => (key === 'AUTH_MODE' ? 'mock' : '')),
+  } as unknown as ConfigService<AppEnvironment, true>;
+  const reflector = { getAllAndOverride: jest.fn().mockReturnValue(false) } as unknown as Reflector;
+
+  beforeEach(() => jest.clearAllMocks());
+
+  function contextWithDevRoles(devRoles?: string): {
+    context: ExecutionContext;
+    request: Record<string, unknown>;
+  } {
+    const request: Record<string, unknown> = {
+      header: (name: string) => (name === 'x-dev-roles' ? devRoles : undefined),
+    };
+    return {
+      context: {
+        getClass: () => class TestController {},
+        getHandler: () => function handler() {},
+        switchToHttp: () => ({ getRequest: () => request }),
+      } as unknown as ExecutionContext,
+      request,
+    };
+  }
+
+  it('accepts requests without a token and grants all demo roles', async () => {
+    const guard = new JwtAuthGuard(config, reflector);
+    const { context, request } = contextWithDevRoles();
+
+    await expect(guard.canActivate(context)).resolves.toBe(true);
+    expect(jwtVerify).not.toHaveBeenCalled();
+    expect(request.user).toEqual({
+      roles: ['analyst', 'approver', 'admin'],
+      sub: 'demo-reviewer',
+      username: 'demo-reviewer',
+    });
+  });
+
+  it('narrows to the roles requested via x-dev-roles', async () => {
+    const guard = new JwtAuthGuard(config, reflector);
+    const { context, request } = contextWithDevRoles('approver, bogus');
+
+    await expect(guard.canActivate(context)).resolves.toBe(true);
+    expect(request.user).toEqual({
+      roles: ['approver'],
+      sub: 'demo-reviewer',
+      username: 'demo-reviewer',
+    });
   });
 });

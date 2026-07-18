@@ -1,5 +1,5 @@
-import { DashboardView } from '@/src/features/dashboard/dashboard-view';
+import { redirect } from 'next/navigation';
 
 export default function DashboardPage() {
-  return <DashboardView />;
+  redirect('/nba/calllist');
 }

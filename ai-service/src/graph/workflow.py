@@ -1,3 +1,10 @@
+"""LUỒNG MÔ PHỎNG TẠM (AGENT_MODE=simulate).
+
+Toàn bộ package `src/graph`, `src/agents`, `src/tools` là bộ não mô phỏng dùng LLM để
+demo trước. Khi chuyển `AGENT_MODE=external` (model riêng), code này KHÔNG được gọi tới và
+có thể xóa gọn. Xem `src/api/agent_runner.py`.
+"""
+
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
