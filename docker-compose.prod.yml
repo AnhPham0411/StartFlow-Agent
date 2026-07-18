@@ -38,6 +38,14 @@ services:
         target: /run/secrets/postgres-ca.crt
         read_only: true
 
+  ai-seed:
+    pull_policy: never
+    volumes:
+      - type: bind
+        source: ${POSTGRES_CA_CERT_PATH:-/dev/null}
+        target: /run/secrets/postgres-ca.crt
+        read_only: true
+
 networks:
   startflow:
     name: ${STARTFLOW_NETWORK:-startflow-prod}

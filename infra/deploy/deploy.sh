@@ -22,6 +22,7 @@ fail() {
 command -v docker >/dev/null || fail 'Docker is not installed.'
 docker compose version >/dev/null || fail 'Docker Compose v2 is not installed.'
 command -v curl >/dev/null || fail 'curl is not installed.'
+command -v timeout >/dev/null || fail 'GNU timeout is not installed.'
 
 mkdir -p "$droplet_path/releases"
 if [[ -L "$current_link" && "$(readlink -f "$current_link")" == "$release_dir" && -d "$release_dir" ]]; then
@@ -107,7 +108,30 @@ api_domain="$(env_value API_DOMAIN)"
 [[ "$app_domain" =~ ^[A-Za-z0-9.-]+$ ]] || fail 'invalid APP_DOMAIN.'
 [[ "$api_domain" =~ ^[A-Za-z0-9.-]+$ ]] || fail 'invalid API_DOMAIN.'
 command -v nginx >/dev/null || fail 'Nginx is not installed.'
+
+ensure_tls_certificate() {
+  local domain="$1"
+  if sudo test -s "/etc/letsencrypt/live/$domain/fullchain.pem" \
+    && sudo test -s "/etc/letsencrypt/live/$domain/privkey.pem"; then
+    return 0
+  fi
+  command -v certbot >/dev/null || fail "TLS certificate is missing for $domain and Certbot is not installed."
+  sudo test -d /var/www/html || fail 'Certbot webroot /var/www/html is missing.'
+  printf 'Requesting TLS certificate for %s.\n' "$domain"
+  sudo certbot certonly \
+    --non-interactive \
+    --agree-tos \
+    --register-unsafely-without-email \
+    --webroot \
+    --webroot-path /var/www/html \
+    --keep-until-expiring \
+    --cert-name "$domain" \
+    --domain "$domain" \
+    || fail "Certbot could not issue a TLS certificate for $domain."
+}
+
 for domain in "$app_domain" "$api_domain"; do
+  ensure_tls_certificate "$domain"
   sudo test -s "/etc/letsencrypt/live/$domain/fullchain.pem" \
     || fail "TLS certificate is missing for $domain."
   sudo test -s "/etc/letsencrypt/live/$domain/privkey.pem" \
@@ -184,6 +208,17 @@ verify_nginx_route backend "$api_domain" '/health' '"service":"startflow-backend
 ln -sfn "$release_dir" "$current_link"
 deployment_succeeded=true
 rm -f -- "$archive"
+
+# Seed data improves the demo but an unavailable vector store must not take the
+# website, API, and Nginx routes offline. Qdrant readiness remains observable at
+# the AI service /ready endpoint and the seed can be retried manually.
+if timeout --foreground --kill-after=10s 90s "${compose[@]}" run --rm ai-seed; then
+  printf 'AI knowledge seed is ready.\n'
+else
+  seed_status=$?
+  printf 'StartFlow deploy warning: AI knowledge seed skipped (exit %s); web services remain active.\n' \
+    "$seed_status" >&2
+fi
 
 # Keep the current release plus two rollback candidates inside StartFlow's own path.
 mapfile -t old_releases < <(find "$droplet_path/releases" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' | sort -nr | tail -n +4 | cut -d' ' -f2-)
