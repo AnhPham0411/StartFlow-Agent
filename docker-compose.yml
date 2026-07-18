@@ -79,9 +79,6 @@ services:
         NEXT_PUBLIC_KEYCLOAK_REALM: ${NEXT_PUBLIC_KEYCLOAK_REALM}
         NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: ${NEXT_PUBLIC_KEYCLOAK_CLIENT_ID}
     container_name: startflow-frontend-${DEPLOY_ENV:-local}
-    env_file:
-      - path: ${STARTFLOW_ENV_FILE:-.env}
-        required: false
     ports:
       - '${FRONTEND_BIND_ADDRESS:-0.0.0.0}:${FRONTEND_PORT:-3000}:3000'
     depends_on:

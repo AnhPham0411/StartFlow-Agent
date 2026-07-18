@@ -1,3 +1,5 @@
+import { buildDatabaseUrl } from './database-url';
+
 export type NodeEnvironment = 'development' | 'test' | 'production';
 
 export interface AppEnvironment {
@@ -15,7 +17,6 @@ export interface AppEnvironment {
 const required = [
   'AI_SERVICE_URL',
   'CORS_ORIGINS',
-  'DATABASE_URL',
   'INTERNAL_SERVICE_TOKEN',
   'KEYCLOAK_AUDIENCE',
   'KEYCLOAK_ISSUER',
@@ -55,11 +56,13 @@ export function validateEnvironment(input: Record<string, unknown>): AppEnvironm
     .split(',')
     .map((origin) => requireUrl(origin.trim(), 'CORS_ORIGINS'))
     .join(',');
+  const databaseUrl = buildDatabaseUrl(input);
+  process.env.DATABASE_URL = databaseUrl;
 
   return {
     AI_SERVICE_URL: requireUrl(String(input.AI_SERVICE_URL), 'AI_SERVICE_URL'),
     CORS_ORIGINS: corsOrigins,
-    DATABASE_URL: String(input.DATABASE_URL),
+    DATABASE_URL: databaseUrl,
     INTERNAL_SERVICE_TOKEN: serviceToken,
     KEYCLOAK_AUDIENCE: String(input.KEYCLOAK_AUDIENCE),
     KEYCLOAK_ISSUER: requireUrl(String(input.KEYCLOAK_ISSUER), 'KEYCLOAK_ISSUER'),

@@ -16,7 +16,7 @@ Mỗi môi trường phải dùng namespace riêng:
 | Compose project | `startflow-dev`, `startflow-prod`                                                                    |
 | Docker network  | `startflow-dev`, `startflow-prod`                                                                    |
 | Container names | `startflow-frontend-*`, `startflow-backend-*`, `startflow-ai-*`                                      |
-| Host ports      | cặp port riêng, ví dụ `3100/3101`                                                                    |
+| Host ports      | DEV `3200/3201`, PROD `3300/3301`; không xung đột với app khác                                       |
 | Nginx sites     | `startflow-<env>-frontend.conf`, `startflow-<env>-backend.conf`                                      |
 | Domains         | app/API subdomain riêng của StartFlow                                                                |
 
@@ -33,6 +33,8 @@ Tạo GitHub Environment `development`, sau đó cấu hình đúng hai secrets:
 | Variable `STARTFLOW_DROPLET_ROOT` | tùy chọn; workflow tự dùng namespace `/opt/startflow-agent/dev`                |
 
 `STARTFLOW_DEV` phải có toàn bộ runtime keys cùng `DROPLET_HOST`, `DROPLET_USER` và một verified OpenSSH known-host line trong `DROPLET_SSH_KNOWN_HOSTS`. Nếu PostgreSQL dùng CA riêng, thêm `POSTGRES_CA_CERT_BASE64` ngay trong secret này. Workflow validate các giá trị, export metadata cho SSH rồi loại chúng khỏi runtime `.env` trước khi upload.
+
+PostgreSQL được cấu hình bằng `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_SSL_MODE` và `DB_SSL_ROOT_CERT`. Không đặt `DATABASE_URL` hoặc `AI_DATABASE_URL` trong GitHub secret; backend và AI service tự tạo DSN đã URL-encode trong process runtime.
 
 Không cần tạo các secrets rời `DROPLET_HOST`, `DROPLET_USER`, `DROPLET_SSH_KNOWN_HOSTS` hoặc `POSTGRES_TLS_CA_BASE64`. Production được giữ tách biệt và chỉ dùng `STARTFLOW_PROD` cùng `SSH_PRIVATE_KEY_PROD` khi deploy branch `main`; workflow không fallback sang dev secrets.
 

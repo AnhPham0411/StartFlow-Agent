@@ -2,7 +2,7 @@ services:
   backend:
     pull_policy: never
     ports:
-      - '127.0.0.1:${BACKEND_PORT:-3101}:3001'
+      - '127.0.0.1:${BACKEND_PORT:-3201}:3001'
     volumes:
       - type: bind
         source: ${POSTGRES_CA_CERT_PATH:-/dev/null}
@@ -20,7 +20,7 @@ services:
   frontend:
     pull_policy: never
     ports:
-      - '127.0.0.1:${FRONTEND_PORT:-3100}:3000'
+      - '127.0.0.1:${FRONTEND_PORT:-3200}:3000'
 
   backend-migrate:
     pull_policy: never

@@ -27,8 +27,8 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
       "protocol": "openid-connect",
-      "redirectUris": ["http://localhost:3000/*"],
-      "webOrigins": ["http://localhost:3000"],
+      "redirectUris": ["http://localhost:3200/*"],
+      "webOrigins": ["http://localhost:3200"],
       "attributes": {
         "pkce.code.challenge.method": "S256"
       },

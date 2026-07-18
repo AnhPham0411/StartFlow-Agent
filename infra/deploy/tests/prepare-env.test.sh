@@ -12,8 +12,11 @@ API_DOMAIN=api.example.com
 FRONTEND_PORT=3100
 BACKEND_PORT=3101
 STARTFLOW_NETWORK=startflow-prod
-DATABASE_URL=postgresql://db.example.com:5432/app
-AI_DATABASE_URL=postgresql://db.example.com:5432/ai
+DB_HOST=db.example.com
+DB_PORT=5432
+DB_NAME=startflow
+DB_USER=startflow
+DB_PASSWORD=fixture]password;=value
 AUTH_MODE=keycloak
 KEYCLOAK_ISSUER=https://auth.example.com/realms/startflow
 KEYCLOAK_AUDIENCE=startflow-api
@@ -35,6 +38,7 @@ STARTFLOW_RUNTIME_ENV="$valid_env" TARGET_ENV=prod \
 OUTPUT_ENV="$tmp_dir/.env" OUTPUT_CA="$tmp_dir/ca.crt" \
   bash "$repo_root/infra/deploy/prepare-env.sh" >/dev/null
 grep -Fxq 'STARTFLOW_NETWORK=startflow-prod' "$tmp_dir/.env"
+grep -Fxq 'DB_PASSWORD=fixture]password;=value' "$tmp_dir/.env"
 grep -Fxq 'POSTGRES_CA_CERT_PATH=./postgres-ca.crt' "$tmp_dir/.env"
 grep -Fxq 'test-ca' "$tmp_dir/ca.crt"
 ! grep -q '^POSTGRES_CA_CERT_BASE64=' "$tmp_dir/.env"
@@ -46,6 +50,15 @@ esac
 set +e
 STARTFLOW_RUNTIME_ENV="${valid_env/DEPLOY_ENV=prod/DEPLOY_ENV=dev}" TARGET_ENV=prod \
 OUTPUT_ENV="$tmp_dir/invalid.env" OUTPUT_CA="$tmp_dir/invalid-ca.crt" \
+  bash "$repo_root/infra/deploy/prepare-env.sh" >/dev/null 2>&1
+status=$?
+set -e
+[[ "$status" -ne 0 ]]
+
+set +e
+STARTFLOW_RUNTIME_ENV="$valid_env
+DATABASE_URL=postgresql://legacy.example.test/startflow" TARGET_ENV=prod \
+OUTPUT_ENV="$tmp_dir/legacy.env" OUTPUT_CA="$tmp_dir/legacy-ca.crt" \
   bash "$repo_root/infra/deploy/prepare-env.sh" >/dev/null 2>&1
 status=$?
 set -e

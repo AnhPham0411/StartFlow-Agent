@@ -53,7 +53,7 @@ Yêu cầu Node.js 22, pnpm 10, Docker Compose và quyền truy cập PostgreSQL
 
 ```powershell
 Copy-Item .env.example .env
-# Điền URL/credential thật vào .env; không commit file này.
+# Điền các biến DB_* và credential thật vào .env; không commit file này.
 
 pnpm install --frozen-lockfile
 docker compose build
@@ -62,7 +62,7 @@ docker compose run --rm ai-migrate
 docker compose up -d backend ai-service frontend
 ```
 
-Mở `http://localhost:3000`. API readiness ở `http://localhost:3001/ready`; AI readiness được kiểm tra nội bộ tại `http://ai-service:8000/ready`.
+Mở `http://localhost:3200`. API readiness ở `http://localhost:3201/ready`; AI readiness được kiểm tra nội bộ tại `http://ai-service:8000/ready`.
 
 Không có tài khoản mặc định trong repository. Tạo/gán user với role `analyst`, `approver` hoặc `admin` trong Keycloak hiện hữu. Hướng dẫn chi tiết nằm ở [START.md](START.md).
 

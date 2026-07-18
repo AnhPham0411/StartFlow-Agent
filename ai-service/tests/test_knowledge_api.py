@@ -9,7 +9,8 @@ from src.main import create_app
 def configure(monkeypatch) -> None:
     monkeypatch.setenv("ENVIRONMENT", "test")
     monkeypatch.setenv("INTERNAL_SERVICE_TOKEN", "test-service-token")
-    monkeypatch.delenv("AI_DATABASE_URL", raising=False)
+    for key in ("DB_HOST", "DB_NAME", "DB_USER", "DB_PASSWORD"):
+        monkeypatch.delenv(key, raising=False)
     monkeypatch.setenv(
         "KNOWLEDGE_SEED_PATH", str(Path(__file__).resolve().parents[2] / "knowledge" / "seed")
     )

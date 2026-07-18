@@ -5,6 +5,7 @@ from typing import Literal, Self
 
 from pydantic import AnyHttpUrl, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import URL
 
 
 class Settings(BaseSettings):
@@ -19,7 +20,11 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     port: int = Field(default=8000, ge=1, le=65535)
 
-    ai_database_url: str | None = None
+    db_host: str | None = None
+    db_port: int = Field(default=5432, ge=1, le=65535)
+    db_name: str | None = None
+    db_user: str | None = None
+    db_password: SecretStr | None = None
     db_ssl_mode: Literal["disable", "allow", "prefer", "require", "verify-ca", "verify-full"] = (
         "prefer"
     )
@@ -39,6 +44,31 @@ class Settings(BaseSettings):
     callback_timeout_seconds: float = Field(default=5.0, gt=0, le=30)
     callback_max_attempts: int = Field(default=3, ge=1, le=6)
 
+    @property
+    def ai_database_url(self) -> str | None:
+        """Build the SQLAlchemy DSN in memory from split deployment secrets."""
+        host = self.db_host
+        name = self.db_name
+        user = self.db_user
+        password = self.db_password
+        if host is None or name is None or user is None or password is None:
+            return None
+        password_value = password.get_secret_value()
+        if not host or not name or not user or not password_value:
+            return None
+        query: dict[str, str] = {"sslmode": self.db_ssl_mode}
+        if self.db_ssl_root_cert:
+            query["sslrootcert"] = self.db_ssl_root_cert
+        return URL.create(
+            drivername="postgresql",
+            username=user,
+            password=password_value,
+            host=host,
+            port=self.db_port,
+            database=name,
+            query=query,
+        ).render_as_string(hide_password=False)
+
     @model_validator(mode="after")
     def validate_secure_modes(self) -> Self:
         if self.llm_mode == "openai-compatible" and self.llm_api_key is None:
@@ -47,7 +77,9 @@ class Settings(BaseSettings):
             if self.internal_service_token.get_secret_value() == "development-only-change-me":
                 raise ValueError("INTERNAL_SERVICE_TOKEN must be changed in production")
             if not self.ai_database_url:
-                raise ValueError("AI_DATABASE_URL is required in production")
+                raise ValueError(
+                    "DB_HOST, DB_NAME, DB_USER and DB_PASSWORD are required in production"
+                )
             if self.db_ssl_mode not in {"require", "verify-ca", "verify-full"}:
                 raise ValueError("DB_SSL_MODE must fail closed in production")
         return self

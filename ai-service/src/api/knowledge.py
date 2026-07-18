@@ -103,7 +103,7 @@ async def ingest_knowledge(
     if runtime.repository is None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="AI_DATABASE_URL is required for knowledge ingestion",
+            detail="Split database configuration is required for knowledge ingestion",
         )
     document_id = str(uuid4())
     domain = payload.domain.lower()

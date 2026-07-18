@@ -23,7 +23,8 @@ def test_health_is_process_only(monkeypatch) -> None:
 
 def test_ready_reports_seed_mode_when_database_is_not_configured(monkeypatch) -> None:
     monkeypatch.setenv("ENVIRONMENT", "test")
-    monkeypatch.delenv("AI_DATABASE_URL", raising=False)
+    for key in ("DB_HOST", "DB_NAME", "DB_USER", "DB_PASSWORD"):
+        monkeypatch.delenv(key, raising=False)
     monkeypatch.setenv(
         "KNOWLEDGE_SEED_PATH", str(Path(__file__).resolve().parents[2] / "knowledge" / "seed")
     )

@@ -109,6 +109,8 @@ jobs:
           set -euo pipefail
           bash -n infra/deploy/prepare-env.sh
           bash -n infra/deploy/deploy.sh
+          bash -n backend/entrypoint.sh
+          bash -n ai-service/entrypoint.sh
           bash infra/deploy/tests/prepare-env.test.sh
           bash infra/deploy/tests/deploy.test.sh
           bash infra/deploy/tests/workflow.test.sh

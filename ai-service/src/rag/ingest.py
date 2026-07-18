@@ -15,7 +15,7 @@ from src.rag.retrieval import SeedChunk, deterministic_embedding, load_seed_chun
 async def ingest_seed() -> int:
     settings = get_settings()
     if not settings.ai_database_url:
-        raise RuntimeError("AI_DATABASE_URL is required for seed ingestion")
+        raise RuntimeError("Split database configuration is required for seed ingestion")
     repository = KnowledgeRepository(
         settings.ai_database_url,
         settings.db_ssl_mode,
