@@ -13,6 +13,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:seed": "prisma db seed",
+    "profile:seed": "tsx prisma/profile-seed.ts",
     "start": "node dist/main.js",
     "start:prod": "node dist/main.js",
     "test": "jest --runInBand",

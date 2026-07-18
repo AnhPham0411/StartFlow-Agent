@@ -7,8 +7,16 @@ export function resolveRoles(token: KeycloakTokenParsed | undefined, clientId: s
     ...(token?.resource_access?.[clientId]?.roles ?? []),
   ]);
 
-  return [...rawRoles].flatMap((role) => {
+  const resolved = [...rawRoles].flatMap((role) => {
     const parsed = userRoleSchema.safeParse(role);
     return parsed.success ? [parsed.data] : [];
   });
+
+  const expanded = new Set<UserRole>(resolved);
+  if (expanded.has('analyst')) expanded.add('sale');
+  if (expanded.has('approver')) {
+    expanded.add('sale');
+    expanded.add('manager');
+  }
+  return [...expanded];
 }

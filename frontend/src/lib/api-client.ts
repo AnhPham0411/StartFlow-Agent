@@ -9,6 +9,7 @@ import {
   type CaseInput,
 } from '@startflow/contracts';
 import type { CaseDetail, CaseSummary, KnowledgeDocument, RunDetail } from './models';
+import type { NbaAssessment } from './nba-assessment.types';
 
 type AccessTokenProvider = () => Promise<string>;
 
@@ -195,6 +196,7 @@ export class StartFlowApi {
 
   private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const token = await this.getAccessToken();
+
     const response = await fetch(`${getApiBaseUrl()}${path}`, {
       ...init,
       cache: 'no-store',
@@ -308,5 +310,82 @@ export class StartFlowApi {
         body: JSON.stringify(input),
       }),
     );
+  }
+
+  // ─── NBA ──────────────────────────────────────────────────────────────────
+
+  async nbaCallList(date?: string) {
+    const d = date ?? new Date().toISOString().slice(0, 10);
+    return this.request<unknown[]>(`/nba/calllist?date=${d}`);
+  }
+
+  async nbaCustomers(q?: string) {
+    const query = q?.trim() ? `?q=${encodeURIComponent(q.trim())}` : '';
+    return this.request<
+      Array<{
+        customer_id: number;
+        full_name: string;
+        cif_code: string;
+        product_rank1: string | null;
+        last_list_date: string | null;
+      }>
+    >(`/nba/customers${query}`);
+  }
+
+  async nbaCustomer(id: number) {
+    return this.request<Record<string, unknown>>(`/nba/customer/${id}`);
+  }
+
+  async nbaAssessment(customerId: number, asOf?: string) {
+    const q = asOf ? `?as_of=${asOf}` : '';
+    return this.request<NbaAssessment>(`/nba/customer/${customerId}/assessment${q}`);
+  }
+
+  async getCallNotes(customerId: number) {
+    return this.request<
+      Array<{ id: number; note_text: string; created_at: string; sale_name?: string }>
+    >(`/nba/notes/${customerId}`);
+  }
+
+  async saveCallNote(customerId: number, noteText: string) {
+    return this.request<{ ok: boolean; noteId: number }>('/nba/notes', {
+      method: 'POST',
+      body: JSON.stringify({ customer_id: customerId, note_text: noteText }),
+    });
+  }
+
+  async nbaFeedback(body: {
+    rec_id: string;
+    status: 'success' | 'rejected' | 'no_contact' | 'callback';
+    /** Bỏ trống → BE lấy product_rank1 của đề xuất. */
+    product?: string;
+    reject_reason?: string;
+    note?: string;
+  }) {
+    return this.request<{ ok: boolean; suppressed: boolean }>('/nba/feedback', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
+  async nbaAssignCallList(
+    date: string,
+    assignments: Array<{ customer_id: number; sale_id: number }>,
+  ) {
+    return this.request<{ inserted: number }>('/nba/admin/calllist', {
+      method: 'POST',
+      body: JSON.stringify({ date, assignments }),
+    });
+  }
+
+  async nbaSetKpi(month: string, product: string, multiplier: number) {
+    return this.request<{ ok: boolean }>('/nba/admin/kpi', {
+      method: 'PUT',
+      body: JSON.stringify({ month, product, multiplier }),
+    });
+  }
+
+  async nbaAudit(recId: string) {
+    return this.request<Record<string, unknown>>(`/nba/audit/recommendation/${recId}`);
   }
 }

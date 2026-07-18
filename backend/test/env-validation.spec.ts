@@ -22,11 +22,23 @@ describe('environment validation', () => {
     expect(result.NODE_ENV).toBe('development');
     expect(result.KEYCLOAK_ISSUER).toBe('https://auth.example.test/realms/startflow');
     expect(result.DATABASE_URL).toContain('sslmode=require');
+    expect(result.EXPLAINER_MODE).toBe('rules');
+    expect(result.LLM_BASE_URL).toBe('https://api.openai.com/v1');
   });
 
   it('fails closed when an internal token is too short', () => {
     expect(() =>
       validateEnvironment({ ...validEnvironment, INTERNAL_SERVICE_TOKEN: 'short' }),
     ).toThrow('INTERNAL_SERVICE_TOKEN');
+  });
+
+  it('requires provider configuration for non-rule explainers', () => {
+    expect(() => validateEnvironment({ ...validEnvironment, EXPLAINER_MODE: 'llm' })).toThrow(
+      'LLM_API_KEY',
+    );
+
+    expect(() => validateEnvironment({ ...validEnvironment, EXPLAINER_MODE: 'model' })).toThrow(
+      'EXTERNAL_MODEL_URL',
+    );
   });
 });

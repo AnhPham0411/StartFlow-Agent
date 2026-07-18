@@ -212,3 +212,23 @@ model Comparison {
   @@index([caseId, createdAt])
   @@map("comparisons")
 }
+
+model CallNote {
+  id         BigInt   @id @default(autoincrement())
+  customerId BigInt   @map("customer_id")
+  saleId     BigInt   @map("sale_id")
+  noteText   String   @map("note_text") @db.Text
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([customerId, createdAt(sort: Desc)])
+  @@map("call_notes")
+}
+
+model ProfileSeedManifest {
+  version        String   @id @db.Text
+  checksumSha256 String   @map("checksum_sha256") @db.Char(64)
+  tableCounts    Json     @map("table_counts")
+  appliedAt      DateTime @default(now()) @map("applied_at") @db.Timestamptz(6)
+
+  @@map("profile_seed_manifest")
+}

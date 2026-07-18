@@ -4,6 +4,7 @@ import type { Reflector } from '@nestjs/core';
 import { jwtVerify } from 'jose';
 
 import type { AppEnvironment } from '../src/config/env.validation';
+import type { PrismaService } from '../src/database/prisma.service';
 import { JwtAuthGuard } from '../src/modules/auth/jwt-auth.guard';
 
 jest.mock('jose', () => ({
@@ -37,6 +38,7 @@ describe('Keycloak access-token verification', () => {
     }),
   } as unknown as ConfigService<AppEnvironment, true>;
   const reflector = { getAllAndOverride: jest.fn().mockReturnValue(false) } as unknown as Reflector;
+  const prisma = { $queryRaw: jest.fn().mockResolvedValue([]) } as unknown as PrismaService;
 
   beforeEach(() => jest.clearAllMocks());
 
@@ -51,7 +53,7 @@ describe('Keycloak access-token verification', () => {
       protectedHeader: { alg: 'RS256' },
     } as never);
     const { context, request } = executionContext('Bearer signed-token');
-    const guard = new JwtAuthGuard(config, reflector);
+    const guard = new JwtAuthGuard(config, reflector, prisma);
 
     await expect(guard.canActivate(context)).resolves.toBe(true);
     expect(jwtVerify).toHaveBeenCalledWith(
@@ -67,10 +69,56 @@ describe('Keycloak access-token verification', () => {
   });
 
   it('returns unauthorized when a bearer token is missing', async () => {
-    const guard = new JwtAuthGuard(config, reflector);
+    const guard = new JwtAuthGuard(config, reflector, prisma);
     const { context } = executionContext();
 
     await expect(guard.canActivate(context)).rejects.toBeInstanceOf(UnauthorizedException);
     expect(jwtVerify).not.toHaveBeenCalled();
+  });
+
+  it('accepts roles issued for the configured Keycloak client', async () => {
+    jest.mocked(jwtVerify).mockResolvedValue({
+      payload: {
+        realm_access: { roles: ['offline_access'] },
+        resource_access: { 'startflow-api': { roles: ['sale'] } },
+        sub: 'client-role-user',
+      },
+      protectedHeader: { alg: 'RS256' },
+    } as never);
+    const { context, request } = executionContext('Bearer signed-token');
+
+    await expect(new JwtAuthGuard(config, reflector, prisma).canActivate(context)).resolves.toBe(
+      true,
+    );
+    expect(request.user).toEqual({
+      roles: ['offline_access', 'sale'],
+      sub: 'client-role-user',
+    });
+  });
+
+  it('enriches profile metadata without replacing Keycloak realm roles', async () => {
+    jest.mocked(jwtVerify).mockResolvedValue({
+      payload: {
+        realm_access: { roles: ['analyst'] },
+        preferred_username: 'sale01',
+        sub: 'keycloak-subject',
+      },
+      protectedHeader: { alg: 'RS256' },
+    } as never);
+    jest
+      .mocked(prisma.$queryRaw)
+      .mockResolvedValueOnce([{ id: 10n, branch: 'Demo Branch' }] as never);
+    const { context, request } = executionContext('Bearer signed-token');
+
+    await expect(new JwtAuthGuard(config, reflector, prisma).canActivate(context)).resolves.toBe(
+      true,
+    );
+    expect(request.user).toEqual({
+      id: 10,
+      branch: 'Demo Branch',
+      roles: ['analyst'],
+      sub: 'keycloak-subject',
+      username: 'sale01',
+    });
   });
 });

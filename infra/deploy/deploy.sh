@@ -79,6 +79,7 @@ curl --fail --silent --show-error --max-time 10 \
 # Migrations finish before any long-running StartFlow container is replaced.
 "${compose[@]}" run --interactive=false --no-TTY --rm backend-migrate
 "${compose[@]}" run --interactive=false --no-TTY --rm ai-migrate
+"${compose[@]}" run --interactive=false --no-TTY --rm backend-profile-seed
 "${compose[@]}" up -d backend ai-service frontend
 
 frontend_port="$(env_value FRONTEND_PORT)"

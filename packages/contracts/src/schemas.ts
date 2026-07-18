@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const userRoleSchema = z.enum(['analyst', 'approver', 'admin']);
+export const userRoleSchema = z.enum(['analyst', 'approver', 'admin', 'sale', 'manager']);
 export const runStatusSchema = z.enum([
   'PENDING',
   'PLANNING',

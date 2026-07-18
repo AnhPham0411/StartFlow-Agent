@@ -8,11 +8,14 @@ bash -n "$script"
 
 backend_migration_line="$(grep -n 'run --interactive=false --no-TTY --rm backend-migrate' "$script" | cut -d: -f1)"
 ai_migration_line="$(grep -n 'run --interactive=false --no-TTY --rm ai-migrate' "$script" | cut -d: -f1)"
+profile_seed_line="$(grep -n 'run --interactive=false --no-TTY --rm backend-profile-seed' "$script" | cut -d: -f1)"
 up_line="$(grep -n 'up -d backend ai-service frontend' "$script" | head -n 1 | cut -d: -f1)"
 ai_seed_line="$(grep -n 'run --interactive=false --no-TTY --rm ai-seed' "$script" | cut -d: -f1)"
 
 [[ "$backend_migration_line" -lt "$up_line" ]]
 [[ "$ai_migration_line" -lt "$up_line" ]]
+[[ "$backend_migration_line" -lt "$profile_seed_line" ]]
+[[ "$profile_seed_line" -lt "$up_line" ]]
 [[ "$ai_seed_line" -gt "$up_line" ]]
 grep -Fq 'trap rollback EXIT' "$script"
 grep -Fq '/.well-known/openid-configuration' "$script"
@@ -37,15 +40,18 @@ grep -Fq '"service":"startflow-frontend"' "$script"
 grep -Fq '"service":"startflow-backend"' "$script"
 grep -Fq 'timeout --foreground --kill-after=10s 90s' "$script"
 grep -Fq 'web services remain active' "$script"
-[[ "$(grep -c 'run --interactive=false --no-TTY --rm' "$script")" -eq 3 ]]
+[[ "$(grep -c 'run --interactive=false --no-TTY --rm' "$script")" -eq 4 ]]
 if grep -Fq '"${compose[@]}" run --rm' "$script"; then
   printf 'Compose one-off services must not consume the streamed deploy script from stdin.\n' >&2
   exit 1
 fi
 
 compose="$repo_root/docker-compose.yml"
+compose_prod="$repo_root/docker-compose.prod.yml"
 grep -Fq "urlopen('http://127.0.0.1:8000/health'" "$compose"
 grep -Fq "command: ['alembic', 'upgrade', 'head']" "$compose"
+grep -Fq 'backend-profile-seed:' "$compose_prod"
+grep -Fq "command: ['pnpm', '--filter', '@startflow/backend', 'profile:seed']" "$compose_prod"
 grep -Fq 'ai-seed:' "$compose"
 if grep -Fq 'alembic upgrade head && python -m src.rag.ingest' "$compose"; then
   printf 'AI seed must not be coupled to schema migration.\n' >&2

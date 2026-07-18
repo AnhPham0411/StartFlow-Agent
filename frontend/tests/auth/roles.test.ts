@@ -14,7 +14,7 @@ describe('resolveRoles', () => {
         },
         'startflow-web',
       ),
-    ).toEqual(['analyst', 'approver']);
+    ).toEqual(['analyst', 'approver', 'sale', 'manager']);
   });
 
   it('returns no roles for an absent token', () => {
