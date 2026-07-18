@@ -25,17 +25,35 @@ NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=startflow-web
 CORS_ORIGINS=https://app.example.com
 LLM_MODE=openai-compatible
 LLM_API_KEY=local-fixture-value
-INTERNAL_SERVICE_TOKEN=local-fixture-value'
+INTERNAL_SERVICE_TOKEN=local-fixture-value
+DROPLET_HOST=droplet.example.com
+DROPLET_USER=deploy
+DROPLET_SSH_KNOWN_HOSTS=droplet.example.com ssh-ed25519 local-fixture-key
+POSTGRES_CA_CERT_BASE64=dGVzdC1jYQ=='
 
 STARTFLOW_RUNTIME_ENV="$valid_env" TARGET_ENV=prod \
 OUTPUT_ENV="$tmp_dir/.env" OUTPUT_CA="$tmp_dir/ca.crt" \
   bash "$repo_root/infra/deploy/prepare-env.sh" >/dev/null
 grep -Fxq 'STARTFLOW_NETWORK=startflow-prod' "$tmp_dir/.env"
-[[ "$(stat -c '%a' "$tmp_dir/.env")" == '600' ]]
+grep -Fxq 'POSTGRES_CA_CERT_PATH=./postgres-ca.crt' "$tmp_dir/.env"
+grep -Fxq 'test-ca' "$tmp_dir/ca.crt"
+! grep -q '^POSTGRES_CA_CERT_BASE64=' "$tmp_dir/.env"
+case "$(uname -s)" in
+  MINGW*|MSYS*) ;;
+  *) [[ "$(stat -c '%a' "$tmp_dir/.env")" == '600' ]] ;;
+esac
 
 set +e
 STARTFLOW_RUNTIME_ENV="${valid_env/DEPLOY_ENV=prod/DEPLOY_ENV=dev}" TARGET_ENV=prod \
 OUTPUT_ENV="$tmp_dir/invalid.env" OUTPUT_CA="$tmp_dir/invalid-ca.crt" \
+  bash "$repo_root/infra/deploy/prepare-env.sh" >/dev/null 2>&1
+status=$?
+set -e
+[[ "$status" -ne 0 ]]
+
+set +e
+STARTFLOW_RUNTIME_ENV="${valid_env/DROPLET_HOST=droplet.example.com/DROPLET_HOST=CHANGE_ME_DROPLET_HOST}" TARGET_ENV=prod \
+OUTPUT_ENV="$tmp_dir/placeholder.env" OUTPUT_CA="$tmp_dir/placeholder-ca.crt" \
   bash "$repo_root/infra/deploy/prepare-env.sh" >/dev/null 2>&1
 status=$?
 set -e

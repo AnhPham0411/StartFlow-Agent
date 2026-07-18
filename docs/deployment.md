@@ -24,19 +24,17 @@ Không dùng port, container name, Compose project hoặc Nginx site của ứng
 
 ## GitHub configuration
 
-Tạo GitHub Environments `development` và `production`, sau đó cấu hình:
+Tạo GitHub Environment `development`, sau đó cấu hình đúng hai secrets:
 
-| Secret/variable                   | Nội dung                                                                     |
-| --------------------------------- | ---------------------------------------------------------------------------- |
-| `STARTFLOW_ENV`                   | toàn bộ runtime `KEY=value`, dựa trên `.env.production.example`              |
-| `DROPLET_HOST`                    | hostname/IP của shared droplet                                               |
-| `DROPLET_USER`                    | SSH deploy user                                                              |
-| `SSH_PRIVATE_KEY`                 | private key deploy                                                           |
-| `DROPLET_SSH_KNOWN_HOSTS`         | verified host-key line lấy từ kênh tin cậy                                   |
-| `POSTGRES_TLS_CA_BASE64`          | CA certificate base64 khi dùng `verify-ca`/`verify-full`                     |
-| Variable `STARTFLOW_DROPLET_ROOT` | tùy chọn theo từng GitHub Environment; mặc định `/opt/startflow-agent/<env>` |
+| Secret/variable                   | Nội dung                                                                       |
+| --------------------------------- | ------------------------------------------------------------------------------ |
+| `STARTFLOW_DEV`                   | runtime và deploy metadata dạng multiline `KEY=value`, dựa trên `.env.example` |
+| `SSH_PRIVATE_KEY_DEV`             | private key của SSH deploy user                                                |
+| Variable `STARTFLOW_DROPLET_ROOT` | tùy chọn; workflow tự dùng namespace `/opt/startflow-agent/dev`                |
 
-`STARTFLOW_ENV` phải có `DEPLOY_ENV`, `APP_DOMAIN`, `API_DOMAIN`, port riêng, `STARTFLOW_NETWORK`, database URLs, Keycloak config, LLM config và internal token. Runtime secret không được chứa placeholder. Dùng cùng tên secret ở hai GitHub Environments; mỗi environment lưu giá trị riêng.
+`STARTFLOW_DEV` phải có toàn bộ runtime keys cùng `DROPLET_HOST`, `DROPLET_USER` và một verified OpenSSH known-host line trong `DROPLET_SSH_KNOWN_HOSTS`. Nếu PostgreSQL dùng CA riêng, thêm `POSTGRES_CA_CERT_BASE64` ngay trong secret này. Workflow validate các giá trị, export metadata cho SSH rồi loại chúng khỏi runtime `.env` trước khi upload.
+
+Không cần tạo các secrets rời `DROPLET_HOST`, `DROPLET_USER`, `DROPLET_SSH_KNOWN_HOSTS` hoặc `POSTGRES_TLS_CA_BASE64`. Production được giữ tách biệt và chỉ dùng `STARTFLOW_PROD` cùng `SSH_PRIVATE_KEY_PROD` khi deploy branch `main`; workflow không fallback sang dev secrets.
 
 ## Pipeline độc lập
 

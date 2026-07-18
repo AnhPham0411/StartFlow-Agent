@@ -5,6 +5,10 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 workflow="$repo_root/.github/workflows/deploy.yml"
 
 grep -Fq 'DROPLET_SSH_KNOWN_HOSTS' "$workflow"
+grep -Fq 'secrets.STARTFLOW_DEV' "$workflow"
+grep -Fq 'secrets.SSH_PRIVATE_KEY_DEV' "$workflow"
+grep -Fq 'env_value DROPLET_HOST' "$workflow"
+grep -Fq "'/^DROPLET_HOST=/d'" "$workflow"
 grep -Fq 'startflow-backend:$IMAGE_TAG' "$workflow"
 grep -Fq 'infra/deploy/prepare-env.sh' "$workflow"
 grep -Fq 'infra/deploy/deploy.sh' "$workflow"
@@ -20,5 +24,18 @@ if grep -Fq 'ssh-keyscan' "$workflow"; then
   echo 'Workflow must not trust ssh-keyscan output at deploy time.' >&2
   exit 1
 fi
+
+for old_secret in \
+  'secrets.STARTFLOW_ENV }}' \
+  'secrets.SSH_PRIVATE_KEY }}' \
+  'secrets.DROPLET_HOST' \
+  'secrets.DROPLET_USER' \
+  'secrets.DROPLET_SSH_KNOWN_HOSTS' \
+  'secrets.POSTGRES_TLS_CA_BASE64'; do
+  if grep -Fq "$old_secret" "$workflow"; then
+    echo "Workflow still references obsolete secret: $old_secret" >&2
+    exit 1
+  fi
+done
 
 printf 'standalone workflow static tests passed.\n'
