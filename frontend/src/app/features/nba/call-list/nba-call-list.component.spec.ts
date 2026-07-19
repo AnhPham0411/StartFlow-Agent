@@ -92,6 +92,15 @@ describe('NbaCallListComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Đang tải danh sách gọi');
     fixture.destroy();
   });
+
+  it('groups page-level sections in the responsive local wrapper', async () => {
+    const fixture = TestBed.createComponent(NbaCallListComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.nba-call-list-sections')).not.toBeNull();
+  });
 });
 
 function callListItems(): NbaCallListEntry[] {

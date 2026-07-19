@@ -35,6 +35,7 @@ const PRODUCT_LABELS: Record<NbaProduct, string> = {
     LoadingStateComponent,
   ],
   templateUrl: './nba-call-list.component.html',
+  styleUrl: './nba-call-list.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 @SdTabComponent({

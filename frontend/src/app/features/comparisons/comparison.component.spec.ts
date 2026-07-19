@@ -87,6 +87,18 @@ describe('ComparisonComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Không thể chạy phép so sánh');
     expect(fixture.nativeElement.querySelector('sd-select')).not.toBeNull();
   });
+
+  it('uses the responsive control grid without stretching the desktop action', async () => {
+    const fixture = TestBed.createComponent(ComparisonComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const controls = fixture.nativeElement.querySelector('.comparison-controls');
+    expect(controls).not.toBeNull();
+    expect(controls.querySelector('.comparison-source')).not.toBeNull();
+    expect(controls.querySelector('.comparison-action')).not.toBeNull();
+  });
 });
 
 function comparisonResult(): ComparisonResult {

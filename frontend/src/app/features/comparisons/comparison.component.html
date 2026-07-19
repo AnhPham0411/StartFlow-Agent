@@ -15,25 +15,27 @@
       description="Tạo và chạy một hồ sơ demo trước khi mở phép so sánh."
     />
   } @else {
-    <div class="d-flex flex-column gap-16">
+    <div class="comparison-page-sections mt-16">
       <sd-section title="Chọn hồ sơ" icon="tune" iconColor="primary">
         <div class="p-16">
-          <div class="row align-items-end">
-            <div class="col-12 col-md-8 mb-12 mb-md-0">
-              <sd-select
-                autoId="comparison-case"
-                label="Hồ sơ nguồn"
-                placeholder="Chọn hồ sơ"
-                [items]="cases()"
-                valueField="id"
-                displayField="companyName"
-                [model]="selectedCaseId()"
-                (modelChange)="selectCase($event)"
-              />
-            </div>
-            <div class="col-12 col-md-4">
+          <div class="comparison-controls">
+            <sd-select
+              class="comparison-source"
+              autoId="comparison-case"
+              size="md"
+              hideInlineError
+              label="Hồ sơ nguồn"
+              placeholder="Chọn hồ sơ"
+              [items]="cases()"
+              valueField="id"
+              displayField="companyName"
+              [model]="selectedCaseId()"
+              (modelChange)="selectCase($event)"
+            />
+            <div class="comparison-action">
               <sd-button
                 autoId="run-comparison"
+                size="md"
                 title="Chạy phép so sánh"
                 prefixIcon="play_arrow"
                 color="primary"

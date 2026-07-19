@@ -13,6 +13,7 @@ bash -n "$script"
 backend_migration_line="$(grep -n 'run --interactive=false --no-TTY --rm backend-migrate' "$script" | cut -d: -f1)"
 ai_migration_line="$(grep -n 'run --interactive=false --no-TTY --rm ai-migrate' "$script" | cut -d: -f1)"
 profile_seed_line="$(grep -n 'run --interactive=false --no-TTY --rm backend-profile-seed' "$script" | cut -d: -f1)"
+demo_seed_line="$(grep -n 'run --interactive=false --no-TTY --rm backend-demo-seed' "$script" | cut -d: -f1)"
 identity_seed_line="$(grep -n 'run --interactive=false --no-TTY --rm backend-identity-seed' "$script" | cut -d: -f1)"
 up_line="$(grep -n 'up -d backend ai-service frontend' "$script" | head -n 1 | cut -d: -f1)"
 ai_seed_line="$(grep -n 'run --interactive=false --no-TTY --rm ai-seed' "$script" | cut -d: -f1)"
@@ -20,6 +21,8 @@ ai_seed_line="$(grep -n 'run --interactive=false --no-TTY --rm ai-seed' "$script
 [[ "$backend_migration_line" -lt "$up_line" ]]
 [[ "$ai_migration_line" -lt "$up_line" ]]
 [[ "$backend_migration_line" -lt "$profile_seed_line" ]]
+[[ "$profile_seed_line" -lt "$demo_seed_line" ]]
+[[ "$demo_seed_line" -lt "$identity_seed_line" ]]
 [[ "$profile_seed_line" -lt "$identity_seed_line" ]]
 [[ "$identity_seed_line" -lt "$up_line" ]]
 [[ "$profile_seed_line" -lt "$up_line" ]]
@@ -157,7 +160,7 @@ grep -Fq "verify_nginx_route frontend \"\$app_domain\" '/health' 'ok'" "$script"
 grep -Fq '"service":"startflow-backend"' "$script"
 grep -Fq 'timeout --foreground --kill-after=10s 90s' "$script"
 grep -Fq 'web services remain active' "$script"
-[[ "$(grep -c 'run --interactive=false --no-TTY --rm' "$script")" -eq 5 ]]
+[[ "$(grep -c 'run --interactive=false --no-TTY --rm' "$script")" -eq 6 ]]
 if grep -Fq '"${compose[@]}" run --rm' "$script"; then
   printf 'Compose one-off services must not consume the streamed deploy script from stdin.\n' >&2
   exit 1
@@ -169,6 +172,8 @@ grep -Fq "urlopen('http://127.0.0.1:8000/health'" "$compose"
 grep -Fq "command: ['alembic', 'upgrade', 'head']" "$compose"
 grep -Fq 'backend-profile-seed:' "$compose_prod"
 grep -Fq "command: ['pnpm', '--filter', '@startflow/backend', 'profile:seed']" "$compose_prod"
+grep -Fq 'backend-demo-seed:' "$compose_prod"
+grep -Fq "command: ['pnpm', '--filter', '@startflow/backend', 'prisma:seed']" "$compose_prod"
 grep -Fq 'backend-identity-seed:' "$compose_prod"
 grep -Fq "command: ['pnpm', '--filter', '@startflow/backend', 'identity:seed']" "$compose_prod"
 grep -Fq 'STARTFLOW_ENABLE_IDENTITY_SEED' "$script"

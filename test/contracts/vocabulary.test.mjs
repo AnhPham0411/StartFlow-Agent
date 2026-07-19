@@ -75,11 +75,13 @@ test('NBA schema keeps canonical roles and auditable run vocabulary', async () =
   const schema = JSON.parse(await readFile('packages/contracts/nba-contracts.schema.json', 'utf8'));
   const serialized = JSON.stringify(schema);
 
-  for (const role of ['employee', 'manager', 'admin']) assert.match(serialized, new RegExp(`"${role}"`));
+  for (const role of ['employee', 'manager', 'admin'])
+    assert.match(serialized, new RegExp(`"${role}"`));
   for (const status of ['pending', 'running', 'succeeded', 'failed']) {
     assert.match(serialized, new RegExp(`"${status}"`));
   }
-  for (const stage of ['M1', 'AG1', 'M8', 'M13']) assert.match(serialized, new RegExp(`"${stage}"`));
+  for (const stage of ['M1', 'AG1', 'M8', 'M13'])
+    assert.match(serialized, new RegExp(`"${stage}"`));
   assert.doesNotMatch(serialized, /"sale"|"analyst"|"approver"/);
 });
 
@@ -108,6 +110,26 @@ test('frontend CSP permits only the Core UI silent SSO inline script', async () 
     );
     assert.doesNotMatch(scriptSource, /'unsafe-inline'|static\.cloudflareinsights\.com/);
   }
+});
+
+test('frontend deploy keeps HTML fresh and only immutable-caches hashed JavaScript', async () => {
+  const angularConfig = JSON.parse(await readFile('frontend/angular.json', 'utf8'));
+  const buildConfigurations = angularConfig.projects.startflow.architect.build.configurations;
+  assert.equal(buildConfigurations.development.outputHashing, 'all');
+  assert.equal(buildConfigurations.production.outputHashing, 'all');
+
+  const nginx = await readFile('frontend/nginx.conf', 'utf8');
+  const noStore = 'Cache-Control "no-store, no-cache, must-revalidate, max-age=0"';
+  assert.match(nginx, new RegExp(noStore.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.match(nginx, /location ~\* "\/\[\^\/\]\+-\[a-z0-9\]\{8,\}\\\.\(\?:js\|mjs\)\$"/);
+  assert.match(nginx, /Cache-Control "public, max-age=31536000, immutable"/);
+  assert.doesNotMatch(nginx, /location ~\* "\/\[\^\/\]\+-\[a-z0-9\]\{8,\}[^\n]*(?:css|woff)/);
+
+  const globalStyles = await readFile('frontend/src/styles.scss', 'utf8');
+  assert.match(globalStyles, /--startflow-asset-revision:\s*["']2026-07-19-cache-recovery["']/);
+
+  const proxy = await readFile('infra/deploy/nginx/frontend.conf.template', 'utf8');
+  assert.doesNotMatch(proxy, /proxy_hide_header\s+Cache-Control|add_header\s+Cache-Control/);
 });
 
 test('CI prepares workspace-generated types before quality checks and e2e', async () => {

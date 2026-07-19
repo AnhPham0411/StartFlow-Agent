@@ -6,67 +6,68 @@
     </p>
   </div>
 
-  <sd-inform
-    class="d-block mb-16"
-    info
-    title="Dữ liệu snapshot demo"
-    description="Đề xuất hiện tại được tạo từ batch và luật nghiệp vụ để phục vụ demo; đây không phải quyết định tín dụng thời gian thực."
-  ></sd-inform>
+  <div class="nba-call-list-sections mt-16">
+    <sd-inform
+      info
+      title="Dữ liệu snapshot demo"
+      description="Đề xuất hiện tại được tạo từ batch và luật nghiệp vụ để phục vụ demo; đây không phải quyết định tín dụng thời gian thực."
+    ></sd-inform>
 
-  <sd-section
-    title="Khách hàng cần liên hệ"
-    subTitle="Chọn ngày để xem Top 2 đề xuất mới nhất trong phạm vi được phân công."
-    icon="support_agent"
-  >
-    <div class="p-16 pb-0">
-      <div class="row align-items-end">
-        <div class="col-12 col-md-4 col-lg-3">
-          <sd-date
-            autoId="nba-call-list-date"
-            size="sm"
-            hideInlineError
-            label="Ngày gọi"
-            [model]="selectedDate()"
-            (modelChange)="changeDate($event)"
-          ></sd-date>
-        </div>
-        <div class="col-12 col-md-4 col-lg-3">
-          <sd-button
-            autoId="nba-call-list-refresh"
-            type="outline"
-            color="primary"
-            prefixIcon="refresh"
-            title="Tải lại"
-            [loading]="loading()"
-            (click)="load()"
-          ></sd-button>
+    <sd-section
+      title="Khách hàng cần liên hệ"
+      subTitle="Chọn ngày để xem Top 2 đề xuất mới nhất trong phạm vi được phân công."
+      icon="support_agent"
+    >
+      <div class="p-16 pb-0">
+        <div class="row align-items-end">
+          <div class="col-12 col-md-4 col-lg-3">
+            <sd-date
+              autoId="nba-call-list-date"
+              size="sm"
+              hideInlineError
+              label="Ngày gọi"
+              [model]="selectedDate()"
+              (modelChange)="changeDate($event)"
+            ></sd-date>
+          </div>
+          <div class="col-12 col-md-4 col-lg-3">
+            <sd-button
+              autoId="nba-call-list-refresh"
+              type="outline"
+              color="primary"
+              prefixIcon="refresh"
+              title="Tải lại"
+              [loading]="loading()"
+              (click)="load()"
+            ></sd-button>
+          </div>
         </div>
       </div>
-    </div>
 
-    @if (loading()) {
-      <app-loading-state label="Đang tải danh sách gọi…"></app-loading-state>
-    } @else if (error()) {
-      <div class="p-16">
-        <app-error-state
-          title="Không tải được danh sách gọi"
-          [description]="error() ?? ''"
-          (retry)="load()"
-        ></app-error-state>
-      </div>
-    } @else if (items().length === 0) {
-      <div class="p-16">
-        <app-empty-state
-          title="Chưa có khách hàng cho ngày này"
-          description="Chọn ngày khác hoặc tải lại sau khi call list được phân công."
-          actionLabel="Tải lại"
-          (primaryAction)="load()"
-        ></app-empty-state>
-      </div>
-    } @else {
-      <div class="overflow-x-auto">
-        <sd-table autoId="nba-call-list" [option]="tableOption"></sd-table>
-      </div>
-    }
-  </sd-section>
+      @if (loading()) {
+        <app-loading-state label="Đang tải danh sách gọi…"></app-loading-state>
+      } @else if (error()) {
+        <div class="p-16">
+          <app-error-state
+            title="Không tải được danh sách gọi"
+            [description]="error() ?? ''"
+            (retry)="load()"
+          ></app-error-state>
+        </div>
+      } @else if (items().length === 0) {
+        <div class="p-16">
+          <app-empty-state
+            title="Chưa có khách hàng cho ngày này"
+            description="Chọn ngày khác hoặc tải lại sau khi call list được phân công."
+            actionLabel="Tải lại"
+            (primaryAction)="load()"
+          ></app-empty-state>
+        </div>
+      } @else {
+        <div class="overflow-x-auto">
+          <sd-table autoId="nba-call-list" [option]="tableOption"></sd-table>
+        </div>
+      }
+    </sd-section>
+  </div>
 </sd-page>

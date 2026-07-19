@@ -83,6 +83,7 @@ const PRODUCT_LABELS: Record<NbaProduct, string> = {
     LoadingStateComponent,
   ],
   templateUrl: './nba-customer-detail.component.html',
+  styleUrl: './nba-customer-detail.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 @SdTabComponent({

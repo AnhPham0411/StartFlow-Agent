@@ -73,6 +73,26 @@ services:
         target: /run/secrets/postgres-ca.crt
         read_only: true
 
+  backend-demo-seed:
+    image: ${STARTFLOW_BACKEND_IMAGE:-startflow-backend:local}
+    pull_policy: never
+    env_file:
+      - path: ${STARTFLOW_ENV_FILE:-.env}
+        required: false
+    environment:
+      AI_SERVICE_URL: http://ai-service:8000
+      PORT: 3001
+    networks:
+      - startflow
+    profiles: [tools]
+    command: ['pnpm', '--filter', '@startflow/backend', 'prisma:seed']
+    restart: 'no'
+    volumes:
+      - type: bind
+        source: ${POSTGRES_CA_CERT_PATH:-/dev/null}
+        target: /run/secrets/postgres-ca.crt
+        read_only: true
+
   ai-migrate:
     pull_policy: never
     volumes:

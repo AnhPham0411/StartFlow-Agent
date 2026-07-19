@@ -116,6 +116,14 @@ describe('NbaCustomerDetailComponent', () => {
     expect(fixture.nativeElement.querySelector('app-error-state')).not.toBeNull();
   });
 
+  it('groups page-level content in the responsive local wrapper', async () => {
+    const fixture = createFixture();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.nba-customer-detail-sections')).not.toBeNull();
+  });
+
   function createFixture() {
     const fixture = TestBed.createComponent(NbaCustomerDetailComponent);
     fixture.componentRef.setInput('customerId', '42');

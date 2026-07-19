@@ -117,6 +117,7 @@ curl --fail --silent --show-error --max-time 10 \
 "${compose[@]}" run --interactive=false --no-TTY --rm backend-migrate
 "${compose[@]}" run --interactive=false --no-TTY --rm ai-migrate
 "${compose[@]}" run --interactive=false --no-TTY --rm backend-profile-seed
+"${compose[@]}" run --interactive=false --no-TTY --rm backend-demo-seed
 if [[ "$(env_value STARTFLOW_ENABLE_IDENTITY_SEED)" == 'true' ]]; then
   "${compose[@]}" run --interactive=false --no-TTY --rm backend-identity-seed
   printf 'Keycloak identities are synchronized.\n'

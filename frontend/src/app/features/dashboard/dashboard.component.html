@@ -27,150 +27,161 @@
     ></sd-button>
   </div>
 
-  <sd-section
-    class="d-block mb-16"
-    title="NBA Sales Copilot"
-    subTitle="Customer data dùng API theo phạm vi thật; mini-run pipeline là hành trình demo cục bộ và được gắn nhãn rõ ràng."
-    icon="support_agent"
-  >
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-12 p-16">
-      <div class="d-flex flex-wrap align-items-center gap-8">
-        <sd-badge type="round" color="success" icon="cloud_done" title="Customer: LIVE DATA"></sd-badge>
-        <sd-badge type="round" color="info" icon="account_tree" title="Pipeline: DEMO MODE"></sd-badge>
-        <span class="T12R text-muted">M1–M13 · Compliance · Tag QA · Models · RAG · Audit</span>
+  <div class="dashboard-page-sections mt-16">
+    <sd-section
+      title="NBA Sales Copilot"
+      subTitle="Customer data dùng API theo phạm vi thật; mini-run pipeline là hành trình demo cục bộ và được gắn nhãn rõ ràng."
+      icon="support_agent"
+    >
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-12 p-16">
+        <div class="d-flex flex-wrap align-items-center gap-8">
+          <sd-badge
+            type="round"
+            color="success"
+            icon="cloud_done"
+            title="Customer: LIVE DATA"
+          ></sd-badge>
+          <sd-badge
+            type="round"
+            color="info"
+            icon="account_tree"
+            title="Pipeline: DEMO MODE"
+          ></sd-badge>
+          <span class="T12R text-muted">M1–M13 · Compliance · Tag QA · Models · RAG · Audit</span>
+        </div>
+        <sd-button
+          autoId="dashboard-nba-journey"
+          type="fill"
+          color="primary"
+          suffixIcon="arrow_forward"
+          title="Mở NBA Operations"
+          (click)="openNbaDemo()"
+        ></sd-button>
       </div>
-      <sd-button
-        autoId="dashboard-nba-journey"
-        type="fill"
-        color="primary"
-        suffixIcon="arrow_forward"
-        title="Mở NBA Operations"
-        (click)="openNbaDemo()"
-      ></sd-button>
-    </div>
-  </sd-section>
+    </sd-section>
 
-  @if (loading()) {
-    <app-loading-state label="Đang tổng hợp hàng đợi…"></app-loading-state>
-  } @else if (error()) {
-    <app-error-state
-      title="Không tải được tổng quan"
-      [description]="error() ?? ''"
-      (retry)="load()"
-    ></app-error-state>
-  } @else {
-    <section aria-labelledby="dashboard-metrics-title">
-      <h2 id="dashboard-metrics-title" class="T16M mb-12">Chỉ số vận hành</h2>
-      <div class="row gap-y-16">
-        <div class="col-12 col-sm-6 col-xl-3">
-          <sd-section title="Hồ sơ demo" icon="folder_open" iconColor="primary">
-            <div class="p-16">
-              <p class="T32M mb-4">{{ metrics().cases }}</p>
-              <p class="text-muted m-0">Tổng hồ sơ đã khởi tạo</p>
-            </div>
-          </sd-section>
-        </div>
-        <div class="col-12 col-sm-6 col-xl-3">
-          <sd-section title="Đang phân tích" icon="pending_actions" iconColor="info">
-            <div class="p-16">
-              <p class="T32M mb-4">{{ metrics().active }}</p>
-              <p class="text-muted m-0">Lượt đánh giá đang chạy</p>
-            </div>
-          </sd-section>
-        </div>
-        <div class="col-12 col-sm-6 col-xl-3">
-          <sd-section title="Chờ phê duyệt" icon="verified_user" iconColor="warning">
-            <div class="p-16">
-              <p class="T32M mb-4">{{ metrics().approvals }}</p>
-              <p class="text-muted m-0">Quyết định cần con người</p>
-            </div>
-          </sd-section>
-        </div>
-        <div class="col-12 col-sm-6 col-xl-3">
-          <sd-section title="Đã có kết luận" icon="task_alt" iconColor="success">
-            <div class="p-16">
-              <p class="T32M mb-4">{{ metrics().completed }}</p>
-              <p class="text-muted m-0">Hoàn tất hoặc chưa đầy đủ</p>
-            </div>
-          </sd-section>
-        </div>
-      </div>
-    </section>
-
-    <div class="row gap-y-16 mt-16">
-      <section class="col-12 col-xl-8" aria-labelledby="recent-runs-title">
-        <h2 id="recent-runs-title" class="d-none">Lượt đánh giá gần đây</h2>
-        <sd-section title="Lượt đánh giá gần đây" icon="history">
-          <div class="d-flex justify-content-end p-16 pb-0">
-            <sd-button
-              type="text"
-              color="primary"
-              suffixIcon="arrow_forward"
-              title="Xem tất cả hồ sơ"
-              (click)="openCases()"
-            ></sd-button>
+    @if (loading()) {
+      <app-loading-state label="Đang tổng hợp hàng đợi…"></app-loading-state>
+    } @else if (error()) {
+      <app-error-state
+        title="Không tải được tổng quan"
+        [description]="error() ?? ''"
+        (retry)="load()"
+      ></app-error-state>
+    } @else {
+      <section aria-labelledby="dashboard-metrics-title">
+        <h2 id="dashboard-metrics-title" class="T18M font-weight-bold mb-12">Chỉ số vận hành</h2>
+        <div class="row gap-y-16">
+          <div class="col-12 col-sm-6 col-xl-3">
+            <sd-section title="Hồ sơ demo" icon="folder_open" iconColor="primary">
+              <div class="p-16">
+                <p class="T32M mb-4">{{ metrics().cases }}</p>
+                <p class="text-muted m-0">Tổng hồ sơ đã khởi tạo</p>
+              </div>
+            </sd-section>
           </div>
-          @if (recentRuns().length === 0) {
-            <div class="p-16">
-              <app-empty-state
-                title="Chưa có hồ sơ"
-                description="Tạo hồ sơ demo rồi bắt đầu đánh giá để theo dõi tại đây."
-                actionLabel="Tạo hồ sơ demo"
-                (primaryAction)="createCase()"
-              ></app-empty-state>
-            </div>
-          } @else {
-            <div class="overflow-x-auto">
-              <sd-table autoId="dashboard-recent-runs" [option]="recentRunsTable"></sd-table>
-            </div>
-          }
-        </sd-section>
+          <div class="col-12 col-sm-6 col-xl-3">
+            <sd-section title="Đang phân tích" icon="pending_actions" iconColor="info">
+              <div class="p-16">
+                <p class="T32M mb-4">{{ metrics().active }}</p>
+                <p class="text-muted m-0">Lượt đánh giá đang chạy</p>
+              </div>
+            </sd-section>
+          </div>
+          <div class="col-12 col-sm-6 col-xl-3">
+            <sd-section title="Chờ phê duyệt" icon="verified_user" iconColor="warning">
+              <div class="p-16">
+                <p class="T32M mb-4">{{ metrics().approvals }}</p>
+                <p class="text-muted m-0">Quyết định cần con người</p>
+              </div>
+            </sd-section>
+          </div>
+          <div class="col-12 col-sm-6 col-xl-3">
+            <sd-section title="Đã có kết luận" icon="task_alt" iconColor="success">
+              <div class="p-16">
+                <p class="T32M mb-4">{{ metrics().completed }}</p>
+                <p class="text-muted m-0">Hoàn tất hoặc chưa đầy đủ</p>
+              </div>
+            </sd-section>
+          </div>
+        </div>
       </section>
 
-      <section class="col-12 col-xl-4" aria-labelledby="next-actions-title">
-        <h2 id="next-actions-title" class="d-none">Việc cần xử lý tiếp</h2>
-        <sd-section title="Việc cần xử lý tiếp" icon="playlist_add_check">
-          @if (nextActions().length === 0) {
-            <div class="p-16">
-              <app-empty-state
-                title="Hàng đợi đang trống"
-                description="Hồ sơ cần xử lý tiếp sẽ xuất hiện tại đây."
-              ></app-empty-state>
+      <div class="row gap-y-16">
+        <section class="col-12 col-xl-8" aria-labelledby="recent-runs-title">
+          <h2 id="recent-runs-title" class="d-none">Lượt đánh giá gần đây</h2>
+          <sd-section title="Lượt đánh giá gần đây" icon="history">
+            <div class="d-flex justify-content-end p-16 pb-0">
+              <sd-button
+                type="text"
+                color="primary"
+                suffixIcon="arrow_forward"
+                title="Xem tất cả hồ sơ"
+                (click)="openCases()"
+              ></sd-button>
             </div>
-          } @else {
-            <div class="d-flex flex-column">
-              @for (item of nextActions(); track item.id) {
-                <article class="p-16 border-bottom">
-                  <div class="d-flex justify-content-between align-items-start gap-12">
-                    <div class="flex-1">
-                      <h3 class="T14M mb-4">{{ item.companyName }}</h3>
-                      <p class="T12R text-muted mb-8">
-                        {{ item.registrationNumber }} · {{ item.formattedDate }}
-                      </p>
-                      @if (item.status; as status) {
-                        <sd-badge
-                          type="round"
-                          [color]="status.color"
-                          [title]="status.label"
-                        ></sd-badge>
-                      } @else {
-                        <sd-badge type="round" color="secondary" title="Chưa đánh giá"></sd-badge>
-                      }
+            @if (recentRuns().length === 0) {
+              <div class="p-16">
+                <app-empty-state
+                  title="Chưa có hồ sơ"
+                  description="Tạo hồ sơ demo rồi bắt đầu đánh giá để theo dõi tại đây."
+                  actionLabel="Tạo hồ sơ demo"
+                  (primaryAction)="createCase()"
+                ></app-empty-state>
+              </div>
+            } @else {
+              <div class="overflow-x-auto">
+                <sd-table autoId="dashboard-recent-runs" [option]="recentRunsTable"></sd-table>
+              </div>
+            }
+          </sd-section>
+        </section>
+
+        <section class="col-12 col-xl-4" aria-labelledby="next-actions-title">
+          <h2 id="next-actions-title" class="d-none">Việc cần xử lý tiếp</h2>
+          <sd-section title="Việc cần xử lý tiếp" icon="playlist_add_check">
+            @if (nextActions().length === 0) {
+              <div class="p-16">
+                <app-empty-state
+                  title="Hàng đợi đang trống"
+                  description="Hồ sơ cần xử lý tiếp sẽ xuất hiện tại đây."
+                ></app-empty-state>
+              </div>
+            } @else {
+              <div class="d-flex flex-column">
+                @for (item of nextActions(); track item.id) {
+                  <article class="p-16 border-bottom">
+                    <div class="d-flex justify-content-between align-items-start gap-12">
+                      <div class="flex-1">
+                        <h3 class="T14M mb-4">{{ item.companyName }}</h3>
+                        <p class="T12R text-muted mb-8">
+                          {{ item.registrationNumber }} · {{ item.formattedDate }}
+                        </p>
+                        @if (item.status; as status) {
+                          <sd-badge
+                            type="round"
+                            [color]="status.color"
+                            [title]="status.label"
+                          ></sd-badge>
+                        } @else {
+                          <sd-badge type="round" color="secondary" title="Chưa đánh giá"></sd-badge>
+                        }
+                      </div>
+                      <sd-button
+                        type="text"
+                        color="primary"
+                        suffixIcon="arrow_forward"
+                        [title]="item.actionLabel"
+                        (click)="openNextAction(item)"
+                      ></sd-button>
                     </div>
-                    <sd-button
-                      type="text"
-                      color="primary"
-                      suffixIcon="arrow_forward"
-                      [title]="item.actionLabel"
-                      (click)="openNextAction(item)"
-                    ></sd-button>
-                  </div>
-                </article>
-              }
-            </div>
-          }
-        </sd-section>
-      </section>
-    </div>
-  }
+                  </article>
+                }
+              </div>
+            }
+          </sd-section>
+        </section>
+      </div>
+    }
+  </div>
 </sd-page>

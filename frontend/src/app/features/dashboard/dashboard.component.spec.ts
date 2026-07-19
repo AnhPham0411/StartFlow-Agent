@@ -91,6 +91,19 @@ describe('DashboardComponent', () => {
 
     expect(navigateSpy).toHaveBeenCalledWith(['/nba/operations']);
   });
+
+  it('renders the operational metrics as a scoped Core UI h2 inside the page section grid', async () => {
+    const fixture = TestBed.createComponent(DashboardComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const heading = fixture.nativeElement.querySelector('h2#dashboard-metrics-title');
+    expect(heading).not.toBeNull();
+    expect(heading.classList).toContain('T18M');
+    expect(heading.classList).toContain('font-weight-bold');
+    expect(fixture.nativeElement.querySelector('.dashboard-page-sections')).not.toBeNull();
+  });
 });
 
 function dashboardCases(): CaseSummary[] {
