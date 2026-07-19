@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+node_modules
 .venv/
 venv/
 __pycache__/
@@ -18,6 +19,13 @@ __pycache__/
 dist/
 build/
 .next/
+.next-*/
+frontend/startflow-release-*.tar.gz
+
+# Slurm runtime logs (kept outside source control)
+*.out
+*.err
+ai.log
 coverage/
 test-results/
 playwright-report/

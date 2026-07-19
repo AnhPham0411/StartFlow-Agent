@@ -2,11 +2,11 @@
 
 import {
   BookOpenText,
-  GitCompareArrows,
   LayoutDashboard,
   LogOut,
-  PlusCircle,
+  MessageSquareText,
   ScrollText,
+  UsersRound,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -15,18 +15,18 @@ import { useAuth } from '@/src/auth/auth-context';
 import { Badge } from '@/src/components/ui/badge';
 
 const navigation = [
+  { href: '/assistant', label: 'Trợ lý AI', icon: MessageSquareText },
   { href: '/dashboard', label: 'Tổng quan', icon: LayoutDashboard },
   { href: '/cases', label: 'Hồ sơ', icon: ScrollText },
-  { href: '/cases/new', label: 'Tạo mới', icon: PlusCircle },
-  { href: '/comparisons', label: 'So sánh', icon: GitCompareArrows },
+  { href: '/manager', label: 'Quản lý', icon: UsersRound, adminOnly: true },
   { href: '/knowledge', label: 'Tri thức', icon: BookOpenText, adminOnly: true },
 ];
 
 function Navigation({ mobile = false }: { mobile?: boolean }) {
   const pathname = usePathname();
-  const { hasRole } = useAuth();
+  const { hasRole, logout } = useAuth();
   const items = navigation.filter((item) => !item.adminOnly || hasRole('admin'));
-  const visible = mobile ? items.slice(0, 4) : items;
+  const visible = mobile ? items.slice(0, 3) : items;
 
   return (
     <nav
@@ -49,6 +49,17 @@ function Navigation({ mobile = false }: { mobile?: boolean }) {
           </Link>
         );
       })}
+      {mobile ? (
+        <button
+          className="nav-link logout-button"
+          type="button"
+          title="Đăng xuất khỏi StartFlow"
+          onClick={() => void logout()}
+        >
+          <LogOut aria-hidden="true" />
+          <span>Đăng xuất</span>
+        </button>
+      ) : null}
     </nav>
   );
 }
@@ -69,7 +80,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
             <span className="brand-copy">
               <strong>STARTFLOW</strong>
-              <small>AI CREDIT WORKSPACE</small>
+              <small>AI BANKING WORKSPACE</small>
             </span>
           </Link>
           <Navigation />
@@ -82,7 +93,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </Badge>
               ))}
             </div>
-            <button className="nav-link" type="button" onClick={() => void logout()}>
+            <button
+              className="nav-link logout-button"
+              type="button"
+              title="Đăng xuất khỏi StartFlow"
+              onClick={() => void logout()}
+            >
               <LogOut aria-hidden="true" />
               <span>Đăng xuất</span>
             </button>

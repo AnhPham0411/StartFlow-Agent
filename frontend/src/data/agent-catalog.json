@@ -1,0 +1,3916 @@
+{
+  "catalog_version": "2026-07-17",
+  "agent_count": 128,
+  "autonomy_levels": {
+    "A0": "Observe, test or report only; no business action.",
+    "A1": "Analyze, retrieve, score, draft or recommend.",
+    "A2": "Create action proposals or reversible workflow changes; approval/policy required.",
+    "A3": "Deterministic low-risk execution only when explicitly authorized; never high-impact LLM authority.",
+    "A4": "High-impact final action; prohibited for generative agents."
+  },
+  "agents": [
+    {
+      "agent_id": "A001",
+      "slug": "Workflow_Supervisor",
+      "domain_code": "D01",
+      "domain": "Governance_Orchestration",
+      "purpose": "Supervise durable end-to-end banking workflows, state transitions, retries, deadlines and terminal outcomes.",
+      "skills": [
+        "workflow_supervision",
+        "state_validation",
+        "failure_recovery"
+      ],
+      "tools": [
+        "workflow.read",
+        "workflow.signal",
+        "workflow.cancel_proposal"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority",
+        "Core_01_General_LLM",
+        "Core_16_Policy_Hallucination_Judge"
+      ],
+      "retrieval_mode": "none",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A002",
+      "slug": "Intent_Triage",
+      "domain_code": "D01",
+      "domain": "Governance_Orchestration",
+      "purpose": "Classify incoming requests, business domain, urgency, sensitivity and required workflow without executing business actions.",
+      "skills": [
+        "intent_classification",
+        "risk_triage",
+        "language_detection"
+      ],
+      "tools": [
+        "agent_registry.read",
+        "policy.read"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_15_Safety_Input_Guard"
+      ],
+      "retrieval_mode": "standard",
+      "autonomy_level": "A1",
+      "risk_tier": "moderate",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": false,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A003",
+      "slug": "Task_Decomposer",
+      "domain_code": "D01",
+      "domain": "Governance_Orchestration",
+      "purpose": "Convert complex approved objectives into bounded typed tasks, dependencies, budgets and stop conditions.",
+      "skills": [
+        "task_decomposition",
+        "dependency_planning",
+        "budget_planning"
+      ],
+      "tools": [
+        "skill_registry.read",
+        "tool_registry.read",
+        "workflow.plan_proposal"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority",
+        "Core_01_General_LLM",
+        "Core_16_Policy_Hallucination_Judge"
+      ],
+      "retrieval_mode": "agentic",
+      "autonomy_level": "A1",
+      "risk_tier": "high",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A004",
+      "slug": "Agent_Router",
+      "domain_code": "D01",
+      "domain": "Governance_Orchestration",
+      "purpose": "Select eligible agents and core models using capability, policy, latency, cost and data-residency constraints.",
+      "skills": [
+        "capability_routing",
+        "model_routing",
+        "fallback_selection"
+      ],
+      "tools": [
+        "agent_registry.read",
+        "core_registry.read",
+        "routing.emit"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority",
+        "Core_01_General_LLM"
+      ],
+      "retrieval_mode": "none",
+      "autonomy_level": "A2",
+      "risk_tier": "high",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A005",
+      "slug": "Policy_Resolver",
+      "domain_code": "D01",
+      "domain": "Governance_Orchestration",
+      "purpose": "Resolve applicable policy versions, conflicts, effective dates and mandatory controls for each task.",
+      "skills": [
+        "policy_resolution",
+        "temporal_policy_lookup",
+        "conflict_detection"
+      ],
+      "tools": [
+        "policy_rag.search",
+        "policy_engine.evaluate"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority",
+        "Core_03_Text_Embedding_Banking",
+        "Core_04_Text_Reranker",
+        "Core_16_Policy_Hallucination_Judge"
+      ],
+      "retrieval_mode": "temporal",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A006",
+      "slug": "Human_Approval_Coordinator",
+      "domain_code": "D01",
+      "domain": "Governance_Orchestration",
+      "purpose": "Create, route, expire and record human approval requests with complete evidence packages.",
+      "skills": [
+        "approval_packaging",
+        "segregation_of_duties",
+        "approval_tracking"
+      ],
+      "tools": [
+        "approval.create",
+        "approval.read",
+        "approval.expire",
+        "notification.send_template"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority",
+        "Core_01_General_LLM"
+      ],
+      "retrieval_mode": "standard",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A007",
+      "slug": "SLA_Priority_Manager",
+      "domain_code": "D01",
+      "domain": "Governance_Orchestration",
+      "purpose": "Prioritize cases and compute deadlines based on SLA, risk, customer harm and operational capacity.",
+      "skills": [
+        "sla_calculation",
+        "priority_scoring",
+        "queue_balancing"
+      ],
+      "tools": [
+        "case_queue.read",
+        "case_queue.priority_proposal",
+        "calendar.read"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_08_Time_Series",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A2",
+      "risk_tier": "high",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A008",
+      "slug": "Incident_Escalation_Coordinator",
+      "domain_code": "D01",
+      "domain": "Governance_Orchestration",
+      "purpose": "Coordinate escalation, containment, communication and handoff for agent or workflow incidents.",
+      "skills": [
+        "incident_triage",
+        "containment_planning",
+        "stakeholder_routing"
+      ],
+      "tools": [
+        "incident.create",
+        "kill_switch.propose",
+        "oncall.notify",
+        "evidence.read"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority",
+        "Core_01_General_LLM",
+        "Core_12_Anomaly_Drift"
+      ],
+      "retrieval_mode": "standard",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A009",
+      "slug": "Customer_Identity_Context",
+      "domain_code": "D02",
+      "domain": "Identity_Consent_Access",
+      "purpose": "Resolve the authenticated customer token and permitted account scope without exposing raw identity data.",
+      "skills": [
+        "identity_context",
+        "customer_scope_resolution"
+      ],
+      "tools": [
+        "identity.resolve_token",
+        "customer_scope.read"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "none",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A010",
+      "slug": "Employee_Entitlement_Context",
+      "domain_code": "D02",
+      "domain": "Identity_Consent_Access",
+      "purpose": "Resolve employee roles, business unit, branch, delegated authority and separation-of-duties constraints.",
+      "skills": [
+        "employee_entitlement",
+        "delegation_resolution"
+      ],
+      "tools": [
+        "iam.entitlements.read",
+        "iam.delegation.read"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "none",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A011",
+      "slug": "Consent_Purpose_Gate",
+      "domain_code": "D02",
+      "domain": "Identity_Consent_Access",
+      "purpose": "Verify consent, legal basis, approved purpose, retention and communication preference before data use.",
+      "skills": [
+        "consent_validation",
+        "purpose_binding",
+        "retention_check"
+      ],
+      "tools": [
+        "consent.read",
+        "purpose_policy.evaluate"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "temporal",
+      "autonomy_level": "A3",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A012",
+      "slug": "Data_Classification_Guard",
+      "domain_code": "D02",
+      "domain": "Identity_Consent_Access",
+      "purpose": "Classify data fields and enforce masking, tokenization, residency and disclosure controls.",
+      "skills": [
+        "data_classification",
+        "pii_detection",
+        "masking_policy"
+      ],
+      "tools": [
+        "dlp.classify",
+        "token_vault.tokenize",
+        "policy_engine.evaluate"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority",
+        "Core_15_Safety_Input_Guard"
+      ],
+      "retrieval_mode": "none",
+      "autonomy_level": "A3",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A013",
+      "slug": "Tool_Authorization_Broker",
+      "domain_code": "D02",
+      "domain": "Identity_Consent_Access",
+      "purpose": "Authorize every tool invocation using principal, action, resource, purpose, risk and request context.",
+      "skills": [
+        "tool_authorization",
+        "scope_reduction",
+        "step_up_detection"
+      ],
+      "tools": [
+        "policy_engine.evaluate",
+        "tool_registry.read"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "none",
+      "autonomy_level": "A3",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A014",
+      "slug": "Privileged_Action_Approver",
+      "domain_code": "D02",
+      "domain": "Identity_Consent_Access",
+      "purpose": "Coordinate dual control and step-up authentication for reversible privileged actions; never self-approve.",
+      "skills": [
+        "dual_control",
+        "step_up_auth",
+        "transaction_limit_check"
+      ],
+      "tools": [
+        "approval.create",
+        "auth.step_up_request",
+        "transaction_limit.read"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "none",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A015",
+      "slug": "Session_Tenant_Isolation",
+      "domain_code": "D02",
+      "domain": "Identity_Consent_Access",
+      "purpose": "Enforce customer, employee, case, tenant and session boundaries across memory, RAG and tools.",
+      "skills": [
+        "scope_isolation",
+        "memory_boundary",
+        "tenant_validation"
+      ],
+      "tools": [
+        "session.scope_read",
+        "memory.scope_validate",
+        "retrieval.scope_validate"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "none",
+      "autonomy_level": "A3",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A016",
+      "slug": "Access_Review_Auditor",
+      "domain_code": "D02",
+      "domain": "Identity_Consent_Access",
+      "purpose": "Continuously review agent, skill, tool and data entitlements for excessive or stale permissions.",
+      "skills": [
+        "access_review",
+        "least_privilege_analysis",
+        "toxic_combination_detection"
+      ],
+      "tools": [
+        "iam.snapshot.read",
+        "agent_registry.read",
+        "audit.finding_create"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority",
+        "Core_01_General_LLM"
+      ],
+      "retrieval_mode": "graph",
+      "autonomy_level": "A1",
+      "risk_tier": "high",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A017",
+      "slug": "Source_Onboarding",
+      "domain_code": "D03",
+      "domain": "Data_Integration_Quality",
+      "purpose": "Register a new data source, owner, schema, purpose, classification, connectivity and approval status.",
+      "skills": [
+        "source_registration",
+        "connectivity_assessment",
+        "data_contract_drafting"
+      ],
+      "tools": [
+        "connector_registry.read",
+        "source_registry.create_proposal",
+        "network_test.read_only"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority",
+        "Core_01_General_LLM"
+      ],
+      "retrieval_mode": "none",
+      "autonomy_level": "A1",
+      "risk_tier": "high",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A018",
+      "slug": "Schema_Discovery",
+      "domain_code": "D03",
+      "domain": "Data_Integration_Quality",
+      "purpose": "Discover database, API, file, stream and graph schemas using read-only metadata access.",
+      "skills": [
+        "schema_discovery",
+        "type_mapping",
+        "relationship_discovery"
+      ],
+      "tools": [
+        "database.metadata_read",
+        "api.openapi_read",
+        "stream.schema_read"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A1",
+      "risk_tier": "high",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A019",
+      "slug": "Data_Contract_Validator",
+      "domain_code": "D03",
+      "domain": "Data_Integration_Quality",
+      "purpose": "Validate source schemas against versioned data contracts and classify breaking changes.",
+      "skills": [
+        "contract_validation",
+        "schema_compatibility",
+        "quality_rule_generation"
+      ],
+      "tools": [
+        "schema_registry.read",
+        "contract.validate",
+        "issue.create"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority",
+        "Core_01_General_LLM"
+      ],
+      "retrieval_mode": "none",
+      "autonomy_level": "A2",
+      "risk_tier": "high",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A020",
+      "slug": "CDC_Ingestion",
+      "domain_code": "D03",
+      "domain": "Data_Integration_Quality",
+      "purpose": "Configure and monitor approved change-data-capture pipelines with replay and deduplication controls.",
+      "skills": [
+        "cdc_configuration",
+        "offset_monitoring",
+        "deduplication"
+      ],
+      "tools": [
+        "debezium.read_status",
+        "kafka_connect.configure_proposal",
+        "stream.offset_read"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority",
+        "Core_12_Anomaly_Drift"
+      ],
+      "retrieval_mode": "none",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A021",
+      "slug": "Batch_Ingestion",
+      "domain_code": "D03",
+      "domain": "Data_Integration_Quality",
+      "purpose": "Plan and run bounded batch ingestion from approved databases, files and object stores.",
+      "skills": [
+        "batch_planning",
+        "partitioning",
+        "checkpointing"
+      ],
+      "tools": [
+        "object_store.read",
+        "database.read_only",
+        "slurm.submit_approved_job"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority",
+        "Core_08_Time_Series"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A2",
+      "risk_tier": "high",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A022",
+      "slug": "Data_Quality_Monitor",
+      "domain_code": "D03",
+      "domain": "Data_Integration_Quality",
+      "purpose": "Monitor completeness, validity, uniqueness, freshness, consistency and distribution drift.",
+      "skills": [
+        "quality_profiling",
+        "rule_evaluation",
+        "drift_detection"
+      ],
+      "tools": [
+        "data_profile.read",
+        "quality_rule.execute",
+        "quarantine.propose"
+      ],
+      "core_dependencies": [
+        "Core_12_Anomaly_Drift",
+        "Core_07_Tabular_Risk"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A2",
+      "risk_tier": "high",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A023",
+      "slug": "Entity_Resolution",
+      "domain_code": "D03",
+      "domain": "Data_Integration_Quality",
+      "purpose": "Link customer, account, business, device and counterparty records with explainable match confidence.",
+      "skills": [
+        "record_linkage",
+        "entity_resolution",
+        "match_explanation"
+      ],
+      "tools": [
+        "entity_index.search",
+        "graph.upsert_proposal",
+        "human_review.create"
+      ],
+      "core_dependencies": [
+        "Core_03_Text_Embedding_Banking",
+        "Core_07_Tabular_Risk",
+        "Core_11_AML"
+      ],
+      "retrieval_mode": "graph",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A024",
+      "slug": "Lineage_Provenance",
+      "domain_code": "D03",
+      "domain": "Data_Integration_Quality",
+      "purpose": "Capture source-to-decision lineage, timestamps, transformations, evidence hashes and policy versions.",
+      "skills": [
+        "lineage_capture",
+        "provenance_validation",
+        "point_in_time_reconstruction"
+      ],
+      "tools": [
+        "lineage.write",
+        "artifact.hash",
+        "schema_registry.read"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "graph",
+      "autonomy_level": "A3",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A025",
+      "slug": "Knowledge_Ingestion",
+      "domain_code": "D04",
+      "domain": "Knowledge_RAG",
+      "purpose": "Ingest, parse, classify, deduplicate, version and index approved knowledge sources.",
+      "skills": [
+        "document_ingestion",
+        "chunking",
+        "metadata_enrichment",
+        "deduplication"
+      ],
+      "tools": [
+        "document_store.read",
+        "ocr.parse",
+        "index.upsert_proposal"
+      ],
+      "core_dependencies": [
+        "Core_02_OCR",
+        "Core_03_Text_Embedding_Banking",
+        "Core_05_Multimodal_Embedding_Banking"
+      ],
+      "retrieval_mode": "multimodal",
+      "autonomy_level": "A2",
+      "risk_tier": "high",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A026",
+      "slug": "Policy_RAG",
+      "domain_code": "D04",
+      "domain": "Knowledge_RAG",
+      "purpose": "Retrieve current or historical banking policies with effective dates, hierarchy and citations.",
+      "skills": [
+        "policy_retrieval",
+        "temporal_filtering",
+        "citation_packaging"
+      ],
+      "tools": [
+        "text_retrieval.search",
+        "text_reranker.rank",
+        "policy_store.read"
+      ],
+      "core_dependencies": [
+        "Core_03_Text_Embedding_Banking",
+        "Core_04_Text_Reranker",
+        "Core_16_Policy_Hallucination_Judge"
+      ],
+      "retrieval_mode": "temporal",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A027",
+      "slug": "Product_RAG",
+      "domain_code": "D04",
+      "domain": "Knowledge_RAG",
+      "purpose": "Retrieve product terms, rates, fees, eligibility, campaigns and disclosures valid for a channel and date.",
+      "skills": [
+        "product_retrieval",
+        "effective_date_resolution",
+        "fee_term_citation"
+      ],
+      "tools": [
+        "product_catalog.search",
+        "text_reranker.rank",
+        "rate_service.read"
+      ],
+      "core_dependencies": [
+        "Core_03_Text_Embedding_Banking",
+        "Core_04_Text_Reranker"
+      ],
+      "retrieval_mode": "hybrid",
+      "autonomy_level": "A1",
+      "risk_tier": "high",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A028",
+      "slug": "Customer_Case_RAG",
+      "domain_code": "D04",
+      "domain": "Knowledge_RAG",
+      "purpose": "Retrieve permission-scoped prior interactions, cases and outcomes for the same customer or authorized cohort.",
+      "skills": [
+        "case_retrieval",
+        "scope_filtering",
+        "similar_case_search"
+      ],
+      "tools": [
+        "case_store.search",
+        "text_reranker.rank",
+        "scope.validate"
+      ],
+      "core_dependencies": [
+        "Core_03_Text_Embedding_Banking",
+        "Core_04_Text_Reranker",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "hybrid",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A029",
+      "slug": "Multimodal_Document_RAG",
+      "domain_code": "D04",
+      "domain": "Knowledge_RAG",
+      "purpose": "Retrieve exact pages, tables, charts and bounding-box evidence from customer documents.",
+      "skills": [
+        "page_retrieval",
+        "box_grounding",
+        "multimodal_reranking"
+      ],
+      "tools": [
+        "multimodal_retrieval.search",
+        "multimodal_reranker.rank",
+        "evidence_store.read"
+      ],
+      "core_dependencies": [
+        "Core_05_Multimodal_Embedding_Banking",
+        "Core_06_Multimodal_Reranker",
+        "Core_02_OCR"
+      ],
+      "retrieval_mode": "multimodal",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A030",
+      "slug": "GraphRAG_Investigator",
+      "domain_code": "D04",
+      "domain": "Knowledge_RAG",
+      "purpose": "Run permission-scoped graph retrieval for multi-hop relationships, communities and case evidence.",
+      "skills": [
+        "graph_query",
+        "community_search",
+        "multi_hop_reasoning"
+      ],
+      "tools": [
+        "graph.read_only",
+        "graphrag.local_search",
+        "graphrag.global_search"
+      ],
+      "core_dependencies": [
+        "Core_11_AML",
+        "Core_01_General_LLM",
+        "Core_16_Policy_Hallucination_Judge"
+      ],
+      "retrieval_mode": "graph",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A031",
+      "slug": "SQL_Structured_RAG",
+      "domain_code": "D04",
+      "domain": "Knowledge_RAG",
+      "purpose": "Answer structured questions through a governed semantic query AST and read-only database execution.",
+      "skills": [
+        "semantic_query_planning",
+        "sql_ast_compilation",
+        "result_validation"
+      ],
+      "tools": [
+        "semantic_catalog.read",
+        "query_executor.read_only",
+        "result_profile.validate"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_07_Tabular_Risk",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A032",
+      "slug": "Research_Web_RAG",
+      "domain_code": "D04",
+      "domain": "Knowledge_RAG",
+      "purpose": "Search and retrieve external public information only through an approved DMZ web broker with citations.",
+      "skills": [
+        "web_query_planning",
+        "source_quality_assessment",
+        "citation_packaging"
+      ],
+      "tools": [
+        "web_broker.search",
+        "web_broker.fetch_sanitized",
+        "web_cache.read"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_15_Safety_Input_Guard",
+        "Core_16_Policy_Hallucination_Judge"
+      ],
+      "retrieval_mode": "web",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "policy_gated_dmz_only",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A033",
+      "slug": "Customer360_Builder",
+      "domain_code": "D05",
+      "domain": "Customer360_Marketing",
+      "purpose": "Build a point-in-time customer profile from approved identity, product, interaction and transaction features.",
+      "skills": [
+        "customer_timeline",
+        "feature_assembly",
+        "evidence_linking"
+      ],
+      "tools": [
+        "feature_store.read",
+        "customer_graph.read",
+        "profile.write_proposal"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_08_Time_Series",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "graph",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A034",
+      "slug": "Segment_Profiler",
+      "domain_code": "D05",
+      "domain": "Customer360_Marketing",
+      "purpose": "Create explainable business segments without inferring prohibited sensitive attributes.",
+      "skills": [
+        "segmentation",
+        "cohort_description",
+        "stability_analysis"
+      ],
+      "tools": [
+        "feature_store.read",
+        "segment_model.score",
+        "report.write"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_01_General_LLM"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A1",
+      "risk_tier": "high",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A035",
+      "slug": "Lead_Propensity",
+      "domain_code": "D05",
+      "domain": "Customer360_Marketing",
+      "purpose": "Score likelihood of conversion for approved products and time horizons.",
+      "skills": [
+        "propensity_scoring",
+        "calibration",
+        "lift_analysis"
+      ],
+      "tools": [
+        "lead_model.score",
+        "feature_store.read",
+        "explanation.generate"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_25_Explainability"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A1",
+      "risk_tier": "high",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A036",
+      "slug": "Uplift_Campaign",
+      "domain_code": "D05",
+      "domain": "Customer360_Marketing",
+      "purpose": "Estimate incremental treatment effect and identify customers who benefit from contact.",
+      "skills": [
+        "uplift_modeling",
+        "treatment_effect",
+        "experiment_analysis"
+      ],
+      "tools": [
+        "uplift_model.score",
+        "campaign_history.read",
+        "experiment_registry.read"
+      ],
+      "core_dependencies": [
+        "Core_10_Recommendation",
+        "Core_07_Tabular_Risk"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A1",
+      "risk_tier": "high",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A037",
+      "slug": "Next_Best_Action",
+      "domain_code": "D05",
+      "domain": "Customer360_Marketing",
+      "purpose": "Rank compliant customer actions using suitability, risk, uplift, value and contact constraints.",
+      "skills": [
+        "action_ranking",
+        "suitability_filtering",
+        "risk_adjusted_value"
+      ],
+      "tools": [
+        "recommendation.rank",
+        "policy_engine.evaluate",
+        "consent.read"
+      ],
+      "core_dependencies": [
+        "Core_10_Recommendation",
+        "Core_00_Control_Authority",
+        "Core_07_Tabular_Risk"
+      ],
+      "retrieval_mode": "hybrid",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A038",
+      "slug": "Churn_Retention",
+      "domain_code": "D05",
+      "domain": "Customer360_Marketing",
+      "purpose": "Predict churn and propose permitted retention treatments.",
+      "skills": [
+        "churn_scoring",
+        "retention_uplift",
+        "treatment_selection"
+      ],
+      "tools": [
+        "churn_model.score",
+        "uplift_model.score",
+        "offer_catalog.read"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_10_Recommendation",
+        "Core_08_Time_Series"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A1",
+      "risk_tier": "high",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A039",
+      "slug": "CLV_Profitability",
+      "domain_code": "D05",
+      "domain": "Customer360_Marketing",
+      "purpose": "Estimate customer lifetime value and risk-adjusted relationship profitability.",
+      "skills": [
+        "clv_forecasting",
+        "margin_attribution",
+        "risk_adjustment"
+      ],
+      "tools": [
+        "clv_model.score",
+        "finance_features.read",
+        "risk_scores.read"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_08_Time_Series",
+        "Core_09_Cash_Flow_Forecast"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A1",
+      "risk_tier": "high",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A040",
+      "slug": "Contact_Strategy",
+      "domain_code": "D05",
+      "domain": "Customer360_Marketing",
+      "purpose": "Select approved contact channel, timing and frequency while respecting consent and fatigue.",
+      "skills": [
+        "channel_selection",
+        "send_time_optimization",
+        "frequency_capping"
+      ],
+      "tools": [
+        "contact_policy.evaluate",
+        "calendar.read",
+        "channel_capacity.read"
+      ],
+      "core_dependencies": [
+        "Core_10_Recommendation",
+        "Core_00_Control_Authority",
+        "Core_08_Time_Series"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A041",
+      "slug": "Card_Advisor",
+      "domain_code": "D06",
+      "domain": "Retail_Advisory_Service",
+      "purpose": "Advise on card products with verified eligibility, fees, benefits, risks and disclosures.",
+      "skills": [
+        "needs_discovery",
+        "card_comparison",
+        "eligibility_explanation"
+      ],
+      "tools": [
+        "product_rag.search",
+        "card_eligibility.read",
+        "fee_calculator.read"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_03_Text_Embedding_Banking",
+        "Core_04_Text_Reranker",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "hybrid",
+      "autonomy_level": "A1",
+      "risk_tier": "high",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A042",
+      "slug": "Loan_Advisor",
+      "domain_code": "D06",
+      "domain": "Retail_Advisory_Service",
+      "purpose": "Advise on retail loan options and simulations without making a credit decision.",
+      "skills": [
+        "loan_needs_analysis",
+        "repayment_simulation",
+        "document_checklist"
+      ],
+      "tools": [
+        "loan_catalog.search",
+        "loan_calculator.read",
+        "appointment.create_proposal"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_09_Cash_Flow_Forecast",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "hybrid",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A043",
+      "slug": "Deposit_Savings_Advisor",
+      "domain_code": "D06",
+      "domain": "Retail_Advisory_Service",
+      "purpose": "Advise on deposit and savings products using current rates, terms and liquidity needs.",
+      "skills": [
+        "savings_needs_analysis",
+        "yield_simulation",
+        "liquidity_explanation"
+      ],
+      "tools": [
+        "deposit_catalog.search",
+        "rate_service.read",
+        "yield_calculator.read"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_03_Text_Embedding_Banking",
+        "Core_04_Text_Reranker"
+      ],
+      "retrieval_mode": "hybrid",
+      "autonomy_level": "A1",
+      "risk_tier": "high",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A044",
+      "slug": "Insurance_Advisor",
+      "domain_code": "D06",
+      "domain": "Retail_Advisory_Service",
+      "purpose": "Explain approved insurance products and suitability; route licensed advice when required.",
+      "skills": [
+        "coverage_needs",
+        "product_comparison",
+        "disclosure_explanation"
+      ],
+      "tools": [
+        "insurance_catalog.search",
+        "suitability_policy.evaluate",
+        "licensed_advisor.route"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "hybrid",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A045",
+      "slug": "Account_Package_Advisor",
+      "domain_code": "D06",
+      "domain": "Retail_Advisory_Service",
+      "purpose": "Recommend account, digital-service and package options based on approved needs and fees.",
+      "skills": [
+        "package_comparison",
+        "service_needs",
+        "fee_summary"
+      ],
+      "tools": [
+        "account_catalog.search",
+        "fee_calculator.read",
+        "eligibility.read"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_03_Text_Embedding_Banking"
+      ],
+      "retrieval_mode": "hybrid",
+      "autonomy_level": "A1",
+      "risk_tier": "high",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A046",
+      "slug": "Fee_Rate_Explainer",
+      "domain_code": "D06",
+      "domain": "Retail_Advisory_Service",
+      "purpose": "Explain current or historical fees and rates with effective-date citations.",
+      "skills": [
+        "fee_lookup",
+        "rate_lookup",
+        "calculation_explanation"
+      ],
+      "tools": [
+        "rate_service.read",
+        "fee_service.read",
+        "policy_rag.search"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_16_Policy_Hallucination_Judge"
+      ],
+      "retrieval_mode": "temporal",
+      "autonomy_level": "A1",
+      "risk_tier": "high",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A047",
+      "slug": "Appointment_Concierge",
+      "domain_code": "D06",
+      "domain": "Retail_Advisory_Service",
+      "purpose": "Find and propose appointments with branches or specialists within customer and staff preferences.",
+      "skills": [
+        "availability_search",
+        "appointment_matching",
+        "reminder_setup"
+      ],
+      "tools": [
+        "calendar.availability_read",
+        "appointment.create_proposal",
+        "notification.send_template"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "none",
+      "autonomy_level": "A2",
+      "risk_tier": "moderate",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": false,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A048",
+      "slug": "General_Customer_Support",
+      "domain_code": "D06",
+      "domain": "Retail_Advisory_Service",
+      "purpose": "Handle general banking questions, read-only status requests and safe escalation.",
+      "skills": [
+        "faq_answering",
+        "status_lookup",
+        "issue_triage"
+      ],
+      "tools": [
+        "product_rag.search",
+        "account_status.read_scoped",
+        "case.create_proposal"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_15_Safety_Input_Guard",
+        "Core_16_Policy_Hallucination_Judge"
+      ],
+      "retrieval_mode": "hybrid",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A049",
+      "slug": "New_Customer_Onboarding",
+      "domain_code": "D07",
+      "domain": "Onboarding_KYC_Documents",
+      "purpose": "Coordinate approved onboarding steps, disclosures, consent, eKYC and handoffs.",
+      "skills": [
+        "onboarding_workflow",
+        "consent_collection",
+        "step_guidance"
+      ],
+      "tools": [
+        "workflow.start",
+        "consent.capture_proposal",
+        "ekyc.status_read"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority",
+        "Core_01_General_LLM"
+      ],
+      "retrieval_mode": "standard",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A050",
+      "slug": "Document_Intake",
+      "domain_code": "D07",
+      "domain": "Onboarding_KYC_Documents",
+      "purpose": "Receive, classify, virus-scan, quality-check and route documents without trusting embedded instructions.",
+      "skills": [
+        "document_classification",
+        "file_validation",
+        "quality_triage"
+      ],
+      "tools": [
+        "file_scan.execute",
+        "ocr.quality_read",
+        "document_store.write_proposal"
+      ],
+      "core_dependencies": [
+        "Core_02_OCR",
+        "Core_15_Safety_Input_Guard",
+        "Core_24_Document_Fraud"
+      ],
+      "retrieval_mode": "multimodal",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A051",
+      "slug": "OCR_Field_Extraction",
+      "domain_code": "D07",
+      "domain": "Onboarding_KYC_Documents",
+      "purpose": "Extract schema-constrained fields, tables and page/box evidence from banking documents.",
+      "skills": [
+        "ocr_extraction",
+        "table_extraction",
+        "schema_mapping"
+      ],
+      "tools": [
+        "ocr.parse",
+        "schema_registry.read",
+        "evidence_store.write"
+      ],
+      "core_dependencies": [
+        "Core_02_OCR",
+        "Core_01_General_LLM"
+      ],
+      "retrieval_mode": "multimodal",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A052",
+      "slug": "Document_Completeness",
+      "domain_code": "D07",
+      "domain": "Onboarding_KYC_Documents",
+      "purpose": "Check whether a case contains every required document and mandatory field for its policy version.",
+      "skills": [
+        "checklist_resolution",
+        "completeness_validation",
+        "missing_item_explanation"
+      ],
+      "tools": [
+        "policy_rag.search",
+        "document_index.read",
+        "request_missing_document.proposal"
+      ],
+      "core_dependencies": [
+        "Core_02_OCR",
+        "Core_00_Control_Authority",
+        "Core_16_Policy_Hallucination_Judge"
+      ],
+      "retrieval_mode": "temporal",
+      "autonomy_level": "A1",
+      "risk_tier": "high",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A053",
+      "slug": "Cross_Document_Consistency",
+      "domain_code": "D07",
+      "domain": "Onboarding_KYC_Documents",
+      "purpose": "Compare names, dates, amounts, identities, employment and account data across documents.",
+      "skills": [
+        "field_reconciliation",
+        "inconsistency_detection",
+        "evidence_grounding"
+      ],
+      "tools": [
+        "evidence_store.read",
+        "document_fields.read",
+        "review_case.create"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_02_OCR",
+        "Core_16_Policy_Hallucination_Judge"
+      ],
+      "retrieval_mode": "multimodal",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A054",
+      "slug": "Face_Liveness_Verification",
+      "domain_code": "D07",
+      "domain": "Onboarding_KYC_Documents",
+      "purpose": "Run approved face matching and liveness checks and return calibrated technical evidence.",
+      "skills": [
+        "face_match",
+        "liveness_check",
+        "quality_assessment"
+      ],
+      "tools": [
+        "biometric.face_match",
+        "biometric.liveness",
+        "human_review.create"
+      ],
+      "core_dependencies": [
+        "Core_13_Face_Match",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "none",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A055",
+      "slug": "Document_Fraud_Review",
+      "domain_code": "D07",
+      "domain": "Onboarding_KYC_Documents",
+      "purpose": "Detect and localize suspected document edits, replays, composites and template anomalies.",
+      "skills": [
+        "tamper_detection",
+        "forensic_localization",
+        "template_consistency"
+      ],
+      "tools": [
+        "document_fraud.score",
+        "ocr.metadata_read",
+        "forensic_review.create"
+      ],
+      "core_dependencies": [
+        "Core_24_Document_Fraud",
+        "Core_02_OCR"
+      ],
+      "retrieval_mode": "multimodal",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A056",
+      "slug": "eKYC_Risk_Aggregator",
+      "domain_code": "D07",
+      "domain": "Onboarding_KYC_Documents",
+      "purpose": "Aggregate eKYC evidence into a calibrated review recommendation without autonomously rejecting a customer.",
+      "skills": [
+        "risk_aggregation",
+        "evidence_summary",
+        "uncertainty_handling"
+      ],
+      "tools": [
+        "ekyc_signals.read",
+        "risk_model.score",
+        "approval.create"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_13_Face_Match",
+        "Core_24_Document_Fraud",
+        "Core_25_Explainability"
+      ],
+      "retrieval_mode": "standard",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A057",
+      "slug": "Credit_Application_Assembler",
+      "domain_code": "D08",
+      "domain": "Credit_Origination",
+      "purpose": "Assemble a point-in-time credit case from authorized documents, features and evidence.",
+      "skills": [
+        "case_assembly",
+        "document_linking",
+        "feature_snapshot"
+      ],
+      "tools": [
+        "credit_case.read",
+        "evidence_store.read",
+        "case_package.write"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_02_OCR",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "multimodal",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A058",
+      "slug": "Income_Expense_Analyzer",
+      "domain_code": "D08",
+      "domain": "Credit_Origination",
+      "purpose": "Extract and validate income, expense, obligation and recurring transaction evidence.",
+      "skills": [
+        "income_detection",
+        "expense_classification",
+        "obligation_reconciliation"
+      ],
+      "tools": [
+        "transactions.read_scoped",
+        "document_fields.read",
+        "category_model.score"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_08_Time_Series",
+        "Core_02_OCR"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A059",
+      "slug": "Cashflow_Affordability",
+      "domain_code": "D08",
+      "domain": "Credit_Origination",
+      "purpose": "Forecast cash flow and compute affordability under approved stress scenarios.",
+      "skills": [
+        "cashflow_forecast",
+        "affordability_calculation",
+        "stress_testing"
+      ],
+      "tools": [
+        "cashflow_model.forecast",
+        "loan_calculator.read",
+        "scenario_registry.read"
+      ],
+      "core_dependencies": [
+        "Core_09_Cash_Flow_Forecast",
+        "Core_08_Time_Series",
+        "Core_25_Explainability"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A060",
+      "slug": "Bureau_Credit_Reviewer",
+      "domain_code": "D08",
+      "domain": "Credit_Origination",
+      "purpose": "Summarize authorized bureau/CIC data and identify discrepancies or missing context.",
+      "skills": [
+        "bureau_summary",
+        "obligation_analysis",
+        "discrepancy_detection"
+      ],
+      "tools": [
+        "bureau.read_scoped",
+        "policy_rag.search",
+        "review_case.create"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_07_Tabular_Risk",
+        "Core_16_Policy_Hallucination_Judge"
+      ],
+      "retrieval_mode": "standard",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A061",
+      "slug": "PD_Risk_Scorer",
+      "domain_code": "D08",
+      "domain": "Credit_Origination",
+      "purpose": "Produce calibrated probability-of-default scores with point-in-time features and approved reason codes.",
+      "skills": [
+        "pd_scoring",
+        "calibration",
+        "reason_code_generation"
+      ],
+      "tools": [
+        "pd_model.score",
+        "feature_store.snapshot_read",
+        "explanation.generate"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_25_Explainability"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A062",
+      "slug": "Collateral_Reviewer",
+      "domain_code": "D08",
+      "domain": "Credit_Origination",
+      "purpose": "Extract collateral facts, valuation inputs, legal-document status and exception evidence.",
+      "skills": [
+        "collateral_extraction",
+        "valuation_review",
+        "legal_checklist"
+      ],
+      "tools": [
+        "collateral_store.read",
+        "ocr.parse",
+        "valuation_service.read"
+      ],
+      "core_dependencies": [
+        "Core_02_OCR",
+        "Core_01_General_LLM",
+        "Core_07_Tabular_Risk"
+      ],
+      "retrieval_mode": "multimodal",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A063",
+      "slug": "Credit_Memo_Drafter",
+      "domain_code": "D08",
+      "domain": "Credit_Origination",
+      "purpose": "Draft a structured credit memorandum from verified facts, scores, policies and evidence.",
+      "skills": [
+        "memo_drafting",
+        "evidence_citation",
+        "risk_summary"
+      ],
+      "tools": [
+        "credit_case.read",
+        "policy_rag.search",
+        "judge.verify"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_16_Policy_Hallucination_Judge",
+        "Core_25_Explainability"
+      ],
+      "retrieval_mode": "agentic",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A064",
+      "slug": "Credit_Decision_Package",
+      "domain_code": "D08",
+      "domain": "Credit_Origination",
+      "purpose": "Package model outputs, policy results, exceptions and approvals for an authorized human decision.",
+      "skills": [
+        "decision_packaging",
+        "exception_routing",
+        "approval_preparation"
+      ],
+      "tools": [
+        "policy_engine.evaluate",
+        "approval.create",
+        "decision_package.write"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority",
+        "Core_16_Policy_Hallucination_Judge",
+        "Core_25_Explainability"
+      ],
+      "retrieval_mode": "standard",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A065",
+      "slug": "Early_Warning",
+      "domain_code": "D09",
+      "domain": "Credit_Monitoring_Collections",
+      "purpose": "Detect emerging financial distress from payment, balance, cash-flow and behavior signals.",
+      "skills": [
+        "early_warning_scoring",
+        "trend_detection",
+        "signal_explanation"
+      ],
+      "tools": [
+        "ews_model.score",
+        "timeseries.read",
+        "case.create_proposal"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_08_Time_Series",
+        "Core_12_Anomaly_Drift"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A066",
+      "slug": "Covenant_Monitor",
+      "domain_code": "D09",
+      "domain": "Credit_Monitoring_Collections",
+      "purpose": "Monitor contractual covenants using point-in-time financial and document evidence.",
+      "skills": [
+        "covenant_extraction",
+        "threshold_monitoring",
+        "breach_evidence"
+      ],
+      "tools": [
+        "contract_rag.search",
+        "financials.read",
+        "alert.create_proposal"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_02_OCR",
+        "Core_08_Time_Series"
+      ],
+      "retrieval_mode": "temporal",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A067",
+      "slug": "Delinquency_Predictor",
+      "domain_code": "D09",
+      "domain": "Credit_Monitoring_Collections",
+      "purpose": "Predict delinquency horizons and calibrate operational intervention priority.",
+      "skills": [
+        "delinquency_scoring",
+        "horizon_modeling",
+        "calibration"
+      ],
+      "tools": [
+        "delinquency_model.score",
+        "feature_store.read",
+        "explanation.generate"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_08_Time_Series"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A068",
+      "slug": "Collections_Prioritizer",
+      "domain_code": "D09",
+      "domain": "Credit_Monitoring_Collections",
+      "purpose": "Prioritize collection cases by risk, cure probability, exposure and customer harm constraints.",
+      "skills": [
+        "case_prioritization",
+        "cure_probability",
+        "capacity_optimization"
+      ],
+      "tools": [
+        "collections_model.rank",
+        "queue.read",
+        "priority.write_proposal"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_10_Recommendation",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A069",
+      "slug": "Contact_Treatment_Optimizer",
+      "domain_code": "D09",
+      "domain": "Credit_Monitoring_Collections",
+      "purpose": "Select compliant contact treatment and timing using uplift and vulnerability protections.",
+      "skills": [
+        "treatment_uplift",
+        "channel_optimization",
+        "contact_policy"
+      ],
+      "tools": [
+        "uplift_model.score",
+        "contact_policy.evaluate",
+        "notification.create_proposal"
+      ],
+      "core_dependencies": [
+        "Core_10_Recommendation",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A070",
+      "slug": "Restructuring_Assistant",
+      "domain_code": "D09",
+      "domain": "Credit_Monitoring_Collections",
+      "purpose": "Analyze permitted restructuring scenarios and prepare options for specialist review.",
+      "skills": [
+        "scenario_simulation",
+        "repayment_restructuring",
+        "option_comparison"
+      ],
+      "tools": [
+        "loan_calculator.read",
+        "cashflow_model.forecast",
+        "approval.create"
+      ],
+      "core_dependencies": [
+        "Core_09_Cash_Flow_Forecast",
+        "Core_01_General_LLM",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "agentic",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A071",
+      "slug": "Recovery_Forecast",
+      "domain_code": "D09",
+      "domain": "Credit_Monitoring_Collections",
+      "purpose": "Forecast recovery amount, timing and uncertainty for portfolio planning.",
+      "skills": [
+        "recovery_forecasting",
+        "survival_modeling",
+        "uncertainty_estimation"
+      ],
+      "tools": [
+        "recovery_model.forecast",
+        "collections_history.read",
+        "finance_report.write"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_08_Time_Series"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A1",
+      "risk_tier": "high",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A072",
+      "slug": "Portfolio_Credit_Monitor",
+      "domain_code": "D09",
+      "domain": "Credit_Monitoring_Collections",
+      "purpose": "Monitor portfolio concentration, migration, vintage, stress and policy exceptions.",
+      "skills": [
+        "portfolio_monitoring",
+        "migration_analysis",
+        "stress_reporting"
+      ],
+      "tools": [
+        "portfolio_cube.read",
+        "risk_model.aggregate",
+        "report.write"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_08_Time_Series",
+        "Core_12_Anomaly_Drift"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A073",
+      "slug": "Payment_Initiation_Assistant",
+      "domain_code": "D10",
+      "domain": "Payments_Cards",
+      "purpose": "Collect payment intent and prepare a payment proposal; never execute without strong authentication and authorization.",
+      "skills": [
+        "payment_intent",
+        "beneficiary_validation",
+        "confirmation_summary"
+      ],
+      "tools": [
+        "beneficiary.read",
+        "payment.create_proposal",
+        "auth.step_up_request"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority",
+        "Core_01_General_LLM"
+      ],
+      "retrieval_mode": "none",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A074",
+      "slug": "Payment_Validation",
+      "domain_code": "D10",
+      "domain": "Payments_Cards",
+      "purpose": "Validate account, amount, currency, limits, sanctions, fraud and duplicate-payment controls before execution.",
+      "skills": [
+        "payment_validation",
+        "limit_check",
+        "duplicate_detection"
+      ],
+      "tools": [
+        "account.read_scoped",
+        "fraud.score",
+        "sanctions.screen",
+        "policy_engine.evaluate"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority",
+        "Core_07_Tabular_Risk",
+        "Core_11_AML"
+      ],
+      "retrieval_mode": "graph",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A075",
+      "slug": "Transfer_Status",
+      "domain_code": "D10",
+      "domain": "Payments_Cards",
+      "purpose": "Provide permission-scoped transfer status, reasons and next steps.",
+      "skills": [
+        "status_lookup",
+        "failure_explanation",
+        "case_routing"
+      ],
+      "tools": [
+        "payment_status.read_scoped",
+        "error_catalog.read",
+        "case.create_proposal"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_16_Policy_Hallucination_Judge"
+      ],
+      "retrieval_mode": "standard",
+      "autonomy_level": "A1",
+      "risk_tier": "high",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A076",
+      "slug": "Card_Lifecycle",
+      "domain_code": "D10",
+      "domain": "Payments_Cards",
+      "purpose": "Support card application status, activation proposal, limits, replacement and closure workflows under policy.",
+      "skills": [
+        "card_status",
+        "lifecycle_guidance",
+        "secure_action_proposal"
+      ],
+      "tools": [
+        "card.read_scoped",
+        "card_action.create_proposal",
+        "auth.step_up_request"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority",
+        "Core_01_General_LLM"
+      ],
+      "retrieval_mode": "standard",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A077",
+      "slug": "Chargeback_Dispute",
+      "domain_code": "D10",
+      "domain": "Payments_Cards",
+      "purpose": "Collect evidence, classify dispute reason and prepare a chargeback case.",
+      "skills": [
+        "dispute_intake",
+        "evidence_checklist",
+        "scheme_rule_lookup"
+      ],
+      "tools": [
+        "transaction.read_scoped",
+        "document_store.read",
+        "dispute_case.create_proposal"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_02_OCR",
+        "Core_03_Text_Embedding_Banking"
+      ],
+      "retrieval_mode": "multimodal",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A078",
+      "slug": "Merchant_Service",
+      "domain_code": "D10",
+      "domain": "Payments_Cards",
+      "purpose": "Support merchant onboarding, settlement, fee and service inquiries within approved scope.",
+      "skills": [
+        "merchant_support",
+        "settlement_explanation",
+        "service_case_triage"
+      ],
+      "tools": [
+        "merchant.read_scoped",
+        "settlement.read",
+        "case.create_proposal"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_07_Tabular_Risk"
+      ],
+      "retrieval_mode": "standard",
+      "autonomy_level": "A1",
+      "risk_tier": "high",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A079",
+      "slug": "Reconciliation",
+      "domain_code": "D10",
+      "domain": "Payments_Cards",
+      "purpose": "Reconcile payments, ledgers, files and settlement records with explainable exceptions.",
+      "skills": [
+        "record_reconciliation",
+        "exception_detection",
+        "break_resolution"
+      ],
+      "tools": [
+        "ledger.read",
+        "payment_file.read",
+        "reconciliation.write_proposal"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_12_Anomaly_Drift"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A080",
+      "slug": "Payment_Operations_Incident",
+      "domain_code": "D10",
+      "domain": "Payments_Cards",
+      "purpose": "Triage payment service incidents, identify affected flows and coordinate operational recovery.",
+      "skills": [
+        "incident_correlation",
+        "impact_estimation",
+        "recovery_coordination"
+      ],
+      "tools": [
+        "observability.search",
+        "payment_metrics.read",
+        "incident.signal"
+      ],
+      "core_dependencies": [
+        "Core_12_Anomaly_Drift",
+        "Core_01_General_LLM",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "graph",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A081",
+      "slug": "RealTime_Transaction_Fraud",
+      "domain_code": "D11",
+      "domain": "Fraud_AML",
+      "purpose": "Score transfer fraud in real time and return bounded control recommendations.",
+      "skills": [
+        "transaction_fraud_scoring",
+        "behavioral_anomaly",
+        "calibrated_action"
+      ],
+      "tools": [
+        "fraud_model.score",
+        "device_graph.read",
+        "policy_engine.evaluate"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_08_Time_Series",
+        "Core_11_AML",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "graph",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A082",
+      "slug": "Card_Fraud",
+      "domain_code": "D11",
+      "domain": "Fraud_AML",
+      "purpose": "Score card authorization and post-transaction fraud using sequence and merchant signals.",
+      "skills": [
+        "card_fraud_scoring",
+        "merchant_risk",
+        "sequence_analysis"
+      ],
+      "tools": [
+        "card_fraud_model.score",
+        "merchant_graph.read",
+        "case.create_proposal"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_08_Time_Series",
+        "Core_11_AML"
+      ],
+      "retrieval_mode": "graph",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A083",
+      "slug": "Account_Takeover",
+      "domain_code": "D11",
+      "domain": "Fraud_AML",
+      "purpose": "Detect compromised sessions and propose step-up or containment controls.",
+      "skills": [
+        "ato_detection",
+        "session_anomaly",
+        "containment_recommendation"
+      ],
+      "tools": [
+        "session_risk.score",
+        "device_history.read",
+        "auth.step_up_request"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_12_Anomaly_Drift",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "graph",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A084",
+      "slug": "Device_Session_Risk",
+      "domain_code": "D11",
+      "domain": "Fraud_AML",
+      "purpose": "Score device, IP, behavior and session risk with explainable signals.",
+      "skills": [
+        "device_risk",
+        "session_risk",
+        "behavioral_baseline"
+      ],
+      "tools": [
+        "device_graph.read",
+        "session_features.read",
+        "risk_model.score"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_12_Anomaly_Drift"
+      ],
+      "retrieval_mode": "graph",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A085",
+      "slug": "Mule_Account",
+      "domain_code": "D11",
+      "domain": "Fraud_AML",
+      "purpose": "Detect potential mule accounts and networks without making a criminal determination.",
+      "skills": [
+        "mule_scoring",
+        "network_pattern_detection",
+        "case_evidence"
+      ],
+      "tools": [
+        "graph.read_only",
+        "mule_model.score",
+        "case.create_proposal"
+      ],
+      "core_dependencies": [
+        "Core_11_AML",
+        "Core_07_Tabular_Risk"
+      ],
+      "retrieval_mode": "graph",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A086",
+      "slug": "AML_Typology_Graph",
+      "domain_code": "D11",
+      "domain": "Fraud_AML",
+      "purpose": "Detect known and emerging AML typologies across temporal transaction graphs.",
+      "skills": [
+        "typology_detection",
+        "subgraph_search",
+        "temporal_graph_analysis"
+      ],
+      "tools": [
+        "aml_graph.query",
+        "typology_rules.evaluate",
+        "alert.create_proposal"
+      ],
+      "core_dependencies": [
+        "Core_11_AML",
+        "Core_12_Anomaly_Drift"
+      ],
+      "retrieval_mode": "graph",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A087",
+      "slug": "Sanctions_PEP_Screening",
+      "domain_code": "D11",
+      "domain": "Fraud_AML",
+      "purpose": "Perform approved name/entity screening with fuzzy matching, provenance and human review.",
+      "skills": [
+        "entity_screening",
+        "fuzzy_matching",
+        "list_provenance"
+      ],
+      "tools": [
+        "screening_lists.read",
+        "screening_model.match",
+        "review_case.create"
+      ],
+      "core_dependencies": [
+        "Core_03_Text_Embedding_Banking",
+        "Core_07_Tabular_Risk",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "graph",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A088",
+      "slug": "Financial_Crime_Case_Investigator",
+      "domain_code": "D11",
+      "domain": "Fraud_AML",
+      "purpose": "Assemble timelines, graphs, evidence and draft investigator summaries for human review.",
+      "skills": [
+        "case_investigation",
+        "timeline_reconstruction",
+        "evidence_summary"
+      ],
+      "tools": [
+        "case_data.read",
+        "graphrag.local_search",
+        "report.draft"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_11_AML",
+        "Core_16_Policy_Hallucination_Judge"
+      ],
+      "retrieval_mode": "agentic",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A089",
+      "slug": "Complaint_Intake",
+      "domain_code": "D12",
+      "domain": "Complaints_Operations",
+      "purpose": "Capture, classify, prioritize and acknowledge complaints across channels.",
+      "skills": [
+        "complaint_classification",
+        "severity_triage",
+        "acknowledgement_drafting"
+      ],
+      "tools": [
+        "complaint.create_proposal",
+        "customer_history.read_scoped",
+        "notification.send_template"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_07_Tabular_Risk",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "standard",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A090",
+      "slug": "Complaint_Root_Cause",
+      "domain_code": "D12",
+      "domain": "Complaints_Operations",
+      "purpose": "Analyze recurring complaint themes, products, journeys and operational causes.",
+      "skills": [
+        "root_cause_analysis",
+        "theme_clustering",
+        "trend_detection"
+      ],
+      "tools": [
+        "complaint_store.search",
+        "analytics.query_read_only",
+        "finding.create"
+      ],
+      "core_dependencies": [
+        "Core_03_Text_Embedding_Banking",
+        "Core_07_Tabular_Risk",
+        "Core_12_Anomaly_Drift"
+      ],
+      "retrieval_mode": "hybrid",
+      "autonomy_level": "A1",
+      "risk_tier": "high",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A091",
+      "slug": "Appeal_Reconsideration",
+      "domain_code": "D12",
+      "domain": "Complaints_Operations",
+      "purpose": "Reconstruct point-in-time decisions and prepare an independent reconsideration package.",
+      "skills": [
+        "decision_reconstruction",
+        "new_evidence_comparison",
+        "appeal_packaging"
+      ],
+      "tools": [
+        "lineage.read",
+        "decision_snapshot.read",
+        "approval.create"
+      ],
+      "core_dependencies": [
+        "Core_25_Explainability",
+        "Core_16_Policy_Hallucination_Judge",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "agentic",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A092",
+      "slug": "Service_Quality_QA",
+      "domain_code": "D12",
+      "domain": "Complaints_Operations",
+      "purpose": "Sample and evaluate calls, chats and cases against approved quality and conduct criteria.",
+      "skills": [
+        "interaction_scoring",
+        "script_compliance",
+        "coaching_feedback"
+      ],
+      "tools": [
+        "interaction.read_scoped",
+        "qa_rubric.read",
+        "evaluation.write"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_16_Policy_Hallucination_Judge",
+        "Core_22_ASR"
+      ],
+      "retrieval_mode": "standard",
+      "autonomy_level": "A1",
+      "risk_tier": "high",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A093",
+      "slug": "Backoffice_Case_Router",
+      "domain_code": "D12",
+      "domain": "Complaints_Operations",
+      "purpose": "Classify and route back-office cases using skills, queues, SLA and segregation of duties.",
+      "skills": [
+        "case_classification",
+        "queue_routing",
+        "capacity_matching"
+      ],
+      "tools": [
+        "case_queue.read",
+        "staff_skills.read",
+        "route.write_proposal"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "none",
+      "autonomy_level": "A2",
+      "risk_tier": "high",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A094",
+      "slug": "Document_Operations",
+      "domain_code": "D12",
+      "domain": "Complaints_Operations",
+      "purpose": "Support document indexing, filing, redaction, retention and retrieval workflows.",
+      "skills": [
+        "document_filing",
+        "redaction",
+        "retention_classification"
+      ],
+      "tools": [
+        "document_store.read",
+        "redaction.execute",
+        "retention_policy.evaluate"
+      ],
+      "core_dependencies": [
+        "Core_02_OCR",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "multimodal",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A095",
+      "slug": "Regulatory_Request",
+      "domain_code": "D12",
+      "domain": "Complaints_Operations",
+      "purpose": "Assemble evidence for approved regulator, auditor or legal requests with scoped disclosure.",
+      "skills": [
+        "request_scope",
+        "evidence_collection",
+        "disclosure_review"
+      ],
+      "tools": [
+        "evidence_store.search",
+        "legal_hold.read",
+        "approval.create"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_00_Control_Authority",
+        "Core_16_Policy_Hallucination_Judge"
+      ],
+      "retrieval_mode": "agentic",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A096",
+      "slug": "Customer_Communication",
+      "domain_code": "D12",
+      "domain": "Complaints_Operations",
+      "purpose": "Generate and deliver only approved, evidence-backed customer communications and templates.",
+      "skills": [
+        "communication_drafting",
+        "tone_adaptation",
+        "disclosure_check"
+      ],
+      "tools": [
+        "template_registry.read",
+        "judge.verify",
+        "notification.send_proposal"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_16_Policy_Hallucination_Judge",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "standard",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A097",
+      "slug": "SME_Relationship_Copilot",
+      "domain_code": "D13",
+      "domain": "SME_Corporate",
+      "purpose": "Prepare SME relationship summaries, opportunities, risks and meeting plans.",
+      "skills": [
+        "relationship_summary",
+        "opportunity_detection",
+        "meeting_preparation"
+      ],
+      "tools": [
+        "customer360.read_scoped",
+        "product_rag.search",
+        "crm_note.draft"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_03_Text_Embedding_Banking",
+        "Core_07_Tabular_Risk"
+      ],
+      "retrieval_mode": "hybrid",
+      "autonomy_level": "A1",
+      "risk_tier": "high",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A098",
+      "slug": "Corporate_Onboarding",
+      "domain_code": "D13",
+      "domain": "SME_Corporate",
+      "purpose": "Coordinate company KYC, beneficial ownership, documents and approval workflows.",
+      "skills": [
+        "corporate_kyc",
+        "ubo_mapping",
+        "document_checklist"
+      ],
+      "tools": [
+        "company_registry.read_approved",
+        "document_store.read",
+        "workflow.signal"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_02_OCR",
+        "Core_11_AML",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "graph",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A099",
+      "slug": "Business_Financial_Statement",
+      "domain_code": "D13",
+      "domain": "SME_Corporate",
+      "purpose": "Extract, normalize and analyze financial statements and management accounts.",
+      "skills": [
+        "financial_statement_parsing",
+        "ratio_analysis",
+        "period_comparison"
+      ],
+      "tools": [
+        "ocr.parse",
+        "financial_model.calculate",
+        "evidence_store.write"
+      ],
+      "core_dependencies": [
+        "Core_02_OCR",
+        "Core_01_General_LLM",
+        "Core_07_Tabular_Risk"
+      ],
+      "retrieval_mode": "multimodal",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A100",
+      "slug": "Working_Capital_Advisor",
+      "domain_code": "D13",
+      "domain": "SME_Corporate",
+      "purpose": "Analyze working-capital cycles and simulate approved financing options.",
+      "skills": [
+        "working_capital_analysis",
+        "cash_conversion_cycle",
+        "scenario_simulation"
+      ],
+      "tools": [
+        "financials.read",
+        "cashflow_model.forecast",
+        "product_catalog.search"
+      ],
+      "core_dependencies": [
+        "Core_09_Cash_Flow_Forecast",
+        "Core_01_General_LLM"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A101",
+      "slug": "Trade_Finance_Document",
+      "domain_code": "D13",
+      "domain": "SME_Corporate",
+      "purpose": "Review trade-finance document completeness, consistency and discrepancy evidence.",
+      "skills": [
+        "trade_document_review",
+        "rule_lookup",
+        "discrepancy_detection"
+      ],
+      "tools": [
+        "ocr.parse",
+        "trade_rules_rag.search",
+        "review_case.create"
+      ],
+      "core_dependencies": [
+        "Core_02_OCR",
+        "Core_01_General_LLM",
+        "Core_16_Policy_Hallucination_Judge"
+      ],
+      "retrieval_mode": "multimodal",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A102",
+      "slug": "Supply_Chain_Finance",
+      "domain_code": "D13",
+      "domain": "SME_Corporate",
+      "purpose": "Analyze approved buyer-supplier relationships and financing opportunities.",
+      "skills": [
+        "supply_chain_graph",
+        "invoice_analysis",
+        "program_eligibility"
+      ],
+      "tools": [
+        "graph.read_only",
+        "invoice_store.read",
+        "eligibility.evaluate"
+      ],
+      "core_dependencies": [
+        "Core_11_AML",
+        "Core_07_Tabular_Risk",
+        "Core_10_Recommendation"
+      ],
+      "retrieval_mode": "graph",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A103",
+      "slug": "Corporate_Credit",
+      "domain_code": "D13",
+      "domain": "SME_Corporate",
+      "purpose": "Assemble corporate credit analysis, risk scores, covenants and policy exceptions.",
+      "skills": [
+        "corporate_credit_analysis",
+        "covenant_design",
+        "risk_summary"
+      ],
+      "tools": [
+        "financials.read",
+        "credit_models.score",
+        "policy_rag.search"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_07_Tabular_Risk",
+        "Core_08_Time_Series",
+        "Core_25_Explainability"
+      ],
+      "retrieval_mode": "agentic",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A104",
+      "slug": "Corporate_Portfolio_Monitor",
+      "domain_code": "D13",
+      "domain": "SME_Corporate",
+      "purpose": "Monitor corporate exposure, concentration, covenant and early-warning risk.",
+      "skills": [
+        "portfolio_monitoring",
+        "concentration_analysis",
+        "early_warning"
+      ],
+      "tools": [
+        "portfolio_cube.read",
+        "graph.read_only",
+        "alert.create_proposal"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_08_Time_Series",
+        "Core_11_AML"
+      ],
+      "retrieval_mode": "graph",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A105",
+      "slug": "Liquidity_Forecast",
+      "domain_code": "D14",
+      "domain": "Treasury_Finance_Risk_ESG",
+      "purpose": "Forecast liquidity positions and uncertainty across approved horizons and scenarios.",
+      "skills": [
+        "liquidity_forecast",
+        "scenario_analysis",
+        "interval_calibration"
+      ],
+      "tools": [
+        "liquidity_data.read",
+        "timeseries.forecast",
+        "report.write"
+      ],
+      "core_dependencies": [
+        "Core_08_Time_Series",
+        "Core_09_Cash_Flow_Forecast"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A106",
+      "slug": "ALM_Analytics",
+      "domain_code": "D14",
+      "domain": "Treasury_Finance_Risk_ESG",
+      "purpose": "Analyze asset-liability gaps, repricing, duration and approved stress scenarios.",
+      "skills": [
+        "gap_analysis",
+        "duration_analysis",
+        "stress_testing"
+      ],
+      "tools": [
+        "alm_cube.read",
+        "scenario_engine.run_read_only",
+        "report.write"
+      ],
+      "core_dependencies": [
+        "Core_08_Time_Series",
+        "Core_07_Tabular_Risk"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A107",
+      "slug": "Market_Risk",
+      "domain_code": "D14",
+      "domain": "Treasury_Finance_Risk_ESG",
+      "purpose": "Monitor market-risk exposures, limits, sensitivities and breaches for human review.",
+      "skills": [
+        "limit_monitoring",
+        "sensitivity_analysis",
+        "breach_triage"
+      ],
+      "tools": [
+        "market_data.read",
+        "risk_engine.read",
+        "alert.create_proposal"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_12_Anomaly_Drift"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A108",
+      "slug": "Operational_Risk",
+      "domain_code": "D14",
+      "domain": "Treasury_Finance_Risk_ESG",
+      "purpose": "Identify, classify and aggregate operational risk events and control gaps.",
+      "skills": [
+        "risk_event_classification",
+        "control_gap_analysis",
+        "scenario_summary"
+      ],
+      "tools": [
+        "risk_event_store.search",
+        "control_library.read",
+        "finding.create"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_07_Tabular_Risk",
+        "Core_12_Anomaly_Drift"
+      ],
+      "retrieval_mode": "hybrid",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A109",
+      "slug": "Finance_Close_Reconciliation",
+      "domain_code": "D14",
+      "domain": "Treasury_Finance_Risk_ESG",
+      "purpose": "Support close, ledger reconciliation, anomaly detection and evidence packaging.",
+      "skills": [
+        "close_checklist",
+        "ledger_reconciliation",
+        "variance_explanation"
+      ],
+      "tools": [
+        "ledger.read",
+        "reconciliation.execute_read_only",
+        "journal.create_proposal"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_12_Anomaly_Drift",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A110",
+      "slug": "Capital_Provisioning",
+      "domain_code": "D14",
+      "domain": "Treasury_Finance_Risk_ESG",
+      "purpose": "Prepare inputs, scenario outputs and reconciliations for capital and provisioning processes.",
+      "skills": [
+        "provisioning_analysis",
+        "scenario_aggregation",
+        "model_output_reconciliation"
+      ],
+      "tools": [
+        "risk_models.read",
+        "finance_cube.read",
+        "report.draft"
+      ],
+      "core_dependencies": [
+        "Core_07_Tabular_Risk",
+        "Core_08_Time_Series",
+        "Core_25_Explainability"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A111",
+      "slug": "ESG_ESMS_Review",
+      "domain_code": "D14",
+      "domain": "Treasury_Finance_Risk_ESG",
+      "purpose": "Review environmental and social risk information, exclusions, covenants and evidence.",
+      "skills": [
+        "esms_screening",
+        "policy_mapping",
+        "risk_summary"
+      ],
+      "tools": [
+        "esg_policy_rag.search",
+        "project_documents.read",
+        "review_case.create"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_02_OCR",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "agentic",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A112",
+      "slug": "Risk_Reporting",
+      "domain_code": "D14",
+      "domain": "Treasury_Finance_Risk_ESG",
+      "purpose": "Generate controlled risk reports from reconciled data, approved metrics and citations.",
+      "skills": [
+        "risk_report_generation",
+        "metric_reconciliation",
+        "narrative_validation"
+      ],
+      "tools": [
+        "risk_cube.read",
+        "report_template.read",
+        "judge.verify"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_16_Policy_Hallucination_Judge",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A113",
+      "slug": "Model_Router",
+      "domain_code": "D15",
+      "domain": "Platform_SRE_ModelOps",
+      "purpose": "Route inference to approved core endpoints and adapters based on capability, health, residency and SLO.",
+      "skills": [
+        "model_selection",
+        "capacity_aware_routing",
+        "fallback"
+      ],
+      "tools": [
+        "core_registry.read",
+        "model_health.read",
+        "router.configure_proposal"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority",
+        "Core_12_Anomaly_Drift"
+      ],
+      "retrieval_mode": "none",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A114",
+      "slug": "Model_Health_Monitor",
+      "domain_code": "D15",
+      "domain": "Platform_SRE_ModelOps",
+      "purpose": "Monitor quality, latency, calibration, drift and safety signals for every model endpoint.",
+      "skills": [
+        "model_monitoring",
+        "drift_detection",
+        "slo_alerting"
+      ],
+      "tools": [
+        "telemetry.query",
+        "evaluation.run",
+        "alert.create"
+      ],
+      "core_dependencies": [
+        "Core_12_Anomaly_Drift",
+        "Core_20_Evaluation"
+      ],
+      "retrieval_mode": "none",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A115",
+      "slug": "GPU_Capacity_Scheduler",
+      "domain_code": "D15",
+      "domain": "Platform_SRE_ModelOps",
+      "purpose": "Forecast and allocate GPU capacity across inference, batch, evaluation and red-team workloads.",
+      "skills": [
+        "capacity_forecast",
+        "queue_scheduling",
+        "quota_enforcement"
+      ],
+      "tools": [
+        "slurm.read",
+        "slurm.submit_approved_job",
+        "gpu_metrics.read"
+      ],
+      "core_dependencies": [
+        "Core_08_Time_Series",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A116",
+      "slug": "Prompt_Skill_Registry",
+      "domain_code": "D15",
+      "domain": "Platform_SRE_ModelOps",
+      "purpose": "Version, validate, test and publish approved prompts and skill packages.",
+      "skills": [
+        "skill_validation",
+        "prompt_versioning",
+        "compatibility_check"
+      ],
+      "tools": [
+        "skill_registry.read",
+        "skill_registry.publish_proposal",
+        "evaluation.run"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority",
+        "Core_20_Evaluation"
+      ],
+      "retrieval_mode": "none",
+      "autonomy_level": "A2",
+      "risk_tier": "high",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A117",
+      "slug": "Tool_Registry_Manager",
+      "domain_code": "D15",
+      "domain": "Platform_SRE_ModelOps",
+      "purpose": "Register, version, classify and certify tools and connector capabilities.",
+      "skills": [
+        "tool_registration",
+        "risk_classification",
+        "schema_validation"
+      ],
+      "tools": [
+        "tool_registry.read",
+        "tool_registry.publish_proposal",
+        "conformance_test.run"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority",
+        "Core_15_Safety_Input_Guard"
+      ],
+      "retrieval_mode": "none",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A118",
+      "slug": "RAG_Index_Manager",
+      "domain_code": "D15",
+      "domain": "Platform_SRE_ModelOps",
+      "purpose": "Build, validate, publish, roll back and monitor permission-aware RAG indexes.",
+      "skills": [
+        "index_lifecycle",
+        "retrieval_evaluation",
+        "rollback"
+      ],
+      "tools": [
+        "index.build_job",
+        "index.publish_proposal",
+        "retrieval_eval.run"
+      ],
+      "core_dependencies": [
+        "Core_03_Text_Embedding_Banking",
+        "Core_05_Multimodal_Embedding_Banking",
+        "Core_20_Evaluation"
+      ],
+      "retrieval_mode": "hybrid",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A119",
+      "slug": "Release_Canary_Manager",
+      "domain_code": "D15",
+      "domain": "Platform_SRE_ModelOps",
+      "purpose": "Run release gates, canary deployment, champion-challenger and rollback workflows.",
+      "skills": [
+        "release_gate",
+        "canary_analysis",
+        "rollback"
+      ],
+      "tools": [
+        "deployment.canary_proposal",
+        "evaluation.run",
+        "rollback.execute_approved"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority",
+        "Core_20_Evaluation",
+        "Core_12_Anomaly_Drift"
+      ],
+      "retrieval_mode": "none",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A120",
+      "slug": "Resilience_BCP_Coordinator",
+      "domain_code": "D15",
+      "domain": "Platform_SRE_ModelOps",
+      "purpose": "Coordinate failover, degraded-mode, backup restoration and business-continuity exercises.",
+      "skills": [
+        "failover_planning",
+        "degraded_mode",
+        "recovery_validation"
+      ],
+      "tools": [
+        "service_health.read",
+        "failover.execute_approved",
+        "bc_test.record"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority",
+        "Core_12_Anomaly_Drift"
+      ],
+      "retrieval_mode": "none",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A121",
+      "slug": "Safety_Input_Guard",
+      "domain_code": "D16",
+      "domain": "Assurance_Security_Audit",
+      "purpose": "Classify and block unsafe, injected, policy-conflicting or data-exfiltration inputs.",
+      "skills": [
+        "prompt_injection_detection",
+        "jailbreak_detection",
+        "input_sanitization"
+      ],
+      "tools": [
+        "safety_guard.classify",
+        "quarantine.write",
+        "incident.create"
+      ],
+      "core_dependencies": [
+        "Core_15_Safety_Input_Guard",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "none",
+      "autonomy_level": "A3",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A122",
+      "slug": "Policy_Hallucination_Judge",
+      "domain_code": "D16",
+      "domain": "Assurance_Security_Audit",
+      "purpose": "Verify policy compliance, citations, groundedness, tool results, calculations and schema validity.",
+      "skills": [
+        "groundedness_judging",
+        "policy_judging",
+        "calculation_verification"
+      ],
+      "tools": [
+        "judge.evaluate",
+        "citation.verify",
+        "tool_result.verify"
+      ],
+      "core_dependencies": [
+        "Core_16_Policy_Hallucination_Judge",
+        "Core_00_Control_Authority"
+      ],
+      "retrieval_mode": "standard",
+      "autonomy_level": "A2",
+      "risk_tier": "critical",
+      "human_approval_required": false,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A123",
+      "slug": "Continuous_Red_Team",
+      "domain_code": "D16",
+      "domain": "Assurance_Security_Audit",
+      "purpose": "Continuously test authorized local/staging targets for agent, RAG, tool, privacy and policy weaknesses.",
+      "skills": [
+        "attack_campaign",
+        "adaptive_mutation",
+        "regression_generation"
+      ],
+      "tools": [
+        "redteam.run_sandbox",
+        "finding.create",
+        "release_gate.block_proposal"
+      ],
+      "core_dependencies": [
+        "Core_17_Red_Teaming",
+        "Core_15_Safety_Input_Guard",
+        "Core_16_Policy_Hallucination_Judge"
+      ],
+      "retrieval_mode": "agentic",
+      "autonomy_level": "A0",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A124",
+      "slug": "Privacy_Leakage_Tester",
+      "domain_code": "D16",
+      "domain": "Assurance_Security_Audit",
+      "purpose": "Test for PII, secret, memorization, cross-customer and membership leakage using synthetic canaries.",
+      "skills": [
+        "privacy_testing",
+        "canary_detection",
+        "cross_tenant_attack"
+      ],
+      "tools": [
+        "privacy_test.run_sandbox",
+        "audit.finding_create"
+      ],
+      "core_dependencies": [
+        "Core_17_Red_Teaming",
+        "Core_15_Safety_Input_Guard"
+      ],
+      "retrieval_mode": "agentic",
+      "autonomy_level": "A0",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A125",
+      "slug": "Fairness_Validator",
+      "domain_code": "D16",
+      "domain": "Assurance_Security_Audit",
+      "purpose": "Evaluate calibration and error disparities in a protected, access-controlled fairness enclave.",
+      "skills": [
+        "fairness_audit",
+        "counterfactual_testing",
+        "cohort_analysis"
+      ],
+      "tools": [
+        "fairness_dataset.read_enclave",
+        "evaluation.run",
+        "finding.create"
+      ],
+      "core_dependencies": [
+        "Core_20_Evaluation",
+        "Core_25_Explainability",
+        "Core_07_Tabular_Risk"
+      ],
+      "retrieval_mode": "sql",
+      "autonomy_level": "A0",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A126",
+      "slug": "Independent_Model_Validator",
+      "domain_code": "D16",
+      "domain": "Assurance_Security_Audit",
+      "purpose": "Perform independent technical validation, challenge assumptions and issue release opinions.",
+      "skills": [
+        "independent_validation",
+        "benchmark_reproduction",
+        "model_risk_review"
+      ],
+      "tools": [
+        "model_registry.read",
+        "hidden_eval.run",
+        "validation_report.write"
+      ],
+      "core_dependencies": [
+        "Core_20_Evaluation",
+        "Core_16_Policy_Hallucination_Judge"
+      ],
+      "retrieval_mode": "agentic",
+      "autonomy_level": "A0",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A127",
+      "slug": "Audit_Evidence_Reporter",
+      "domain_code": "D16",
+      "domain": "Assurance_Security_Audit",
+      "purpose": "Assemble immutable, scoped evidence packages for internal audit and authorized reviewers.",
+      "skills": [
+        "audit_packaging",
+        "lineage_reconstruction",
+        "control_mapping"
+      ],
+      "tools": [
+        "audit_ledger.read",
+        "lineage.read",
+        "report.write"
+      ],
+      "core_dependencies": [
+        "Core_00_Control_Authority",
+        "Core_01_General_LLM"
+      ],
+      "retrieval_mode": "graph",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    },
+    {
+      "agent_id": "A128",
+      "slug": "Security_Incident_Forensics",
+      "domain_code": "D16",
+      "domain": "Assurance_Security_Audit",
+      "purpose": "Reconstruct agent security incidents from traces, events, policy decisions and signed artifacts.",
+      "skills": [
+        "forensic_timeline",
+        "root_cause",
+        "containment_recommendation"
+      ],
+      "tools": [
+        "siem.search",
+        "audit_ledger.read",
+        "artifact.verify",
+        "incident.update_proposal"
+      ],
+      "core_dependencies": [
+        "Core_01_General_LLM",
+        "Core_12_Anomaly_Drift",
+        "Core_17_Red_Teaming"
+      ],
+      "retrieval_mode": "graph",
+      "autonomy_level": "A1",
+      "risk_tier": "critical",
+      "human_approval_required": true,
+      "web_access": "disabled",
+      "default_tool_access": "deny",
+      "memory_scope": "case_and_session_only",
+      "evidence_required": true,
+      "kill_switch_required": true
+    }
+  ]
+}

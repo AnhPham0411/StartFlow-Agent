@@ -1,0 +1,255 @@
+{
+  "version": "2026-07-19-demo-v2",
+  "synthetic": true,
+  "notice": "Dữ liệu hoàn toàn tổng hợp, chỉ dùng trình diễn StartFlow. Không phải chính sách SHB và không chứa dữ liệu khách hàng thật.",
+  "sourceDatasets": [
+    {
+      "id": "NBA-SEED-20K",
+      "label": "SHB NBA Engine seed_20k.sql (synthetic)",
+      "insertRows": 37624,
+      "tables": 27,
+      "safeProjection": true,
+      "notice": "Chỉ dùng số liệu tổng hợp đã loại bỏ tên, CIF, ngày sinh, địa chỉ, nội dung giao dịch và thông tin xác thực."
+    }
+  ],
+  "records": [
+    {
+      "id": "POL-DEMO-001",
+      "type": "policy",
+      "domain": "Onboarding KYC Documents",
+      "title": "Quy định kiểm tra hồ sơ KYC cá nhân",
+      "section": "Mục 3.1 — Hồ sơ tối thiểu",
+      "effectiveDate": "2026-01-01",
+      "keywords": ["kyc", "hồ sơ", "cccd", "định danh", "onboarding", "kiểm tra hồ sơ"],
+      "content": "Bộ hồ sơ demo tối thiểu gồm giấy tờ định danh còn hiệu lực, ảnh đối chiếu, địa chỉ liên hệ, nghề nghiệp, nguồn thu nhập và chấp thuận xử lý dữ liệu. Nhân viên phải đối chiếu họ tên, ngày sinh, số giấy tờ và ngày hết hạn; sai lệch hoặc ảnh khó đọc phải chuyển kiểm tra thủ công."
+    },
+    {
+      "id": "POL-DEMO-002",
+      "type": "policy",
+      "domain": "Credit Underwriting",
+      "title": "Khung phê duyệt tín dụng SME tổng hợp",
+      "section": "Mục 4.2 — Nguyên tắc thẩm định",
+      "effectiveDate": "2026-01-15",
+      "keywords": ["sme", "tín dụng", "khoản vay", "phê duyệt", "thẩm định", "tài sản bảo đảm"],
+      "content": "Đánh giá sơ bộ phải tách khả năng trả nợ, lịch sử thanh toán, mục đích sử dụng vốn, dòng tiền và tài sản bảo đảm. AI chỉ hỗ trợ tổng hợp và cảnh báo; quyết định hạn mức, lãi suất, ngoại lệ và giải ngân luôn thuộc người có thẩm quyền."
+    },
+    {
+      "id": "POL-DEMO-003",
+      "type": "policy",
+      "domain": "Governance Orchestration",
+      "title": "Quy định sử dụng trợ lý AI nội bộ",
+      "section": "Mục 2 — Phạm vi sử dụng",
+      "effectiveDate": "2026-02-01",
+      "keywords": ["chính sách công ty", "ai nội bộ", "nhân viên", "dữ liệu", "bảo mật", "quy định"],
+      "content": "Nhân viên chỉ được dùng dữ liệu tổng hợp trong bản demo công khai. Kết quả AI phải có dẫn chứng, được kiểm tra bởi con người và không được xem là quyết định cuối cùng. Cấm nhập mật khẩu, token, bí mật hệ thống hoặc dữ liệu khách hàng thật vào môi trường demo."
+    },
+    {
+      "id": "POL-DEMO-004",
+      "type": "policy",
+      "domain": "Complaints Operations",
+      "title": "Quy trình tiếp nhận khiếu nại",
+      "section": "Mục 5 — SLA và chuyển cấp",
+      "effectiveDate": "2026-03-01",
+      "keywords": ["khiếu nại", "complaint", "sla", "khách hàng", "phản hồi", "chuyển cấp"],
+      "content": "Khiếu nại phải được ghi nhận mã hồ sơ, kênh tiếp nhận, thời điểm, nội dung và bằng chứng. Khi có dấu hiệu tổn thất tài chính, tranh chấp giao dịch hoặc vi phạm dữ liệu, hồ sơ phải chuyển cấp cho quản lý; AI chỉ được soạn bản nháp phản hồi."
+    },
+    {
+      "id": "POL-DEMO-005",
+      "type": "policy",
+      "domain": "Payments Cards",
+      "title": "Kiểm soát giao dịch chuyển khoản",
+      "section": "Mục 6.3 — Hành động có tác động",
+      "effectiveDate": "2026-03-15",
+      "keywords": ["chuyển khoản", "thanh toán", "giao dịch", "approve", "phê duyệt", "hạn mức"],
+      "content": "Tra cứu và phân tích giao dịch là tác vụ đọc-only. Tạo lệnh, sửa người thụ hưởng, thay đổi hạn mức, khóa tài khoản hoặc thực hiện chuyển tiền là hành động có tác động và phải được người có vai trò approver xác nhận trước khi tiếp tục."
+    },
+    {
+      "id": "PROC-DEMO-001",
+      "type": "procedure",
+      "domain": "Onboarding KYC Documents",
+      "title": "Checklist kiểm tra hồ sơ khách hàng",
+      "section": "6 bước kiểm tra",
+      "effectiveDate": "2026-01-01",
+      "keywords": ["cách check hồ sơ", "cách kiểm tra", "checklist", "hồ sơ", "kyc", "hướng dẫn"],
+      "content": "Bước 1 phân loại hồ sơ; bước 2 kiểm tra đủ trường bắt buộc; bước 3 kiểm tra hiệu lực giấy tờ; bước 4 đối chiếu chéo họ tên, số định danh và địa chỉ; bước 5 rà soát dấu hiệu chỉnh sửa/bất thường; bước 6 ghi rõ điểm đạt, điểm thiếu và người cần xử lý tiếp."
+    },
+    {
+      "id": "PROC-DEMO-002",
+      "type": "procedure",
+      "domain": "SME Corporate",
+      "title": "Sàng lọc khách hàng SME tiềm năng",
+      "section": "Tiêu chí demo",
+      "effectiveDate": "2026-04-01",
+      "keywords": ["khách hàng tiềm năng", "lead", "bán hàng", "sme", "sàng lọc", "ưu tiên"],
+      "content": "Điểm ưu tiên demo gồm mức phù hợp sản phẩm 30%, nhu cầu vốn rõ ràng 25%, sức khỏe dòng tiền 20%, mức độ tương tác 15% và rủi ro/KYC 10%. Nhân viên phải xem lý do từng tiêu chí; không tự động loại khách hàng chỉ dựa trên điểm AI."
+    },
+    {
+      "id": "PROC-DEMO-003",
+      "type": "procedure",
+      "domain": "Fraud AML",
+      "title": "Rà soát giao dịch đáng ngờ",
+      "section": "Mẫu dấu hiệu demo",
+      "effectiveDate": "2026-04-10",
+      "keywords": ["aml", "gian lận", "đáng ngờ", "giao dịch", "fraud", "rà soát"],
+      "content": "Dấu hiệu demo gồm chia nhỏ giao dịch sát ngưỡng, tăng đột biến so với hành vi nền, nhiều người thụ hưởng mới, luân chuyển nhanh và địa lý/thiết bị bất thường. Cảnh báo chỉ mở bước điều tra; không tự động kết luận gian lận."
+    },
+    {
+      "id": "LEAD-DEMO-001",
+      "type": "lead",
+      "domain": "SME Corporate",
+      "title": "Công ty Minh Phát Demo",
+      "section": "Lead tổng hợp",
+      "effectiveDate": "2026-07-01",
+      "keywords": ["lead", "khách hàng tiềm năng", "minh phát", "sme", "vốn lưu động"],
+      "content": "Doanh thu 32 tỷ VND, tăng trưởng 18%, nhu cầu vốn lưu động 5 tỷ VND, đã tương tác 3 lần, hồ sơ KYC đủ, không có cảnh báo AML demo. Điểm ưu tiên tham khảo: 88/100."
+    },
+    {
+      "id": "LEAD-DEMO-002",
+      "type": "lead",
+      "domain": "SME Corporate",
+      "title": "Công ty An Bình Demo",
+      "section": "Lead tổng hợp",
+      "effectiveDate": "2026-07-01",
+      "keywords": ["lead", "khách hàng tiềm năng", "an bình", "sme", "thiết bị"],
+      "content": "Doanh thu 21 tỷ VND, tăng trưởng 9%, quan tâm khoản vay thiết bị 3 tỷ VND, đã tương tác 5 lần, còn thiếu báo cáo tài chính quý gần nhất. Điểm ưu tiên tham khảo: 76/100."
+    },
+    {
+      "id": "LEAD-DEMO-003",
+      "type": "lead",
+      "domain": "SME Corporate",
+      "title": "Hộ kinh doanh Sao Việt Demo",
+      "section": "Lead tổng hợp",
+      "effectiveDate": "2026-07-01",
+      "keywords": ["lead", "khách hàng tiềm năng", "sao việt", "sme", "pos"],
+      "content": "Doanh thu 8 tỷ VND, tăng trưởng 25%, quan tâm POS và tài khoản thanh toán, tương tác 2 lần, KYC đang xác minh địa chỉ. Điểm ưu tiên tham khảo: 71/100."
+    },
+    {
+      "id": "LEAD-DEMO-004",
+      "type": "lead",
+      "domain": "SME Corporate",
+      "title": "Công ty Đông Hải Demo",
+      "section": "Lead tổng hợp",
+      "effectiveDate": "2026-07-01",
+      "keywords": ["lead", "khách hàng tiềm năng", "đông hải", "sme", "xuất nhập khẩu"],
+      "content": "Doanh thu 45 tỷ VND, giảm 4%, quan tâm tài trợ thương mại, tương tác 1 lần, có hai khoản trả chậm trên 30 ngày trong dữ liệu demo. Điểm ưu tiên tham khảo: 59/100 và cần rà soát rủi ro."
+    },
+    {
+      "id": "KYC-DEMO-001",
+      "type": "case",
+      "domain": "Onboarding KYC Documents",
+      "title": "Hồ sơ KYC Demo 001",
+      "section": "Trạng thái tổng hợp",
+      "effectiveDate": "2026-07-10",
+      "keywords": ["kyc demo", "hồ sơ", "thiếu", "cccd", "địa chỉ"],
+      "content": "Đã có CCCD còn hiệu lực và ảnh đối chiếu; thiếu bằng chứng địa chỉ; tên trên đơn mở tài khoản có một ký tự khác với giấy tờ. Trạng thái: cần nhân viên xác minh thủ công, chưa được kích hoạt tài khoản."
+    },
+    {
+      "id": "KYC-DEMO-002",
+      "type": "case",
+      "domain": "Onboarding KYC Documents",
+      "title": "Hồ sơ KYC Demo 002",
+      "section": "Trạng thái tổng hợp",
+      "effectiveDate": "2026-07-10",
+      "keywords": ["kyc demo", "hồ sơ", "đủ", "cccd", "onboarding"],
+      "content": "CCCD, ảnh đối chiếu, bằng chứng địa chỉ, nghề nghiệp và nguồn thu nhập đều có trong bộ hồ sơ tổng hợp; chưa phát hiện sai lệch chéo. Trạng thái: sẵn sàng cho người có thẩm quyền xem xét bước tiếp theo."
+    },
+    {
+      "id": "TXN-DEMO-001",
+      "type": "transaction_case",
+      "domain": "Fraud AML",
+      "title": "Cụm giao dịch Demo 001",
+      "section": "Cảnh báo tổng hợp",
+      "effectiveDate": "2026-07-12",
+      "keywords": ["giao dịch", "đáng ngờ", "aml", "chia nhỏ", "fraud"],
+      "content": "Bảy giao dịch 95 triệu VND trong 40 phút tới ba người thụ hưởng mới, cao gấp 6 lần hành vi nền 30 ngày. Mức cảnh báo demo: cao; cần điều tra, không được tự động kết luận hoặc khóa tài khoản."
+    },
+    {
+      "id": "TXN-DEMO-002",
+      "type": "transaction_case",
+      "domain": "Payments Cards",
+      "title": "Cụm giao dịch Demo 002",
+      "section": "Đối soát tổng hợp",
+      "effectiveDate": "2026-07-12",
+      "keywords": ["giao dịch", "đối soát", "thanh toán", "thẻ", "refund"],
+      "content": "Hai giao dịch hoàn tiền cùng mã tham chiếu, tổng 4,8 triệu VND; một bản ghi thiếu mã merchant. Mức cảnh báo demo: trung bình; cần đối soát chứng từ trước khi điều chỉnh."
+    },
+    {
+      "id": "PROD-DEMO-001",
+      "type": "product",
+      "domain": "Retail Products Advisory",
+      "title": "Gói vốn lưu động SME Demo",
+      "section": "Thông tin sản phẩm tổng hợp",
+      "effectiveDate": "2026-06-01",
+      "keywords": ["sản phẩm", "vốn lưu động", "sme", "tư vấn", "khoản vay"],
+      "content": "Sản phẩm demo dành cho doanh nghiệp có nhu cầu vốn chu kỳ ngắn. Điều kiện, lãi suất và hạn mức trong bản demo không phải chào bán thật; nhân viên phải tra cứu biểu phí và chính sách chính thức trước khi tư vấn khách hàng."
+    },
+    {
+      "id": "PROD-DEMO-002",
+      "type": "product",
+      "domain": "Retail Products Advisory",
+      "title": "Tài khoản thanh toán doanh nghiệp Demo",
+      "section": "Thông tin sản phẩm tổng hợp",
+      "effectiveDate": "2026-06-01",
+      "keywords": ["sản phẩm", "tài khoản", "doanh nghiệp", "thanh toán", "tư vấn"],
+      "content": "Gói demo minh họa quản lý dòng tiền, phân quyền giao dịch và đối soát. Mọi biểu phí, hạn mức và điều kiện phải được xác nhận từ nguồn sản phẩm chính thức có hiệu lực."
+    },
+    {
+      "id": "NBA-DEMO-001",
+      "type": "analytics",
+      "domain": "Retail Products Advisory",
+      "title": "Quy mô pipeline Next Best Action tổng hợp",
+      "section": "NBA seed · thống kê an toàn",
+      "effectiveDate": "2026-07-18",
+      "keywords": ["nba", "pipeline", "khách hàng tiềm năng", "sàng lọc", "lead", "score", "recommendation"],
+      "content": "Bộ seed synthetic có 500 khách hàng demo, 2.500 điểm sản phẩm, 500 recommendations, 210 call-list assignments và 16 sản phẩm mẫu. Có thể dùng để trình diễn sàng lọc lead và xếp hạng ưu tiên; điểm chỉ là tín hiệu demo, không phải quyết định tín dụng hay chào bán thật."
+    },
+    {
+      "id": "NBA-DEMO-002",
+      "type": "analytics",
+      "domain": "Payments Cards",
+      "title": "Tổng quan dữ liệu giao dịch NBA tổng hợp",
+      "section": "NBA seed · thống kê an toàn",
+      "effectiveDate": "2026-07-18",
+      "keywords": ["giao dịch", "transaction", "tag", "phân tích", "tổng quan", "dữ liệu demo"],
+      "content": "Bộ seed synthetic có 25.031 giao dịch, 2.000 nhãn mức giao dịch và 1.261 nhãn mức khách hàng. Bản trình diễn chỉ sử dụng tổng số và nhóm hành vi; tên, CIF, địa chỉ, nội dung chuyển khoản và đối tác giao dịch không được đưa vào bằng chứng."
+    },
+    {
+      "id": "NBA-DEMO-003",
+      "type": "analytics",
+      "domain": "Customer Service Complaints",
+      "title": "Tổng quan phản hồi bán hàng tổng hợp",
+      "section": "NBA seed · thống kê an toàn",
+      "effectiveDate": "2026-07-18",
+      "keywords": ["feedback", "phản hồi", "bán hàng", "outcome", "hiệu quả", "pipeline"],
+      "content": "Bộ seed synthetic có 300 phản hồi, 400 outcomes và 200 tình huống RAG đã che nội dung định danh. Dữ liệu có thể minh họa phân tích hiệu quả pipeline, nhưng một số nhãn được sinh ngẫu nhiên và phải được mô tả là demo thay vì sự thật kinh doanh."
+    },
+    {
+      "id": "NBA-DEMO-004",
+      "type": "analytics",
+      "domain": "SME Corporate",
+      "title": "Phân bố vận hành và địa lý tổng hợp",
+      "section": "NBA seed · thống kê an toàn",
+      "effectiveDate": "2026-07-18",
+      "keywords": ["địa lý", "geo", "zone", "chi nhánh", "phân bố", "khách hàng"],
+      "content": "Bộ seed synthetic có 298 ánh xạ khách hàng demo vào 8 vùng và 30 người dùng nội bộ mẫu. Chỉ sử dụng thống kê vùng và workload tổng hợp; không sử dụng tên nhân sự, username, địa chỉ hoặc password hash trong phản hồi AI."
+    },
+    {
+      "id": "NBA-DEMO-005",
+      "type": "analytics",
+      "domain": "Model Risk AI Governance",
+      "title": "Theo dõi model và audit pipeline tổng hợp",
+      "section": "NBA seed · thống kê an toàn",
+      "effectiveDate": "2026-07-18",
+      "keywords": ["model", "auc", "lift", "audit", "governance", "batch", "hiệu năng"],
+      "content": "Bộ seed synthetic có 5 bản ghi model-weight, 10 batch runs và 500 audit-log entries. Chỉ số model trong seed phục vụ minh họa giám sát; phải xác minh bằng kết quả đánh giá độc lập trước khi dùng trong quyết định nghiệp vụ."
+    }
+  ],
+  "staff": [
+    {"id": "STAFF-DEMO-01", "name": "Nguyễn An (Demo)", "role": "RM SME", "team": "Kinh doanh SME", "status": "available", "activeCases": 3, "completedToday": 7},
+    {"id": "STAFF-DEMO-02", "name": "Trần Bình (Demo)", "role": "KYC Analyst", "team": "Onboarding", "status": "reviewing", "activeCases": 5, "completedToday": 11},
+    {"id": "STAFF-DEMO-03", "name": "Lê Chi (Demo)", "role": "Credit Analyst", "team": "Tín dụng", "status": "reviewing", "activeCases": 4, "completedToday": 6},
+    {"id": "STAFF-DEMO-04", "name": "Phạm Dũng (Demo)", "role": "AML Investigator", "team": "Fraud & AML", "status": "escalated", "activeCases": 2, "completedToday": 4},
+    {"id": "STAFF-DEMO-05", "name": "Vũ Hà (Demo)", "role": "Operations", "team": "Vận hành", "status": "available", "activeCases": 2, "completedToday": 13},
+    {"id": "STAFF-DEMO-06", "name": "Đỗ Minh (Demo)", "role": "Approver", "team": "Quản lý", "status": "approval", "activeCases": 3, "completedToday": 8}
+  ]
+}

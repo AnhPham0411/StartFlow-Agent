@@ -20,6 +20,12 @@ export interface AuthUser {
   subject: string;
   name: string;
   email?: string;
+  accountType?: 'manager' | 'banker';
+}
+
+export interface LoginCredentials {
+  username: string;
+  password: string;
 }
 
 export interface AuthContextValue {
@@ -27,7 +33,7 @@ export interface AuthContextValue {
   user: AuthUser | null;
   roles: UserRole[];
   error: string | null;
-  login: () => Promise<void>;
+  login: (credentials?: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
   getAccessToken: () => Promise<string>;
   hasRole: (...roles: UserRole[]) => boolean;
@@ -54,6 +60,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await Promise.resolve();
       if (!active) return;
       const authMode = process.env.NEXT_PUBLIC_AUTH_MODE ?? 'keycloak';
+
+      if (authMode === 'demo') {
+        if (
+          process.env.NODE_ENV === 'production' &&
+          process.env.NEXT_PUBLIC_DEMO_PUBLIC_WARNING !== 'true'
+        ) {
+          setError(
+            'AUTH_MODE=demo trong production cần NEXT_PUBLIC_DEMO_PUBLIC_WARNING=true để luôn hiển thị cảnh báo demo.',
+          );
+          setStatus('error');
+          return;
+        }
+        const account = window.sessionStorage.getItem('startflow-demo-account');
+        if (account === 'manager') {
+          setUser({ subject: 'demo-manager', name: 'Manager', accountType: 'manager' });
+          setRoles(['analyst', 'approver', 'admin']);
+          setStatus('authenticated');
+        } else if (account === 'banker') {
+          setUser({ subject: 'demo-banker', name: 'Banker', accountType: 'banker' });
+          setRoles(['analyst']);
+          setStatus('authenticated');
+        } else {
+          setStatus('unauthenticated');
+        }
+        return;
+      }
 
       if (authMode === 'mock') {
         if (process.env.NODE_ENV === 'production') {
@@ -134,7 +166,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = useCallback(async () => {
+  const login = useCallback(async (credentials?: LoginCredentials) => {
+    if (process.env.NEXT_PUBLIC_AUTH_MODE === 'demo') {
+      const username = credentials?.username.trim().toLowerCase();
+      if ((username !== 'manager' && username !== 'banker') || credentials?.password !== '12345678') {
+        throw new Error('Tên đăng nhập hoặc mật khẩu demo không đúng.');
+      }
+      window.sessionStorage.setItem('startflow-demo-account', username);
+      if (username === 'manager') {
+        setUser({ subject: 'demo-manager', name: 'Manager', accountType: 'manager' });
+        setRoles(['analyst', 'approver', 'admin']);
+      } else {
+        setUser({ subject: 'demo-banker', name: 'Banker', accountType: 'banker' });
+        setRoles(['analyst']);
+      }
+      setStatus('authenticated');
+      return;
+    }
     if (process.env.NEXT_PUBLIC_AUTH_MODE === 'mock' && process.env.NODE_ENV !== 'production') {
       setUser({ subject: 'demo-reviewer', name: 'Demo Reviewer', email: 'demo@startflow.local' });
       setRoles(['analyst', 'approver']);
@@ -146,6 +194,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    if (process.env.NEXT_PUBLIC_AUTH_MODE === 'demo') {
+      window.sessionStorage.removeItem('startflow-demo-account');
+      setUser(null);
+      setRoles([]);
+      setStatus('unauthenticated');
+      return;
+    }
     if (!keycloakRef.current) {
       setStatus('unauthenticated');
       return;
@@ -154,6 +209,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const getAccessToken = useCallback(async () => {
+    if (process.env.NEXT_PUBLIC_AUTH_MODE === 'demo') {
+      const account = window.sessionStorage.getItem('startflow-demo-account');
+      if (account === 'manager') return 'demo-manager-token';
+      if (account === 'banker') return 'demo-banker-token';
+      throw new Error('AUTH_REQUIRED');
+    }
     if (process.env.NEXT_PUBLIC_AUTH_MODE === 'mock' && process.env.NODE_ENV !== 'production')
       return 'mock-access-token';
     const client = keycloakRef.current;
