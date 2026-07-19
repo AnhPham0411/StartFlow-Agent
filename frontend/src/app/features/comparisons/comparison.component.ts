@@ -11,7 +11,6 @@ import { RouterLink } from '@angular/router';
 import { SdButton } from '@sdcorejs/angular/components/button';
 import { SdInform } from '@sdcorejs/angular/components/inform';
 import { SdSection } from '@sdcorejs/angular/components/section';
-import { SdTabComponent } from '@sdcorejs/angular/components/tab-router';
 import {
   SdTable,
   SdTableCellDefDirective,
@@ -72,13 +71,6 @@ const METRIC_DEFINITIONS: readonly MetricDefinition[] = [
   templateUrl: './comparison.component.html',
   styleUrl: './comparison.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-})
-@SdTabComponent({
-  component: ComparisonComponent,
-  name: 'So sánh mô hình',
-  icon: 'compare_arrows',
-  tooltip: 'So sánh Single-agent và Multi-agent',
-  color: 'primary',
 })
 export class ComparisonComponent implements OnInit {
   readonly #api = inject(StartFlowApiService);

@@ -12,7 +12,6 @@ import { SdBadge } from '@sdcorejs/angular/components/badge';
 import { SdButton } from '@sdcorejs/angular/components/button';
 import { SdInform } from '@sdcorejs/angular/components/inform';
 import { SdSection } from '@sdcorejs/angular/components/section';
-import { SD_TAB, SdTabComponent } from '@sdcorejs/angular/components/tab-router';
 import { SdTable, type SdTableOption } from '@sdcorejs/angular/components/table';
 import { SdView } from '@sdcorejs/angular/components/view';
 import { SdPageComponent } from '@sdcorejs/angular/modules/layout';
@@ -51,18 +50,11 @@ interface SnapshotFieldViewModel {
   templateUrl: './case-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-@SdTabComponent({
-  component: CaseDetailComponent,
-  name: ({ params }) => `Hồ sơ #${params['caseId'] ?? '—'}`,
-  icon: 'folder_open',
-  color: 'primary',
-})
 export class CaseDetailComponent {
   readonly #api = inject(StartFlowApiService);
   readonly #router = inject(Router);
   readonly #notify = inject(SdNotifyService);
   readonly #permission = inject(SdPermissionService);
-  readonly #tab = inject(SD_TAB, { optional: true });
 
   readonly caseId = input.required<string>();
   readonly data = signal<CaseDetail | null>(null);
@@ -189,12 +181,6 @@ export class CaseDetailComponent {
     try {
       const item = await this.#api.getCase(currentCaseId);
       this.data.set(item);
-      this.#tab?.tabInfoChanges.next({
-        name: item.companyName,
-        icon: 'folder_open',
-        tooltip: `Hồ sơ ${item.registrationNumber}`,
-        color: 'primary',
-      });
     } catch {
       this.data.set(null);
       this.loadError.set('Không tìm thấy hồ sơ hoặc bạn không có quyền truy cập.');

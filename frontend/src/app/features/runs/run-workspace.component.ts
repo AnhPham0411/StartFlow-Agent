@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input } f
 import { SdBadge } from '@sdcorejs/angular/components/badge';
 import { SdInform } from '@sdcorejs/angular/components/inform';
 import { SdSection } from '@sdcorejs/angular/components/section';
-import { SD_TAB, SdTabComponent } from '@sdcorejs/angular/components/tab-router';
 import { SdView } from '@sdcorejs/angular/components/view';
 import { SdPageComponent } from '@sdcorejs/angular/modules/layout';
 import type { AgentResult } from '@startflow/contracts';
@@ -50,16 +49,8 @@ interface SpecialistLane {
   styleUrl: './run-workspace.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-@SdTabComponent({
-  component: RunWorkspaceComponent,
-  name: ({ params }) => `Phân tích #${String(params['runId'] ?? '—').slice(0, 8)}`,
-  icon: 'hub',
-  tooltip: 'Không gian phân tích đa tác nhân',
-  color: 'primary',
-})
 export class RunWorkspaceComponent {
   readonly facade = inject(RunFacade);
-  readonly #tab = inject(SD_TAB, { optional: true });
 
   readonly runId = input.required<string>();
 
@@ -160,16 +151,6 @@ export class RunWorkspaceComponent {
 
   constructor() {
     effect(() => void this.facade.load(this.runId()));
-    effect(() => {
-      const run = this.facade.run();
-      if (!run) return;
-      this.#tab?.tabInfoChanges.next({
-        name: run.caseSnapshot?.companyName ?? `Phân tích #${run.id.slice(0, 8)}`,
-        icon: 'hub',
-        tooltip: `Lượt đánh giá ${run.id}`,
-        color: this.runStatus()?.color ?? 'primary',
-      });
-    });
   }
 
   reload(): void {
