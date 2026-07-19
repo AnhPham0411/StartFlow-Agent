@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
@@ -68,6 +69,27 @@ test('frontend container never receives private runtime env', async () => {
   const frontend = compose.match(/^  frontend:\r?\n([\s\S]*?)(?=^  backend-migrate:)/m)?.[0];
   assert.ok(frontend);
   assert.doesNotMatch(frontend, /env_file:/);
+});
+
+test('frontend CSP permits only the Core UI silent SSO inline script', async () => {
+  const silentRenew = await readFile(
+    'frontend/node_modules/@sdcorejs/angular/modules/keycloak/htmls/silent-renew.html',
+    'utf8',
+  );
+  const inlineScript = silentRenew.match(/<script>([\s\S]*?)<\/script>/i)?.[1];
+  assert.ok(inlineScript, 'Core UI silent-renew.html must contain its postMessage script');
+
+  const requiredHash = `sha256-${createHash('sha256').update(inlineScript).digest('base64')}`;
+  for (const path of ['frontend/nginx.conf', 'infra/deploy/nginx/frontend.conf.template']) {
+    const nginx = await readFile(path, 'utf8');
+    const scriptSource = nginx.match(/script-src ([^;]+)/)?.[1];
+    assert.ok(scriptSource, `${path} must define script-src`);
+    assert.ok(
+      scriptSource.includes(`'${requiredHash}'`),
+      `${path} must allow the exact Core UI silent SSO script hash`,
+    );
+    assert.doesNotMatch(scriptSource, /'unsafe-inline'|static\.cloudflareinsights\.com/);
+  }
 });
 
 test('CI prepares workspace-generated types before quality checks and e2e', async () => {
