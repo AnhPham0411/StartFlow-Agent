@@ -112,6 +112,23 @@ test('frontend CSP permits only the Core UI silent SSO inline script', async () 
   }
 });
 
+test('Angular builds avoid CSP-blocked critical stylesheet loaders', async () => {
+  const angularConfig = JSON.parse(await readFile('frontend/angular.json', 'utf8'));
+  const configurations = angularConfig.projects.startflow.architect.build.configurations;
+
+  for (const name of ['development', 'production']) {
+    assert.equal(configurations[name].optimization.styles.inlineCritical, false);
+    assert.equal(configurations[name].outputHashing, 'all');
+  }
+
+  assert.deepEqual(configurations.local.fileReplacements, [
+    {
+      replace: 'src/environments/environment.ts',
+      with: 'src/environments/environment.development.ts',
+    },
+  ]);
+});
+
 test('frontend deploy keeps HTML fresh and only immutable-caches hashed JavaScript', async () => {
   const angularConfig = JSON.parse(await readFile('frontend/angular.json', 'utf8'));
   const buildConfigurations = angularConfig.projects.startflow.architect.build.configurations;
