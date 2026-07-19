@@ -49,7 +49,12 @@ env \
   "${node_bin}" node_modules/next/dist/bin/next build --webpack
 
 test -f "${release_name}/BUILD_ID"
-cp -a "${release_name}" "${project_dir}/frontend/${release_name}"
+# Copying the complete .next tree to Lustre creates thousands of metadata
+# operations and can take longer than the build. The deployable archive below
+# contains the same standalone output and is the only artifact serving needs.
+if [[ "${STARTFLOW_COPY_NEXT_DIR:-false}" == "true" ]]; then
+  cp -a "${release_name}" "${project_dir}/frontend/${release_name}"
+fi
 
 bundle_root="${SLURM_TMPDIR}/startflow-standalone-bundle"
 mkdir -p "${bundle_root}"
