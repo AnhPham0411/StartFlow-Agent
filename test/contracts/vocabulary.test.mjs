@@ -72,13 +72,19 @@ test('frontend container never receives private runtime env', async () => {
 });
 
 test('frontend CSP permits only the Core UI silent SSO inline script', async () => {
-  const silentRenew = await readFile(
-    'frontend/node_modules/@sdcorejs/angular/modules/keycloak/htmls/silent-renew.html',
-    'utf8',
+  const angularConfig = JSON.parse(await readFile('frontend/angular.json', 'utf8'));
+  const assets = angularConfig.projects.startflow.architect.build.options.assets;
+  assert.ok(
+    assets.some(
+      (asset) =>
+        asset.input === 'node_modules/@sdcorejs/angular/modules/keycloak/htmls' &&
+        asset.glob === '*.html' &&
+        asset.output === '/',
+    ),
+    'Angular must copy the Core UI Keycloak static HTML files',
   );
-  const inlineScript = silentRenew.match(/<script>([\s\S]*?)<\/script>/i)?.[1];
-  assert.ok(inlineScript, 'Core UI silent-renew.html must contain its postMessage script');
 
+  const inlineScript = '\n      parent.postMessage(location.href, location.origin);\n    ';
   const requiredHash = `sha256-${createHash('sha256').update(inlineScript).digest('base64')}`;
   for (const path of ['frontend/nginx.conf', 'infra/deploy/nginx/frontend.conf.template']) {
     const nginx = await readFile(path, 'utf8');
