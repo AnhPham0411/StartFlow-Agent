@@ -8,7 +8,7 @@ export class LayoutConfiguration implements ISdLayoutConfiguration {
   readonly homeUrl = '/dashboard';
   readonly sidebar = {
     version: 1 as const,
-    brandColor: '#f37021',
+    brandColor: '#b54708',
     brandLightColor: '#fff3e8',
     logoUrl: '/logo.png',
     defaultTitle: 'SHB StartFlow',

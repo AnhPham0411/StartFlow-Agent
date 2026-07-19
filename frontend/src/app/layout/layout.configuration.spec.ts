@@ -23,7 +23,7 @@ describe('LayoutConfiguration', () => {
 
     expect(configuration.sidebar as unknown).toEqual({
       version: 1,
-      brandColor: '#f37021',
+      brandColor: '#b54708',
       brandLightColor: '#fff3e8',
       logoUrl: '/logo.png',
       defaultTitle: 'SHB StartFlow',
