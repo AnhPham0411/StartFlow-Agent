@@ -58,7 +58,7 @@ test('SHB shell owns responsive spacing and a valid PNG logo', async () => {
   assertValidPng(logo);
 
   const styles = await readFile('frontend/src/app/layout/main-layout.component.scss', 'utf8');
-  const activeStyles = styles.replace(/\/\*[\s\S]*?\*\//g, '');
+  const activeStyles = styles.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
   assert.match(activeStyles, /\.app-route-content\s*\{[^}]*padding:\s*24px/);
   assert.match(
     activeStyles,
