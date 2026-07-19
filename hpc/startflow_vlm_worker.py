@@ -534,6 +534,8 @@ class CoreRuntime:
             "tích và đề xuất, không tự thực hiện giao dịch, phê duyệt tín dụng, thay đổi quyền hay gửi dữ liệu ra "
             "ngoài. Mọi kết luận phải gắn với tên nguồn đã cung cấp; dữ liệu có chữ DEMO/TỔNG HỢP phải được nói rõ "
             "là giả lập. Nếu thiếu dữ liệu hãy nói rõ. Không tiết lộ chain-of-thought. "
+            "Chỉ viết kết luận cuối, tối đa 300 từ. Không lặp workflow, agent/model/core ID, JSON đầu vào, mã nguồn "
+            "nội bộ hoặc chép nguyên văn toàn bộ evidence. "
             "Trả về duy nhất JSON hợp lệ với keys answer (string), evidence (array các object source,label,excerpt,confidence), "
             "warnings (array string). Viết câu trả lời tiếng Việt, ngắn gọn nhưng có giải thích và bước kiểm tra của con người."
         )
@@ -556,7 +558,7 @@ class CoreRuntime:
         with torch.inference_mode():
             generated = self.model.generate(
                 **inputs,
-                max_new_tokens=900,
+                max_new_tokens=600,
                 do_sample=False,
                 use_cache=True,
             )
@@ -569,7 +571,7 @@ class CoreRuntime:
         parsed = parse_json_output(text)
         if parsed is None or not isinstance(parsed.get("answer"), str):
             parsed = {
-                "answer": text.strip() or "Model local không tạo được câu trả lời hợp lệ.",
+                "answer": "Model local chưa tạo được kết quả tổng hợp hợp lệ. Vui lòng xem dẫn chứng đã trích xuất hoặc thử lại.",
                 "evidence": evidence,
                 "warnings": ["Output model không đúng JSON; runtime đã dùng bộ phân tích an toàn."],
             }

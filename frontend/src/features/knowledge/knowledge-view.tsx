@@ -10,6 +10,11 @@ import { LoadingState } from '@/src/components/ui/loading-state';
 import { PageHeader } from '@/src/components/ui/page-header';
 import { Panel, PanelBody, PanelHeader } from '@/src/components/ui/panel';
 import { StatusBadge } from '@/src/components/ui/status-badge';
+import {
+  demoKnowledgeDocuments,
+  isDemoKnowledgeDocument,
+  type DemoKnowledgeDocument,
+} from '@/src/data/demo-knowledge';
 import { formatDateTime } from '@/src/lib/format';
 import type { KnowledgeDocument } from '@/src/lib/models';
 import { useStartFlowApi } from '@/src/lib/use-api';
@@ -28,11 +33,10 @@ function AccessDenied() {
       <div className="state-icon state-icon--danger">
         <LockKeyhole aria-hidden="true" />
       </div>
-      <p className="eyebrow">Admin only</p>
+      <p className="eyebrow">Dành cho quản lý</p>
       <h1>Không có quyền quản lý tri thức</h1>
       <p className="muted">
-        Màn hình ingest yêu cầu role <strong>admin</strong>. Backend vẫn là nơi cưỡng chế quyền truy
-        cập.
+        Đăng nhập tài khoản manager để xem và bổ sung thư viện tri thức mô phỏng.
       </p>
       <Link className="button button--secondary" href="/dashboard">
         Về tổng quan
@@ -47,6 +51,7 @@ function AdminKnowledge() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [usingDemo, setUsingDemo] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ title: '', domain: 'CREDIT', content: '' });
   const load = useCallback(async () => {
@@ -54,9 +59,17 @@ function AdminKnowledge() {
     setLoading(true);
     setError(null);
     try {
-      setItems(await api.listKnowledge());
+      const loaded = await api.listKnowledge();
+      if (loaded.length > 0) {
+        setItems(loaded);
+        setUsingDemo(false);
+      } else {
+        setItems(demoKnowledgeDocuments);
+        setUsingDemo(true);
+      }
     } catch {
-      setError('Không tải được thư viện tri thức demo.');
+      setItems(demoKnowledgeDocuments);
+      setUsingDemo(true);
     } finally {
       setLoading(false);
     }
@@ -85,7 +98,23 @@ function AdminKnowledge() {
       setForm({ title: '', domain: 'CREDIT', content: '' });
       setSuccess('Đã gửi tài liệu demo vào hàng đợi ingest.');
     } catch {
-      setError('Không thể ingest tài liệu. Kiểm tra quyền admin và kết nối AI service.');
+      const created: DemoKnowledgeDocument = {
+        id: `local-knowledge-${Date.now()}`,
+        title: form.title.trim(),
+        domain: form.domain.toLowerCase(),
+        sectionCount: 1,
+        chunkCount: Math.max(1, Math.ceil(form.content.trim().length / 400)),
+        status: 'READY',
+        createdAt: new Date().toISOString(),
+        demoData: true,
+        summary: form.content.trim(),
+        keyPoints: ['Tài liệu mô phỏng do người dùng thêm trong phiên demo hiện tại.'],
+        exampleCase: 'Có thể hỏi Trợ lý AI để thử tra cứu nội dung vừa bổ sung.',
+      };
+      setItems((current) => [created, ...current]);
+      setForm({ title: '', domain: 'CREDIT', content: '' });
+      setUsingDemo(true);
+      setSuccess('Đã thêm tài liệu vào thư viện mô phỏng của phiên demo.');
     } finally {
       setSubmitting(false);
     }
@@ -93,9 +122,9 @@ function AdminKnowledge() {
   return (
     <>
       <PageHeader
-        eyebrow="Admin · RAG corpus"
+        eyebrow="Thư viện nội bộ · Dữ liệu mô phỏng"
         title="Tri thức mô phỏng"
-        description="Quản lý tài liệu demo cho Credit, Compliance và Operations. Không tải lên dữ liệu ngân hàng thật."
+        description="Tra cứu tài liệu mẫu cho Tín dụng, Tuân thủ và Vận hành. Không tải lên dữ liệu ngân hàng thật."
         actions={
           <Button onClick={() => document.getElementById('knowledge-title')?.focus()}>
             <Plus aria-hidden="true" />
@@ -108,6 +137,12 @@ function AdminKnowledge() {
           <p>{success}</p>
         </div>
       ) : null}
+      {usingDemo ? (
+        <div className="banner banner--info" role="status">
+          <BookOpenText aria-hidden="true" />
+          <p>Đang hiển thị bộ tri thức mô phỏng an toàn để trải nghiệm đầy đủ bản demo.</p>
+        </div>
+      ) : null}
       {error ? (
         <div className="banner banner--danger" role="alert">
           <p>{error}</p>
@@ -115,7 +150,7 @@ function AdminKnowledge() {
       ) : null}
       <div className="admin-grid">
         <Panel>
-          <PanelHeader title="Thư viện hiện có" eyebrow={`${items.length} demo documents`} />
+          <PanelHeader title="Thư viện hiện có" eyebrow={`${items.length} tài liệu mô phỏng`} />
           {loading ? (
             <LoadingState />
           ) : items.length === 0 ? (
@@ -129,8 +164,8 @@ function AdminKnowledge() {
                 <thead>
                   <tr>
                     <th>Tài liệu</th>
-                    <th>Domain</th>
-                    <th>Chunks</th>
+                    <th>Lĩnh vực</th>
+                    <th>Đoạn tri thức</th>
                     <th>Trạng thái</th>
                     <th>Ngày tạo</th>
                   </tr>
@@ -139,10 +174,33 @@ function AdminKnowledge() {
                   {items.map((item) => (
                     <tr key={item.id}>
                       <td data-label="Tài liệu">
-                        <strong>{item.title}</strong>
-                        <div className="utility muted">#{item.id.slice(0, 8)}</div>
+                        {isDemoKnowledgeDocument(item) ? (
+                          <details className="knowledge-preview">
+                            <summary>
+                              <strong>{item.title}</strong>
+                              <span className="utility muted">
+                                {item.sectionCount ?? 0} mục · Có tình huống minh họa
+                              </span>
+                            </summary>
+                            <div className="knowledge-preview__content">
+                              <p>{item.summary}</p>
+                              <strong>Điểm chính</strong>
+                              <ul>
+                                {item.keyPoints.map((point) => (
+                                  <li key={point}>{point}</li>
+                                ))}
+                              </ul>
+                              <div className="knowledge-example">
+                                <strong>Tình huống mô phỏng</strong>
+                                <p>{item.exampleCase}</p>
+                              </div>
+                            </div>
+                          </details>
+                        ) : (
+                          <strong>{item.title}</strong>
+                        )}
                       </td>
-                      <td data-label="Domain">{item.domain}</td>
+                      <td data-label="Lĩnh vực">{domainLabel(item.domain)}</td>
                       <td data-label="Chunks">{item.chunkCount ?? '—'}</td>
                       <td data-label="Trạng thái">
                         <StatusBadge status={item.status ?? 'READY'} />
@@ -156,7 +214,7 @@ function AdminKnowledge() {
           )}
         </Panel>
         <Panel className="sticky-panel">
-          <PanelHeader title="Ingest tài liệu demo" eyebrow="Admin action" />
+          <PanelHeader title="Thêm tài liệu mô phỏng" eyebrow="Thao tác quản lý" />
           <PanelBody>
             <form onSubmit={(event) => void submit(event)} className="list-stack">
               <div className="banner banner--warning">
@@ -214,4 +272,13 @@ function AdminKnowledge() {
       </div>
     </>
   );
+}
+
+function domainLabel(domain: string) {
+  const labels: Record<string, string> = {
+    credit: 'Tín dụng',
+    compliance: 'Tuân thủ',
+    operations: 'Vận hành',
+  };
+  return labels[domain.toLowerCase()] ?? domain;
 }

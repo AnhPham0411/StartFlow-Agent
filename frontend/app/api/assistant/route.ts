@@ -2,6 +2,12 @@ import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { callHpcSpool, isPendingApproval, syncApprovalQueue } from '@/src/lib/hpc-spool';
 import { planAssistantRequest } from '@/src/lib/assistant-routing';
+import {
+  buildFallbackSummary,
+  hasExecutionTrace,
+  presentEvidence,
+  presentFinalAnswer,
+} from '@/src/lib/assistant-presentation';
 import { retrieveDemoEvidence } from '@/src/lib/demo-database';
 import type {
   AssistantAgentTask,
@@ -97,44 +103,44 @@ async function extractText(files: File[]) {
   return evidence;
 }
 
-function fallbackAnswer(
-  prompt: string,
-  files: AssistantFileSummary[],
-  tasks: AssistantAgentTask[],
-  evidence: AssistantEvidence[],
-) {
-  const specialists = tasks
-    .filter((task) => !['A002', 'A003', 'A004'].includes(task.agentId))
-    .map((task) => `${task.agentId} · ${task.agentName}`)
-    .join(', ');
-  const fileReport = files.length
-    ? `Đã tiếp nhận ${files.length} tệp (${files.map((file) => file.name).join(', ')}).`
-    : 'Yêu cầu này không kèm tệp.';
-  const extracted = evidence.length
-    ? `\n\nDẫn chứng từ tệp hoặc CSDL demo tổng hợp:\n${evidence
-        .map((item) => `${item.source}:\n${item.excerpt}`)
-        .join('\n\n')
-        .slice(0, 6_000)}`
-    : files.length
-      ? '\n\nCác tệp nhị phân đã được giữ nguyên để VLM multimodal local xử lý; fallback hiện chỉ đọc trực tiếp text, CSV, JSON, XML và log.'
-      : '';
-
-  return [
-    `Tôi đã tiếp nhận yêu cầu: “${prompt.trim()}”.`,
-    fileReport,
-    `Planner đã phân rã và giao việc cho: ${specialists || 'nhóm tri thức và vận hành'}.`,
-    'Đây là kết quả sơ bộ từ bộ điều phối local. Những hành động làm thay đổi dữ liệu, phê duyệt tín dụng, giao dịch hoặc quyền truy cập vẫn cần nhân viên có thẩm quyền xác nhận.',
-  ].join('\n\n') + extracted;
-}
-
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function mergeEvidence(...groups: AssistantEvidence[][]) {
+  const unique = new Map<string, AssistantEvidence>();
+  for (const item of groups.flat()) {
+    const key = `${item.source}\u0000${item.excerpt}`;
+    if (!unique.has(key)) unique.set(key, item);
+  }
+  return [...unique.values()].slice(0, 12);
 }
 
 function containsHiddenReasoning(answer: string) {
   return /thinking process|analy[sz]e the request|draft the json|self-correction|let(?:'|’)s assemble|chain[- ]of[- ]thought/i.test(
     answer,
   );
+}
+
+function finalizeResponse(
+  response: AssistantResponse,
+  files: AssistantFileSummary[],
+  trustedEvidence: AssistantEvidence[],
+  forceFallback = false,
+) {
+  const evidence = presentEvidence(trustedEvidence);
+  response.evidence = evidence;
+  const unsafe =
+    forceFallback || containsHiddenReasoning(response.answer) || hasExecutionTrace(response.answer);
+  response.answer = unsafe
+    ? buildFallbackSummary(files, evidence)
+    : presentFinalAnswer(response.answer, trustedEvidence);
+  if (unsafe) {
+    response.warnings = [
+      'Output nội bộ đã được rút gọn thành kết luận cuối dựa trên dẫn chứng đã xác minh.',
+    ];
+  }
+  return response;
 }
 
 function normalizeUpstream(
@@ -378,7 +384,13 @@ export async function POST(request: Request) {
   }).catch(() => null);
   const hpcResponse = normalizeUpstream(hpc, requestId, files, tasks);
   if (hpcResponse) {
-    const trustedEvidence = [...(await extractText(sourceFiles)), ...demoEvidence];
+    // The signed HPC worker returns only locally extracted file/OCR evidence,
+    // never citations invented by generation. Preserve it for binary documents.
+    const trustedEvidence = mergeEvidence(
+      await extractText(sourceFiles),
+      demoEvidence,
+      hpcResponse.evidence,
+    );
     const unsafeOutput =
       containsHiddenReasoning(hpcResponse.answer) ||
       hpcResponse.warnings.some((warning) => warning.includes('không đúng JSON'));
@@ -389,12 +401,7 @@ export async function POST(request: Request) {
           ? `Đã ghi nhận manager phê duyệt cho ${approval.task.agentId} · ${approval.task.agentName}. Đây là phê duyệt để workflow tiếp tục task; không phải quyết định phê duyệt khoản vay hoặc giao dịch ngân hàng.`
           : `Đã ghi nhận manager từ chối ${approval.task.agentId} · ${approval.task.agentName}. Task đã dừng và không thực hiện hành động có tác động.`;
       hpcResponse.warnings = [];
-    } else if (unsafeOutput) {
-      hpcResponse.answer = fallbackAnswer(prompt, files, hpcResponse.tasks, trustedEvidence);
-      hpcResponse.warnings = [
-        'Output sinh tự do không đạt schema an toàn; lớp điều phối đã thay bằng câu trả lời có dẫn chứng đã xác minh.',
-      ];
-    }
+    } else finalizeResponse(hpcResponse, files, trustedEvidence, unsafeOutput);
     await syncApprovalQueue(requestId, hpcResponse.tasks).catch(() => undefined);
     return NextResponse.json(hpcResponse, { headers: { 'Cache-Control': 'no-store' } });
   }
@@ -409,6 +416,12 @@ export async function POST(request: Request) {
     approval ?? undefined,
   );
   if (local) {
+    finalizeResponse(
+      local,
+      files,
+      [...(await extractText(sourceFiles)), ...demoEvidence],
+      local.warnings.some((warning) => warning.includes('không đúng JSON')),
+    );
     await syncApprovalQueue(requestId, local.tasks).catch(() => undefined);
     return NextResponse.json(local, { headers: { 'Cache-Control': 'no-store' } });
   }
@@ -437,10 +450,10 @@ export async function POST(request: Request) {
   const fallback: AssistantResponse = {
     requestId,
     mode: 'demo-fallback',
-    answer: fallbackAnswer(prompt, files, tasks, evidence),
+    answer: buildFallbackSummary(files, presentEvidence(evidence)),
     tasks,
     files,
-    evidence,
+    evidence: presentEvidence(evidence),
     warnings: [
       process.env.STARTFLOW_ASSISTANT_URL
         ? 'Orchestrator/VLM local không phản hồi; hệ thống đã tự chuyển sang routing fallback.'

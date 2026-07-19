@@ -462,15 +462,34 @@ export function AssistantWorkspace() {
                     <p className="assistant-warning" key={warning}>{warning}</p>
                   ))}
                   {message.response?.evidence.length ? (
-                    <details className="assistant-evidence">
-                      <summary>Dẫn chứng từ dữ liệu ({message.response.evidence.length})</summary>
-                      {message.response.evidence.map((item) => (
-                        <blockquote key={item.id}>
-                          <strong>{item.source}</strong>
-                          <span>{item.label} · confidence {Math.round(item.confidence * 100)}%</span>
-                          <p>{item.excerpt}</p>
-                        </blockquote>
-                      ))}
+                    <details className="assistant-evidence" open>
+                      <summary>
+                        <span>Dẫn chứng đã sử dụng</span>
+                        <span className="assistant-evidence-count">
+                          {message.response.evidence.length} nguồn
+                        </span>
+                      </summary>
+                      <ol className="assistant-evidence-list">
+                        {message.response.evidence.map((item, index) => (
+                          <li key={item.id}>
+                            <article className="assistant-evidence-card">
+                              <header>
+                                <span className="assistant-citation-index" aria-hidden="true">
+                                  [{index + 1}]
+                                </span>
+                                <div>
+                                  <strong>{item.source}</strong>
+                                  <span>{item.label}</span>
+                                </div>
+                                <span className="assistant-evidence-score">
+                                  Độ liên quan {Math.round(item.confidence * 100)}%
+                                </span>
+                              </header>
+                              <blockquote>{item.excerpt}</blockquote>
+                            </article>
+                          </li>
+                        ))}
+                      </ol>
                     </details>
                   ) : null}
                   {message.id === latestResponse?.requestId &&

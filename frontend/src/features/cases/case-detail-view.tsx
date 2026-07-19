@@ -11,9 +11,19 @@ import { LoadingState } from '@/src/components/ui/loading-state';
 import { PageHeader } from '@/src/components/ui/page-header';
 import { Panel, PanelBody, PanelHeader } from '@/src/components/ui/panel';
 import { StatusBadge } from '@/src/components/ui/status-badge';
+import { findDemoCreditCase } from '@/src/data/demo-credit-cases';
 import { formatCurrency, formatDateTime } from '@/src/lib/format';
 import type { CaseDetail } from '@/src/lib/models';
 import { useStartFlowApi } from '@/src/lib/use-api';
+
+const financialLabels: Record<keyof CaseDetail['financials'], string> = {
+  revenue: 'Doanh thu',
+  ebitda: 'EBITDA',
+  totalDebt: 'Tổng dư nợ',
+  equity: 'Vốn chủ sở hữu',
+  currentAssets: 'Tài sản ngắn hạn',
+  currentLiabilities: 'Nợ ngắn hạn',
+};
 
 export function CaseDetailView({ caseId }: { caseId: string }) {
   const api = useStartFlowApi();
@@ -29,7 +39,13 @@ export function CaseDetailView({ caseId }: { caseId: string }) {
     try {
       setData(await api.getCase(caseId));
     } catch {
-      setError('Không tìm thấy hồ sơ hoặc bạn không có quyền truy cập.');
+      const demoCase = findDemoCreditCase(caseId);
+      if (demoCase) {
+        setData(demoCase);
+        setError(null);
+      } else {
+        setError('Không tìm thấy hồ sơ hoặc bạn không có quyền truy cập.');
+      }
     } finally {
       setLoading(false);
     }
@@ -59,12 +75,16 @@ export function CaseDetailView({ caseId }: { caseId: string }) {
         eyebrow={`DEMO_DATA · ${data.registrationNumber}`}
         title={data.companyName}
         description={`${formatCurrency(data.requestedAmount)} · ${data.purpose}`}
-        actions={
+        actions={caseId.startsWith('demo-case-') ? (
+          <Link className="button button--primary" href="/assistant">
+            <Play aria-hidden="true" /> Phân tích trong Trợ lý AI
+          </Link>
+        ) : (
           <Button onClick={() => void startRun()} disabled={starting}>
             <Play aria-hidden="true" />
             {starting ? 'Đang khởi tạo…' : 'Bắt đầu đánh giá'}
           </Button>
-        }
+        )}
       />
       {error ? (
         <div className="banner banner--danger" role="alert">
@@ -112,7 +132,10 @@ export function CaseDetailView({ caseId }: { caseId: string }) {
                       </td>
                       <td data-label="Thời điểm">{formatDateTime(run.createdAt)}</td>
                       <td>
-                        <Link aria-label={`Mở lượt ${run.id}`} href={`/runs/${run.id}`}>
+                        <Link
+                          aria-label={run.id.startsWith('demo-run-') ? 'Phân tích hồ sơ trong Trợ lý AI' : `Mở lượt ${run.id}`}
+                          href={run.id.startsWith('demo-run-') ? '/assistant' : `/runs/${run.id}`}
+                        >
                           <ArrowRight aria-hidden="true" />
                         </Link>
                       </td>
@@ -127,20 +150,11 @@ export function CaseDetailView({ caseId }: { caseId: string }) {
           <Panel>
             <PanelHeader title="Ảnh chụp tài chính" eyebrow="Snapshot" />
             <PanelBody>
-              <dl>
-                {Object.entries(data.financials).map(([key, value]) => (
-                  <div
-                    key={key}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      gap: 12,
-                      borderBottom: '1px solid var(--line)',
-                      padding: '8px 0',
-                    }}
-                  >
-                    <dt className="muted">{key}</dt>
-                    <dd style={{ margin: 0, fontWeight: 650 }}>{formatCurrency(value)}</dd>
+              <dl className="stat-grid">
+                {(Object.entries(data.financials) as [keyof CaseDetail['financials'], number][]).map(([key, value]) => (
+                  <div className="stat" key={key}>
+                    <dt className="stat__label">{financialLabels[key]}</dt>
+                    <dd className="stat__value">{formatCurrency(value)}</dd>
                   </div>
                 ))}
               </dl>

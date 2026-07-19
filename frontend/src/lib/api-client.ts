@@ -2,6 +2,7 @@ import {
   agentPlanTaskSchema,
   agentResultSchema,
   comparisonMetricSchema,
+  decisionStatusSchema,
   finalDecisionSchema,
   runEventSchema,
   runStatusSchema,
@@ -51,13 +52,14 @@ function asNumber(value: unknown, fallback = 0) {
 function normalizeRunSummary(value: unknown, caseId: string) {
   const raw = isRecord(value) ? value : {};
   const status = runStatusSchema.safeParse(raw.status);
+  const finalDecisionStatus = decisionStatusSchema.safeParse(raw.finalDecisionStatus);
   return {
     id: asString(raw.id),
     caseId,
     status: status.success ? status.data : ('PENDING' as const),
     createdAt: asString(raw.createdAt),
     completedAt: typeof raw.completedAt === 'string' ? raw.completedAt : null,
-    finalDecisionStatus: null,
+    finalDecisionStatus: finalDecisionStatus.success ? finalDecisionStatus.data : null,
   };
 }
 

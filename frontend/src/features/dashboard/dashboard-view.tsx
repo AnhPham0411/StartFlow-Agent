@@ -9,6 +9,7 @@ import { LoadingState } from '@/src/components/ui/loading-state';
 import { PageHeader } from '@/src/components/ui/page-header';
 import { Panel, PanelBody, PanelHeader } from '@/src/components/ui/panel';
 import { StatusBadge } from '@/src/components/ui/status-badge';
+import { demoCreditCases } from '@/src/data/demo-credit-cases';
 import { formatCurrency, formatDateTime } from '@/src/lib/format';
 import type { CaseSummary } from '@/src/lib/models';
 import { useStartFlowApi } from '@/src/lib/use-api';
@@ -26,7 +27,8 @@ export function DashboardView() {
     try {
       setCases(await api.listCases());
     } catch {
-      setError('Không kết nối được API. Kiểm tra backend và phiên đăng nhập rồi thử lại.');
+      setCases(demoCreditCases);
+      setError(null);
     } finally {
       setLoading(false);
     }

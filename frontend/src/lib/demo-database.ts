@@ -46,7 +46,7 @@ export function retrieveDemoEvidence(prompt: string, limit = 5): AssistantEviden
     .slice(0, limit)
     .map(({ record, score }) => ({
       id: `demo-${record.id}`,
-      source: `${record.id} · ${record.title}`,
+      source: record.title,
       label: `CSDL demo tổng hợp · ${record.section} · hiệu lực ${record.effectiveDate}`,
       excerpt: record.content,
       confidence: Math.min(0.98, 0.62 + score / 100),

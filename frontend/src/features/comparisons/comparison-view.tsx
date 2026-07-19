@@ -9,6 +9,7 @@ import { ErrorState } from '@/src/components/ui/error-state';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { PageHeader } from '@/src/components/ui/page-header';
 import { Panel, PanelBody, PanelHeader } from '@/src/components/ui/panel';
+import { demoCreditCases } from '@/src/data/demo-credit-cases';
 import type { CaseSummary, ComparisonResult } from '@/src/lib/models';
 import { useStartFlowApi } from '@/src/lib/use-api';
 
@@ -38,7 +39,9 @@ export function ComparisonView() {
       setCases(items);
       setCaseId((current) => current || items[0]?.id || '');
     } catch {
-      setError('Không tải được danh sách hồ sơ để so sánh.');
+      setCases(demoCreditCases);
+      setCaseId((current) => current || demoCreditCases[0]?.id || '');
+      setError(null);
     } finally {
       setLoading(false);
     }

@@ -39,6 +39,10 @@ cd "${verify_root}"
 cd "${verify_root}/frontend"
 "${node_bin}" node_modules/vitest/vitest.mjs run \
   tests/features/assistant-routing.test.ts \
+  tests/features/assistant-presentation.test.ts \
+  tests/features/demo-credit-cases.test.ts \
+  tests/features/demo-knowledge.test.ts \
+  tests/features/demo-manager-staff.test.ts \
   tests/features/demo-database.test.ts \
   --maxWorkers=1
 cd "${verify_root}"

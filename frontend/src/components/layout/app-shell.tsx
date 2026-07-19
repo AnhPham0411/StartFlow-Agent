@@ -26,7 +26,7 @@ function Navigation({ mobile = false }: { mobile?: boolean }) {
   const pathname = usePathname();
   const { hasRole, logout } = useAuth();
   const items = navigation.filter((item) => !item.adminOnly || hasRole('admin'));
-  const visible = mobile ? items.slice(0, 3) : items;
+  const visible = items;
 
   return (
     <nav
