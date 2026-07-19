@@ -40,21 +40,31 @@ describe('MainLayoutComponent', () => {
     }).compileComponents();
   });
 
-  it('renders the Core UI layout and tab router outlet', () => {
+  it('renders the Core UI layout through the standard router outlet', () => {
     const fixture = TestBed.createComponent(MainLayoutComponent);
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('sd-layout')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('sd-tab-router-outlet')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('router-outlet')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('sd-tab-router-outlet')).toBeNull();
+    expect(fixture.nativeElement.querySelector('main')?.classList).toContain('app-route-content');
   });
 
-  it('keeps the approved routes in the permission-aware menu', () => {
+  it('groups permission-aware routes into business and AI navigation', () => {
     const fixture = TestBed.createComponent(MainLayoutComponent);
-    const paths = fixture.componentInstance.menus.map((menu) =>
-      'path' in menu ? menu.path : undefined,
-    );
+    const groups = fixture.componentInstance.menus.map((group) => ({
+      id: group.id,
+      title: group.title,
+      paths:
+        'children' in group
+          ? (group.children ?? []).flatMap((child) => ('path' in child ? [child.path] : []))
+          : [],
+    }));
 
-    expect(paths).toEqual(['/dashboard', '/cases', '/comparisons', '/knowledge']);
+    expect(groups).toEqual([
+      { id: 'business', title: 'Nghiệp vụ', paths: ['/dashboard', '/cases'] },
+      { id: 'ai-data', title: 'AI & Dữ liệu', paths: ['/comparisons', '/knowledge'] },
+    ]);
   });
 
   it('focuses semantic main content and announces subsequent route changes in Vietnamese', async () => {
