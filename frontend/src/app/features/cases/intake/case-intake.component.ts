@@ -11,7 +11,6 @@ import { Router } from '@angular/router';
 import { SdButton } from '@sdcorejs/angular/components/button';
 import { SdInform } from '@sdcorejs/angular/components/inform';
 import { SdSection } from '@sdcorejs/angular/components/section';
-import { SdTabComponent } from '@sdcorejs/angular/components/tab-router';
 import { SdCheckbox } from '@sdcorejs/angular/forms/checkbox';
 import { SdInput } from '@sdcorejs/angular/forms/input';
 import { SdInputNumber } from '@sdcorejs/angular/forms/input-number';
@@ -63,12 +62,6 @@ const FIELD_ERROR_MESSAGES: Readonly<Record<string, string>> = {
   templateUrl: './case-intake.component.html',
   styleUrl: './case-intake.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-})
-@SdTabComponent({
-  component: CaseIntakeComponent,
-  name: 'Tạo hồ sơ',
-  icon: 'note_add',
-  color: 'primary',
 })
 export class CaseIntakeComponent {
   readonly #api = inject(StartFlowApiService);

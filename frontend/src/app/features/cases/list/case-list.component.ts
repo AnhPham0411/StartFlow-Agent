@@ -9,7 +9,6 @@ import {
 import { Router } from '@angular/router';
 import { SdButton } from '@sdcorejs/angular/components/button';
 import { SdSection } from '@sdcorejs/angular/components/section';
-import { SdTabComponent } from '@sdcorejs/angular/components/tab-router';
 import { SdTable, type SdTableOption } from '@sdcorejs/angular/components/table';
 import { SdInput } from '@sdcorejs/angular/forms/input';
 import { SdPageComponent } from '@sdcorejs/angular/modules/layout';
@@ -39,12 +38,6 @@ type CaseListRow = CaseSummary & { latestStatus: string };
   ],
   templateUrl: './case-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-})
-@SdTabComponent({
-  component: CaseListComponent,
-  name: 'Hồ sơ tín dụng',
-  icon: 'folder_open',
-  color: 'primary',
 })
 export class CaseListComponent {
   readonly #api = inject(StartFlowApiService);

@@ -10,7 +10,6 @@ import {
 import { SdBadge } from '@sdcorejs/angular/components/badge';
 import { SdButton } from '@sdcorejs/angular/components/button';
 import { SdSection } from '@sdcorejs/angular/components/section';
-import { SdTabComponent } from '@sdcorejs/angular/components/tab-router';
 import {
   SdTable,
   SdTableCellDefDirective,
@@ -57,13 +56,6 @@ interface KnowledgeRow {
   ],
   templateUrl: './knowledge.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-})
-@SdTabComponent({
-  component: KnowledgeComponent,
-  name: 'Tri thức demo',
-  icon: 'menu_book',
-  tooltip: 'Quản lý thư viện tri thức mô phỏng',
-  color: 'primary',
 })
 export class KnowledgeComponent implements OnInit {
   readonly #api = inject(StartFlowApiService);

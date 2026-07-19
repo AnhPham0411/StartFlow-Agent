@@ -3,7 +3,6 @@ import { Router } from '@angular/router';
 import { SdBadge } from '@sdcorejs/angular/components/badge';
 import { SdButton } from '@sdcorejs/angular/components/button';
 import { SdSection } from '@sdcorejs/angular/components/section';
-import { SdTabComponent } from '@sdcorejs/angular/components/tab-router';
 import { SdTable, type SdTableOption } from '@sdcorejs/angular/components/table';
 import { SdPageComponent } from '@sdcorejs/angular/modules/layout';
 import { StartFlowApiService } from '../../core/api/startflow-api.service';
@@ -47,12 +46,6 @@ interface NextActionViewModel {
   ],
   templateUrl: './dashboard.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-})
-@SdTabComponent({
-  component: DashboardComponent,
-  name: 'Tổng quan',
-  icon: 'dashboard',
-  color: 'primary',
 })
 export class DashboardComponent {
   readonly #api = inject(StartFlowApiService);

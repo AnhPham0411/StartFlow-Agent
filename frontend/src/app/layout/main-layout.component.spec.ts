@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { SD_LAYOUT_CONFIGURATION } from '@sdcorejs/angular/modules/layout';
 import { SD_PERMISSION_CONFIGURATION } from '@sdcorejs/angular/modules/permission';
+import { STARTFLOW_PERMISSIONS } from '../core/auth/permission-map';
 import { MainLayoutComponent } from './main-layout.component';
 
 @Component({ template: '<p>Nội dung kiểm thử</p>' })
@@ -40,21 +41,76 @@ describe('MainLayoutComponent', () => {
     }).compileComponents();
   });
 
-  it('renders the Core UI layout and tab router outlet', () => {
+  it('renders the Core UI layout through the standard router outlet', () => {
     const fixture = TestBed.createComponent(MainLayoutComponent);
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('sd-layout')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('sd-tab-router-outlet')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('router-outlet')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('sd-tab-router-outlet')).toBeNull();
+    expect(fixture.nativeElement.querySelector('main')?.classList).toContain('app-route-content');
   });
 
-  it('keeps the approved routes in the permission-aware menu', () => {
+  it('groups permission-aware routes into business and AI navigation', () => {
     const fixture = TestBed.createComponent(MainLayoutComponent);
-    const paths = fixture.componentInstance.menus.map((menu) =>
-      'path' in menu ? menu.path : undefined,
-    );
+    const groups = fixture.componentInstance.menus.map((group) => ({
+      id: group.id,
+      title: group.title,
+      items:
+        'children' in group
+          ? (group.children ?? []).flatMap((child) =>
+              'path' in child
+                ? [
+                    {
+                      title: child.title,
+                      path: child.path,
+                      permission: child.permission,
+                    },
+                  ]
+                : [],
+            )
+          : [],
+    }));
 
-    expect(paths).toEqual(['/dashboard', '/nba', '/cases', '/comparisons', '/knowledge']);
+    expect(groups).toEqual([
+      {
+        id: 'business',
+        title: 'Nghiệp vụ',
+        items: [
+          {
+            title: 'Tổng quan',
+            path: '/dashboard',
+            permission: STARTFLOW_PERMISSIONS.dashboardView,
+          },
+          {
+            title: 'Tư vấn NBA',
+            path: '/nba',
+            permission: STARTFLOW_PERMISSIONS.nbaView,
+          },
+          {
+            title: 'Hồ sơ tín dụng',
+            path: '/cases',
+            permission: STARTFLOW_PERMISSIONS.caseView,
+          },
+        ],
+      },
+      {
+        id: 'ai-data',
+        title: 'AI & Dữ liệu',
+        items: [
+          {
+            title: 'So sánh mô hình',
+            path: '/comparisons',
+            permission: STARTFLOW_PERMISSIONS.comparisonView,
+          },
+          {
+            title: 'Kho tri thức',
+            path: '/knowledge',
+            permission: STARTFLOW_PERMISSIONS.knowledgeView,
+          },
+        ],
+      },
+    ]);
   });
 
   it('focuses semantic main content and announces subsequent route changes in Vietnamese', async () => {
