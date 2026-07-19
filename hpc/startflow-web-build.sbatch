@@ -5,8 +5,8 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=12G
 #SBATCH --time=00:20:00
-#SBATCH --output=%x-%j.out
-#SBATCH --error=%x-%j.err
+#SBATCH --output=runtime-logs/%x-%j.out
+#SBATCH --error=runtime-logs/%x-%j.err
 
 set -euo pipefail
 
@@ -27,6 +27,7 @@ rsync -a \
   --exclude '.next*' \
   --exclude '*.out' \
   --exclude '*.err' \
+  --exclude 'startflow-release-*.tar.gz' \
   "${project_dir}/frontend/" "${build_root}/frontend/"
 rsync -a \
   --exclude node_modules \

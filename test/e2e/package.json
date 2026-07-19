@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "test": "playwright test",
-    "test:headed": "playwright test --headed"
+    "test:headed": "playwright test --headed",
+    "test:standalone": "playwright test --config=playwright.standalone.config.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2"

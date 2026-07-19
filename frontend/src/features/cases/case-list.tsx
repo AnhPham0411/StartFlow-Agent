@@ -9,6 +9,7 @@ import { LoadingState } from '@/src/components/ui/loading-state';
 import { PageHeader } from '@/src/components/ui/page-header';
 import { StatusBadge } from '@/src/components/ui/status-badge';
 import { demoCreditCases } from '@/src/data/demo-credit-cases';
+import { listStoredDemoCases } from '@/src/lib/demo-case-store';
 import { formatCurrency, formatDateTime } from '@/src/lib/format';
 import type { CaseSummary } from '@/src/lib/models';
 import { useStartFlowApi } from '@/src/lib/use-api';
@@ -24,9 +25,9 @@ export function CaseList() {
     setLoading(true);
     setError(null);
     try {
-      setItems(await api.listCases());
+      setItems([...listStoredDemoCases(), ...(await api.listCases())]);
     } catch {
-      setItems(demoCreditCases);
+      setItems([...listStoredDemoCases(), ...demoCreditCases]);
       setError(null);
     } finally {
       setLoading(false);

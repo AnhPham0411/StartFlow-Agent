@@ -10,6 +10,7 @@ import { PageHeader } from '@/src/components/ui/page-header';
 import { Panel, PanelBody, PanelHeader } from '@/src/components/ui/panel';
 import { StatusBadge } from '@/src/components/ui/status-badge';
 import { demoCreditCases } from '@/src/data/demo-credit-cases';
+import { listStoredDemoCases } from '@/src/lib/demo-case-store';
 import { formatCurrency, formatDateTime } from '@/src/lib/format';
 import type { CaseSummary } from '@/src/lib/models';
 import { useStartFlowApi } from '@/src/lib/use-api';
@@ -25,9 +26,9 @@ export function DashboardView() {
     setLoading(true);
     setError(null);
     try {
-      setCases(await api.listCases());
+      setCases([...listStoredDemoCases(), ...(await api.listCases())]);
     } catch {
-      setCases(demoCreditCases);
+      setCases([...listStoredDemoCases(), ...demoCreditCases]);
       setError(null);
     } finally {
       setLoading(false);

@@ -12,6 +12,7 @@ import { PageHeader } from '@/src/components/ui/page-header';
 import { Panel, PanelBody, PanelHeader } from '@/src/components/ui/panel';
 import { StatusBadge } from '@/src/components/ui/status-badge';
 import { findDemoCreditCase } from '@/src/data/demo-credit-cases';
+import { findStoredDemoCase } from '@/src/lib/demo-case-store';
 import { formatCurrency, formatDateTime } from '@/src/lib/format';
 import type { CaseDetail } from '@/src/lib/models';
 import { useStartFlowApi } from '@/src/lib/use-api';
@@ -39,7 +40,7 @@ export function CaseDetailView({ caseId }: { caseId: string }) {
     try {
       setData(await api.getCase(caseId));
     } catch {
-      const demoCase = findDemoCreditCase(caseId);
+      const demoCase = findStoredDemoCase(caseId) ?? findDemoCreditCase(caseId);
       if (demoCase) {
         setData(demoCase);
         setError(null);

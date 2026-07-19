@@ -5,8 +5,8 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=12G
 #SBATCH --time=00:30:00
-#SBATCH --output=%x-%j.out
-#SBATCH --error=%x-%j.err
+#SBATCH --output=runtime-logs/%x-%j.out
+#SBATCH --error=runtime-logs/%x-%j.err
 
 set -euo pipefail
 
@@ -40,6 +40,7 @@ cd "${verify_root}/frontend"
 "${node_bin}" node_modules/vitest/vitest.mjs run \
   tests/features/assistant-routing.test.ts \
   tests/features/assistant-presentation.test.ts \
+  tests/features/demo-case-store.test.ts \
   tests/features/demo-credit-cases.test.ts \
   tests/features/demo-knowledge.test.ts \
   tests/features/demo-manager-staff.test.ts \

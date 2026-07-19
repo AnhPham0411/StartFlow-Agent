@@ -25,6 +25,8 @@ frontend/startflow-release-*.tar.gz
 # Slurm runtime logs (kept outside source control)
 *.out
 *.err
+runtime-logs/*
+!runtime-logs/.gitkeep
 ai.log
 coverage/
 test-results/

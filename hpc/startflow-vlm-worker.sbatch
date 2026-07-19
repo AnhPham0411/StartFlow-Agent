@@ -6,8 +6,8 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=96G
 #SBATCH --time=03:00:00
-#SBATCH --output=%x-%j.out
-#SBATCH --error=%x-%j.err
+#SBATCH --output=runtime-logs/%x-%j.out
+#SBATCH --error=runtime-logs/%x-%j.err
 
 set -euo pipefail
 

@@ -8,6 +8,7 @@ import { Button } from '@/src/components/ui/button';
 import { PageHeader } from '@/src/components/ui/page-header';
 import { Panel, PanelBody, PanelHeader } from '@/src/components/ui/panel';
 import { demoFixtures, documentOptions } from '@/src/lib/demo-fixtures';
+import { saveStoredDemoCase } from '@/src/lib/demo-case-store';
 import { formatCurrency } from '@/src/lib/format';
 import { useStartFlowApi } from '@/src/lib/use-api';
 
@@ -43,7 +44,8 @@ export function IntakeForm() {
       const created = await api.createCase(parsed.data);
       router.push(`/cases/${created.id}`);
     } catch {
-      setRequestError('Không thể lưu hồ sơ. Kiểm tra kết nối API và thử lại.');
+      const created = saveStoredDemoCase(parsed.data);
+      router.push(`/cases/${created.id}`);
     } finally {
       setSubmitting(false);
     }

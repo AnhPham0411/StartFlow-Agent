@@ -10,6 +10,7 @@ import { LoadingState } from '@/src/components/ui/loading-state';
 import { PageHeader } from '@/src/components/ui/page-header';
 import { Panel, PanelBody, PanelHeader } from '@/src/components/ui/panel';
 import { demoCreditCases } from '@/src/data/demo-credit-cases';
+import { listStoredDemoCases } from '@/src/lib/demo-case-store';
 import type { CaseSummary, ComparisonResult } from '@/src/lib/models';
 import { useStartFlowApi } from '@/src/lib/use-api';
 
@@ -35,12 +36,13 @@ export function ComparisonView() {
     setLoading(true);
     setError(null);
     try {
-      const items = await api.listCases();
+      const items = [...listStoredDemoCases(), ...(await api.listCases())];
       setCases(items);
       setCaseId((current) => current || items[0]?.id || '');
     } catch {
-      setCases(demoCreditCases);
-      setCaseId((current) => current || demoCreditCases[0]?.id || '');
+      const items = [...listStoredDemoCases(), ...demoCreditCases];
+      setCases(items);
+      setCaseId((current) => current || items[0]?.id || '');
       setError(null);
     } finally {
       setLoading(false);
