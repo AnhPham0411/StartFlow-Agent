@@ -90,6 +90,11 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "e2e": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
             }
           },
           "defaultConfiguration": "production"
@@ -99,7 +104,8 @@
           "configurations": {
             "production": { "buildTarget": "startflow:build:production" },
             "development": { "buildTarget": "startflow:build:development" },
-            "local": { "buildTarget": "startflow:build:local" }
+            "local": { "buildTarget": "startflow:build:local" },
+            "e2e": { "buildTarget": "startflow:build:e2e" }
           },
           "defaultConfiguration": "local",
           "options": { "port": 3000, "host": "0.0.0.0" }
@@ -127,9 +133,7 @@
     }
   },
   "cli": {
-    "schematicCollections": [
-      "angular-eslint"
-    ],
+    "schematicCollections": ["angular-eslint"],
     "analytics": false
   }
 }
