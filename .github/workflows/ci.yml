@@ -26,6 +26,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm ci:prepare
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
@@ -63,6 +64,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm ci:prepare
       - run: pnpm --filter @startflow/e2e exec playwright install --with-deps chromium
       - run: pnpm test:e2e
 
@@ -109,6 +111,18 @@ jobs:
           set -euo pipefail
           bash -n infra/deploy/prepare-env.sh
           bash -n infra/deploy/deploy.sh
+          bash -n backend/entrypoint.sh
+          bash -n ai-service/entrypoint.sh
           bash infra/deploy/tests/prepare-env.test.sh
           bash infra/deploy/tests/deploy.test.sh
           bash infra/deploy/tests/workflow.test.sh
+
+  deploy:
+    name: Deploy ${{ github.ref_name == 'main' && 'production' || 'development' }}
+    if: github.event_name == 'push'
+    needs: [node, python, e2e, docker, secret-safety, deployment-assets]
+    uses: ./.github/workflows/deploy.yml
+    with:
+      target_env: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
+      release_sha: ${{ github.sha }}
+    secrets: inherit

@@ -97,7 +97,15 @@ export class CasesService {
   }
 
   snapshotData(loanCase: LoanCase) {
-    return this.toRecord(loanCase);
+    return {
+      companyName: loanCase.companyName,
+      demoData: true as const,
+      financials: loanCase.financials,
+      purpose: loanCase.purpose,
+      registrationNumber: loanCase.registrationNumber,
+      requestedAmount: loanCase.requestedAmount.toNumber(),
+      submittedDocuments: loanCase.submittedDocuments,
+    };
   }
 
   snapshotHash(snapshot: Record<string, unknown>): string {

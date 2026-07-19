@@ -10,7 +10,7 @@ import { CreateCaseDto } from './dto/create-case.dto';
 @ApiTags('cases')
 @ApiBearerAuth()
 @Controller('api/cases')
-@Roles('analyst')
+@Roles('employee')
 export class CasesController {
   constructor(private readonly casesService: CasesService) {}
 

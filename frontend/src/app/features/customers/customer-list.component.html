@@ -1,0 +1,87 @@
+<sd-page>
+  <div headerLeft class="d-flex flex-column">
+    <div class="d-flex align-items-center gap-8">
+      <h1 class="T20M m-0">Customer 360</h1>
+      <span class="T12M text-primary bg-primary-light rounded-full px-8 py-4">LIVE DATA</span>
+    </div>
+    <p class="T14R text-secondary mt-4 mb-0">
+      Tra cứu danh mục khách hàng theo đúng phạm vi chi nhánh và phân công hiện tại.
+    </p>
+  </div>
+
+  <sd-inform
+    class="d-block mb-16"
+    info
+    title="Phạm vi dữ liệu được bảo vệ"
+    description="Quản lý xem dữ liệu toàn chi nhánh; nhân viên chỉ xem khách hàng được phân công; quản trị viên xem toàn hệ thống."
+  ></sd-inform>
+
+  <sd-section
+    title="Danh sách khách hàng"
+    subTitle="Tìm theo họ tên hoặc mã CIF, sau đó mở hồ sơ Customer 360 để xem đề xuất NBA."
+    icon="groups"
+  >
+    <div class="p-16 pb-0">
+      <div class="row align-items-end">
+        <div class="col-12 col-lg-7">
+          <sd-input
+            autoId="customer-search"
+            size="sm"
+            hideInlineError
+            label="Tìm khách hàng"
+            placeholder="Nhập tên hoặc mã CIF"
+            [model]="query()"
+            (modelChange)="updateQuery($event)"
+            (keyupEnter)="search()"
+          ></sd-input>
+        </div>
+        <div class="col-12 col-lg-5">
+          <div class="d-flex align-items-center gap-8">
+            <sd-button
+              autoId="customer-search-submit"
+              type="fill"
+              color="primary"
+              prefixIcon="search"
+              title="Tìm kiếm"
+              [loading]="loading()"
+              (click)="search()"
+            ></sd-button>
+            <sd-button
+              autoId="customer-search-clear"
+              type="outline"
+              color="secondary"
+              prefixIcon="refresh"
+              title="Xóa lọc"
+              (click)="clearSearch()"
+            ></sd-button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <app-loading-state label="Đang tải danh mục khách hàng…"></app-loading-state>
+    } @else if (error()) {
+      <div class="p-16">
+        <app-error-state
+          title="Không tải được khách hàng"
+          [description]="error() ?? ''"
+          (retry)="search()"
+        ></app-error-state>
+      </div>
+    } @else if (customers().length === 0) {
+      <div class="p-16">
+        <app-empty-state
+          [title]="emptyState().title"
+          [description]="emptyState().description"
+          actionLabel="Xóa bộ lọc"
+          (primaryAction)="clearSearch()"
+        ></app-empty-state>
+      </div>
+    } @else {
+      <div class="overflow-x-auto">
+        <sd-table autoId="customer-list" [option]="tableOption"></sd-table>
+      </div>
+    }
+  </sd-section>
+</sd-page>

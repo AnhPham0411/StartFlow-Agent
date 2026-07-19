@@ -1,0 +1,239 @@
+<sd-page>
+  <div headerLeft class="d-flex flex-column">
+    <h1 class="T20M m-0">Tạo hồ sơ đánh giá</h1>
+    <p class="T14R text-secondary mt-4 mb-0">
+      Chỉ dùng dữ liệu doanh nghiệp hư cấu; dữ liệu được kiểm tra theo shared contract trước khi
+      gửi.
+    </p>
+  </div>
+  <div class="mb-16">
+    <sd-section
+      title="Chọn dữ liệu demo"
+      subTitle="Dùng fixture có sẵn để chuẩn bị nhanh một kịch bản trình diễn an toàn."
+      icon="science"
+      iconColor="info"
+    >
+      <div class="d-flex flex-wrap gap-8 p-16">
+        @for (fixture of fixtures; track fixture.id) {
+          <sd-button
+            [autoId]="'case-fixture-' + fixture.id"
+            [type]="selectedFixtureId() === fixture.id ? 'fill' : 'light'"
+            [color]="selectedFixtureId() === fixture.id ? 'primary' : 'secondary'"
+            [title]="fixture.label"
+            prefixIcon="science"
+            [tooltip]="fixture.description"
+            (click)="selectFixture(fixture.id)"
+          ></sd-button>
+        }
+      </div>
+    </sd-section>
+  </div>
+
+  @if (requestError()) {
+    <div class="mb-16">
+      <sd-inform error title="Chưa lưu được hồ sơ" [description]="requestError() ?? ''"></sd-inform>
+    </div>
+  }
+
+  @if (validationSummaryText(); as summaryText) {
+    <div #validationSummary class="mb-16" data-testid="validation-summary" tabindex="-1">
+      <sd-inform
+        error
+        title="Cần kiểm tra lại thông tin hồ sơ"
+        [description]="summaryText"
+      ></sd-inform>
+    </div>
+  }
+
+  <form novalidate (submit)="submit($event)">
+    <div class="intake-layout">
+      <div class="d-flex flex-column gap-16">
+        <sd-section
+          title="Doanh nghiệp và khoản vay"
+          subTitle="Bước 1 · Thông tin định danh và nhu cầu tín dụng"
+          icon="business"
+        >
+          <div class="intake-fields">
+            <sd-input
+              autoId="case-company-name"
+              label="Tên doanh nghiệp"
+              placeholder="Ví dụ: Công ty Cổ phần Sao Việt Demo"
+              required
+              [maxlength]="160"
+              [inlineError]="errors()['companyName']"
+              [model]="input().companyName"
+              (modelChange)="updateRoot('companyName', $event)"
+            ></sd-input>
+
+            <sd-input
+              autoId="case-registration-number"
+              label="Mã đăng ký"
+              placeholder="Ví dụ: DEMO-01042"
+              required
+              [maxlength]="32"
+              [inlineError]="errors()['registrationNumber']"
+              [model]="input().registrationNumber"
+              (modelChange)="updateRoot('registrationNumber', $event)"
+            ></sd-input>
+
+            <sd-input-number
+              autoId="case-requested-amount"
+              label="Số tiền đề nghị (VND)"
+              helperText="Nhập số tiền lớn hơn 0."
+              required
+              [precision]="0"
+              [min]="1"
+              [inlineError]="errors()['requestedAmount']"
+              [model]="input().requestedAmount"
+              (modelChange)="updateRoot('requestedAmount', $event)"
+            ></sd-input-number>
+
+            <sd-textarea
+              class="intake-wide"
+              autoId="case-purpose"
+              label="Mục đích vay"
+              placeholder="Mô tả nhu cầu sử dụng khoản vay"
+              required
+              [rows]="4"
+              [maxlength]="1000"
+              [inlineError]="errors()['purpose']"
+              [model]="input().purpose"
+              (modelChange)="updateRoot('purpose', $event)"
+            ></sd-textarea>
+          </div>
+        </sd-section>
+
+        <sd-section
+          title="Ảnh chụp tài chính"
+          subTitle="Bước 2 · Các số liệu được cố định khi khởi chạy đánh giá"
+          icon="account_balance"
+        >
+          <div class="intake-fields">
+            <sd-input-number
+              autoId="case-revenue"
+              label="Doanh thu (VND)"
+              required
+              [precision]="0"
+              [min]="0"
+              [inlineError]="errors()['financials.revenue']"
+              [model]="input().financials.revenue"
+              (modelChange)="updateFinancial('revenue', $event)"
+            ></sd-input-number>
+            <sd-input-number
+              autoId="case-ebitda"
+              label="EBITDA (VND)"
+              required
+              [precision]="0"
+              [inlineError]="errors()['financials.ebitda']"
+              [model]="input().financials.ebitda"
+              (modelChange)="updateFinancial('ebitda', $event)"
+            ></sd-input-number>
+            <sd-input-number
+              autoId="case-total-debt"
+              label="Tổng nợ (VND)"
+              required
+              [precision]="0"
+              [min]="0"
+              [inlineError]="errors()['financials.totalDebt']"
+              [model]="input().financials.totalDebt"
+              (modelChange)="updateFinancial('totalDebt', $event)"
+            ></sd-input-number>
+            <sd-input-number
+              autoId="case-equity"
+              label="Vốn chủ sở hữu (VND)"
+              required
+              [precision]="0"
+              [min]="1"
+              [inlineError]="errors()['financials.equity']"
+              [model]="input().financials.equity"
+              (modelChange)="updateFinancial('equity', $event)"
+            ></sd-input-number>
+            <sd-input-number
+              autoId="case-current-assets"
+              label="Tài sản ngắn hạn (VND)"
+              required
+              [precision]="0"
+              [min]="0"
+              [inlineError]="errors()['financials.currentAssets']"
+              [model]="input().financials.currentAssets"
+              (modelChange)="updateFinancial('currentAssets', $event)"
+            ></sd-input-number>
+            <sd-input-number
+              autoId="case-current-liabilities"
+              label="Nợ ngắn hạn (VND)"
+              required
+              [precision]="0"
+              [min]="1"
+              [inlineError]="errors()['financials.currentLiabilities']"
+              [model]="input().financials.currentLiabilities"
+              (modelChange)="updateFinancial('currentLiabilities', $event)"
+            ></sd-input-number>
+          </div>
+        </sd-section>
+
+        <sd-section
+          title="Tài liệu đã nộp"
+          subTitle="Bước 3 · Đánh dấu đúng những tài liệu đang có trong fixture"
+          icon="description"
+        >
+          <fieldset class="intake-documents m-0 p-16 border-0">
+            <legend class="T14M mb-12">Danh sách tài liệu</legend>
+            @for (document of documents(); track document.label) {
+              <sd-checkbox
+                [autoId]="'case-document-' + $index"
+                [label]="document.label"
+                [model]="document.selected"
+                (modelChange)="toggleDocument(document.label, $event)"
+              ></sd-checkbox>
+            }
+            @if (errors()['submittedDocuments']; as documentError) {
+              <p class="intake-wide text-error m-0" role="alert">{{ documentError }}</p>
+            }
+          </fieldset>
+        </sd-section>
+      </div>
+
+      <aside class="intake-summary" aria-labelledby="case-summary-title">
+        <sd-section title="Tóm tắt trước khi lưu" subTitle="DEMO_DATA" icon="fact_check">
+          <div class="p-16">
+            <h2 id="case-summary-title" class="T20M mb-4">{{ summary().companyName }}</h2>
+            <p class="T12R text-muted mb-16">{{ summary().registrationNumber }}</p>
+            <p class="T24M text-primary mb-8">{{ summary().requestedAmount }}</p>
+            <p class="text-secondary mb-16">{{ summary().purpose }}</p>
+
+            <div class="d-flex flex-column gap-8 mb-16">
+              <div class="d-flex justify-content-between gap-12 border-bottom pb-8">
+                <span class="text-muted">Tài liệu đã chọn</span>
+                <strong>{{ summary().documentCount }}</strong>
+              </div>
+              <div class="d-flex justify-content-between gap-12 border-bottom pb-8">
+                <span class="text-muted">Doanh thu</span>
+                <strong>{{ summary().revenue }}</strong>
+              </div>
+              <div class="d-flex justify-content-between gap-12">
+                <span class="text-muted">Phân loại dữ liệu</span>
+                <strong>Demo an toàn</strong>
+              </div>
+            </div>
+
+            <sd-button
+              autoId="case-submit"
+              htmlType="submit"
+              type="fill"
+              color="primary"
+              size="md"
+              prefixIcon="save"
+              title="Lưu hồ sơ demo"
+              [block]="true"
+              [loading]="submitting()"
+              [disabled]="submitting()"
+            ></sd-button>
+            <p class="T12R text-muted mt-12 mb-0">
+              Hồ sơ chỉ được gửi tới luồng AI khi bạn chủ động bắt đầu đánh giá.
+            </p>
+          </div>
+        </sd-section>
+      </aside>
+    </div>
+  </form>
+</sd-page>

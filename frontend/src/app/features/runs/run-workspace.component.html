@@ -1,0 +1,200 @@
+<sd-page>
+  <div headerLeft class="d-flex flex-column">
+    <h1 class="T20M m-0">{{ header().title }}</h1>
+    <p class="T14R text-secondary mt-4 mb-0">{{ header().description }}</p>
+  </div>
+  @if (runStatus(); as status) {
+    <sd-badge headerRight type="round" [color]="status.color" [title]="status.label"></sd-badge>
+  }
+
+  @if (facade.loading() && !facade.run()) {
+    <app-loading-state label="Đang dựng không gian phân tích…"></app-loading-state>
+  } @else if (facade.error() && !facade.run()) {
+    <app-error-state
+      title="Không mở được lượt đánh giá"
+      [description]="facade.error() ?? ''"
+      (retry)="reload()"
+    ></app-error-state>
+  } @else if (facade.run(); as run) {
+    <div class="d-flex flex-column gap-16">
+      @if (streamNotice(); as notice) {
+        <sd-inform
+          [color]="notice.color"
+          [title]="notice.title"
+          [description]="notice.description"
+        ></sd-inform>
+      }
+
+      @if (facade.error()) {
+        <sd-inform
+          error
+          title="Chưa đồng bộ được dữ liệu mới nhất"
+          [description]="facade.error() ?? ''"
+          actionLabel="Thử lại"
+          (sdAction)="reload()"
+        ></sd-inform>
+      }
+
+      @if (facade.isPartial()) {
+        <div data-testid="partial-warning">
+          <sd-inform
+            warning
+            title="Đang hiển thị kết quả một phần"
+            [description]="partialDescription()"
+          ></sd-inform>
+        </div>
+      }
+
+      <section data-testid="planner-strip" aria-labelledby="planner-strip-title">
+        <h2 id="planner-strip-title" class="d-none">Kế hoạch phối hợp</h2>
+        <sd-section
+          title="Kế hoạch phối hợp"
+          [subTitle]="plannerTasks().length + ' nhiệm vụ chuyên gia'"
+          icon="account_tree"
+        >
+          @if (plannerTasks().length === 0) {
+            <div class="p-16">
+              <sd-inform
+                info
+                title="Planner đang lập kế hoạch"
+                description="Ba nhiệm vụ chuyên gia sẽ xuất hiện khi sự kiện plan.created được ghi nhận."
+              ></sd-inform>
+            </div>
+          } @else {
+            <ol class="planner-flow m-0 p-16" aria-label="Trình tự nhiệm vụ">
+              @for (task of plannerTasks(); track task.id; let last = $last) {
+                <li class="planner-flow__task">
+                  <div class="d-flex flex-column gap-8">
+                    <div class="d-flex align-items-center justify-content-between gap-8">
+                      <strong>{{ task.agentLabel }}</strong>
+                      <sd-badge
+                        type="round"
+                        [color]="task.statusView.color"
+                        [title]="task.statusView.label"
+                      ></sd-badge>
+                    </div>
+                    <sd-view [label]="task.title" [display]="task.objective"></sd-view>
+                  </div>
+                  @if (!last) {
+                    <span class="planner-flow__arrow" aria-hidden="true">→</span>
+                  }
+                </li>
+              }
+            </ol>
+          }
+        </sd-section>
+      </section>
+
+      <div class="run-convergence">
+        <section class="d-flex flex-column gap-16" aria-label="Kết quả chuyên gia">
+          <div class="agent-lanes">
+            @for (lane of specialistLanes(); track lane.agent) {
+              <app-agent-lane
+                [agent]="lane.agent"
+                [task]="lane.task"
+                [result]="lane.result"
+                [events]="facade.events()"
+              ></app-agent-lane>
+            }
+          </div>
+
+          <div class="run-lower-grid">
+            <app-run-timeline
+              aria-label="Dòng thời gian lượt đánh giá"
+              [events]="facade.events()"
+            ></app-run-timeline>
+            <app-evidence-panel
+              aria-label="Bằng chứng và công cụ"
+              [results]="run.agentResults"
+              [events]="facade.events()"
+            ></app-evidence-panel>
+          </div>
+        </section>
+
+        <aside data-testid="decision-rail" aria-labelledby="decision-rail-title">
+          <h2 id="decision-rail-title" class="d-none">Kết luận tổng hợp</h2>
+          <sd-section title="Kết luận tổng hợp" icon="hub">
+            <div class="d-flex flex-column gap-16 p-16">
+              @if (decision(); as item) {
+                <div class="d-flex align-items-center justify-content-between gap-8">
+                  <sd-badge
+                    type="round"
+                    [color]="item.statusView.color"
+                    [title]="item.statusView.label"
+                  ></sd-badge>
+                  <sd-view label="Độ tin cậy" [display]="item.confidenceDisplay"></sd-view>
+                </div>
+                <sd-view label="Tóm tắt" [display]="item.summary"></sd-view>
+
+                <div class="d-flex flex-column gap-8" aria-label="Căn cứ kết luận">
+                  <strong>Căn cứ</strong>
+                  <ul class="m-0 pl-20">
+                    @for (reason of item.rationale; track reason) {
+                      <li>{{ reason }}</li>
+                    }
+                  </ul>
+                </div>
+
+                @if (item.conditions.length > 0) {
+                  <div class="d-flex flex-column gap-8" aria-label="Điều kiện">
+                    <strong>Điều kiện</strong>
+                    <ul class="m-0 pl-20">
+                      @for (condition of item.conditions; track condition) {
+                        <li>{{ condition }}</li>
+                      }
+                    </ul>
+                  </div>
+                }
+
+                @if (item.conflicts.length > 0) {
+                  <sd-inform
+                    warning
+                    title="Có xung đột giữa các chuyên gia"
+                    [description]="item.conflictsDisplay"
+                  ></sd-inform>
+                }
+
+                @if (item.proposedAction; as action) {
+                  <sd-view label="Hành động đề xuất" [display]="action.title"></sd-view>
+                  <sd-view label="Mô tả" [display]="action.description"></sd-view>
+                }
+
+                @if (approval(); as record) {
+                  <div class="d-flex flex-column gap-8" aria-label="Quyết định phê duyệt">
+                    <sd-badge
+                      type="round"
+                      [color]="record.decisionColor"
+                      [title]="record.decisionLabel"
+                    ></sd-badge>
+                    <sd-view label="Lý do" [display]="record.reason"></sd-view>
+                    <sd-view label="Người quyết định" [display]="record.createdBy"></sd-view>
+                    <sd-view label="Thời điểm" [display]="record.createdAtDisplay"></sd-view>
+                  </div>
+                } @else if (item.requiresHumanApproval) {
+                  <app-approval-panel
+                    [run]="run"
+                    (snapshotUpdated)="applyApprovalSnapshot($event)"
+                  ></app-approval-panel>
+                }
+              } @else {
+                <sd-inform
+                  info
+                  title="Synthesizer đang tổng hợp"
+                  description="Kết luận sẽ xuất hiện sau khi các lane chuyên gia hoàn tất hoặc hết thời gian chờ."
+                ></sd-inform>
+              }
+
+              @if (run.actionTicket; as ticket) {
+                <sd-inform
+                  success
+                  title="Đã tạo phiếu hành động"
+                  [description]="ticket.title"
+                ></sd-inform>
+              }
+            </div>
+          </sd-section>
+        </aside>
+      </div>
+    </div>
+  }
+</sd-page>

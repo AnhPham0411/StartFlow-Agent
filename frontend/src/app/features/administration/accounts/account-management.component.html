@@ -1,0 +1,217 @@
+<sd-page>
+  <div headerLeft class="d-flex flex-column">
+    <h1 class="T20M m-0">Quản lý tài khoản</h1>
+    <p class="T14R text-secondary mt-4 mb-0">
+      Phân vai trò Admin, Manager, Employee và phạm vi chi nhánh ngay trên Portal.
+    </p>
+  </div>
+  @if (canManage) {
+    <sd-button
+      headerRight
+      autoId="account-create"
+      type="fill"
+      color="primary"
+      prefixIcon="person_add"
+      title="Thêm tài khoản"
+      (click)="startCreate()"
+    ></sd-button>
+  }
+
+  <sd-inform
+    class="d-block mb-16"
+    info
+    title="Định danh được đồng bộ an toàn"
+    description="Portal quản lý vai trò và phạm vi vận hành; Keycloak vẫn là nguồn xác thực. Mật khẩu hoặc secret không được hiển thị sau thao tác."
+  ></sd-inform>
+
+  <sd-section
+    title="Danh sách tài khoản"
+    subTitle="Lọc theo vai trò, chi nhánh, trạng thái và theo dõi tình trạng đồng bộ SSO."
+    icon="manage_accounts"
+  >
+    <div class="p-16 pb-0">
+      <div class="row align-items-end">
+        <div class="col-12 col-lg-4">
+          <sd-input
+            autoId="account-search"
+            size="sm"
+            hideInlineError
+            label="Tìm tài khoản"
+            placeholder="Tên đăng nhập hoặc họ tên"
+            [model]="query()"
+            (modelChange)="updateQuery($event)"
+            (keyupEnter)="loadAccounts()"
+          ></sd-input>
+        </div>
+        <div class="col-12 col-lg-2">
+          <sd-select
+            autoId="account-role-filter"
+            size="sm"
+            hideInlineError
+            label="Vai trò"
+            [items]="roleFilterOptions"
+            valueField="value"
+            displayField="label"
+            [model]="roleFilter()"
+            (modelChange)="updateRoleFilter($event)"
+          ></sd-select>
+        </div>
+        <div class="col-12 col-lg-3">
+          <sd-select
+            autoId="account-branch-filter"
+            size="sm"
+            hideInlineError
+            label="Chi nhánh"
+            placeholder="Tất cả chi nhánh"
+            [items]="branches()"
+            valueField="id"
+            displayField="name"
+            [model]="branchFilter()"
+            (modelChange)="updateBranchFilter($event)"
+          ></sd-select>
+        </div>
+        <div class="col-12 col-lg-2">
+          <sd-select
+            autoId="account-active-filter"
+            size="sm"
+            hideInlineError
+            label="Trạng thái"
+            [items]="activeOptions"
+            valueField="value"
+            displayField="label"
+            [model]="activeFilter()"
+            (modelChange)="updateActiveFilter($event)"
+          ></sd-select>
+        </div>
+        <div class="col-12 col-lg-1">
+          <sd-button
+            autoId="account-filter-submit"
+            type="outline"
+            color="primary"
+            prefixIcon="filter_alt"
+            title="Lọc"
+            [loading]="loading()"
+            (click)="loadAccounts()"
+          ></sd-button>
+        </div>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <app-loading-state label="Đang tải danh sách tài khoản…"></app-loading-state>
+    } @else if (error()) {
+      <div class="p-16">
+        <app-error-state
+          title="Không tải được tài khoản"
+          [description]="error() ?? ''"
+          (retry)="initialize()"
+        ></app-error-state>
+      </div>
+    } @else if (accounts().length === 0) {
+      <div class="p-16">
+        <app-empty-state
+          title="Chưa có tài khoản phù hợp"
+          description="Thay đổi bộ lọc hoặc tạo tài khoản mới."
+          [actionLabel]="canManage ? 'Thêm tài khoản' : ''"
+          (primaryAction)="startCreate()"
+        ></app-empty-state>
+      </div>
+    } @else {
+      <div class="overflow-x-auto">
+        <sd-table autoId="account-list" [option]="tableOption"></sd-table>
+      </div>
+    }
+  </sd-section>
+</sd-page>
+
+@if (canManage) {
+<sd-modal #editorModal autoId="account-editor" [title]="editorTitle()" width="md">
+  <form class="p-16" [formGroup]="form">
+    <div class="d-flex flex-column gap-16">
+      <div class="row">
+        <div class="col-12 col-md-6">
+          <sd-input
+            autoId="account-username"
+            [form]="form"
+            name="username"
+            label="Tên đăng nhập"
+            helperText="Tên đăng nhập không thể đổi sau khi tạo."
+            required
+            [minlength]="3"
+            [maxlength]="80"
+            pattern="^[a-zA-Z0-9._-]+$"
+            [readonly]="isEditing()"
+            [(model)]="draft.username"
+          ></sd-input>
+        </div>
+        <div class="col-12 col-md-6">
+          <sd-input
+            autoId="account-full-name"
+            [form]="form"
+            name="full_name"
+            label="Họ và tên"
+            required
+            [minlength]="2"
+            [maxlength]="160"
+            [(model)]="draft.full_name"
+          ></sd-input>
+        </div>
+      </div>
+
+      <sd-radio
+        autoId="account-role"
+        [form]="form"
+        name="role"
+        label="Vai trò"
+        required
+        display="row"
+        [items]="roleOptions"
+        valueField="value"
+        displayField="label"
+        [(model)]="draft.role"
+        (modelChange)="onRoleChange($event)"
+      ></sd-radio>
+
+      @if (isAdminDraft()) {
+        <sd-inform
+          success
+          title="Phạm vi toàn hệ thống"
+          description="Admin không được gắn chi nhánh và có quyền quản trị toàn Portal."
+        ></sd-inform>
+      } @else {
+        <sd-select
+          autoId="account-branch"
+          [form]="form"
+          name="branch_id"
+          label="Chi nhánh"
+          helperText="Manager và Employee bắt buộc thuộc đúng một chi nhánh."
+          required
+          [items]="activeBranches()"
+          valueField="id"
+          displayField="name"
+          [(model)]="draft.branch_id"
+        ></sd-select>
+      }
+    </div>
+  </form>
+
+  <sd-button
+    sdFooterLeft
+    autoId="account-cancel"
+    type="text"
+    color="secondary"
+    title="Hủy"
+    (click)="closeEditor()"
+  ></sd-button>
+  <sd-button
+    sdFooterRight
+    autoId="account-save"
+    type="fill"
+    color="primary"
+    prefixIcon="save"
+    title="Lưu tài khoản"
+    [loading]="saving()"
+    (click)="save()"
+  ></sd-button>
+</sd-modal>
+}

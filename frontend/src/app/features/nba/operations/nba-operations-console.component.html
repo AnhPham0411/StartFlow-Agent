@@ -1,0 +1,65 @@
+<sd-page>
+  <div headerLeft class="d-flex flex-column">
+    <div class="d-flex align-items-center gap-8">
+      <h1 class="T20M m-0">{{ config.title }}</h1>
+      <sd-badge type="round" color="info" icon="science" title="DEMO MODE"></sd-badge>
+    </div>
+    <p class="T14R text-secondary mt-4 mb-0">{{ config.subtitle }}</p>
+  </div>
+  @if (canRunMiniJourney) {
+    <div headerRight class="d-flex align-items-center gap-8">
+      <sd-badge
+        type="round"
+        [color]="runBadge().color"
+        [icon]="runBadge().icon"
+        [title]="runBadge().title"
+      ></sd-badge>
+      <sd-button
+        autoId="nba-mini-run"
+        type="fill"
+        color="primary"
+        prefixIcon="play_arrow"
+        title="Chạy mini-run demo"
+        [loading]="runStatus() === 'running'"
+        (click)="startMiniRun()"
+      ></sd-button>
+    </div>
+  }
+
+  <sd-inform
+    class="d-block mb-16"
+    info
+    title="Bề mặt trình diễn an toàn"
+    description="Trang này minh họa luồng và mức sẵn sàng. Các công thức E1–E10, R1–R12 và rule chưa được cung cấp sẽ không được tự suy diễn hoặc kích hoạt."
+  ></sd-inform>
+
+  <section aria-label="Chỉ số năng lực NBA">
+    <div class="row gap-y-16">
+      @for (item of config.capabilities; track item.title) {
+        <div class="col-12 col-sm-6 col-xl-3">
+          <sd-section [title]="item.title" [icon]="item.icon" [iconColor]="item.color">
+            <div class="p-16">
+              <p class="T24M mb-4">{{ item.value }}</p>
+              <p class="T12R text-muted m-0">{{ item.hint }}</p>
+            </div>
+          </sd-section>
+        </div>
+      }
+    </div>
+  </section>
+
+  @if (runStatus() === 'complete') {
+    <sd-inform
+      class="d-block mt-16"
+      success
+      title="Mini-run demo đã hoàn tất"
+      description="Luồng giao diện đã đi qua stage journey bằng dữ liệu trình diễn cục bộ; không có production batch hoặc dữ liệu khách hàng thật nào được tạo."
+    ></sd-inform>
+  }
+
+  <sd-section class="d-block mt-16" [title]="config.sectionTitle" icon="account_tree">
+    <div class="overflow-x-auto">
+      <sd-table autoId="nba-operations-console" [option]="tableOption"></sd-table>
+    </div>
+  </sd-section>
+</sd-page>

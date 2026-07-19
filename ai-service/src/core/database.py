@@ -17,7 +17,7 @@ def prepare_asyncpg_connection(
     if url.drivername in {"postgres", "postgresql"}:
         url = url.set(drivername="postgresql+asyncpg")
     elif url.drivername != "postgresql+asyncpg":
-        raise ValueError("AI_DATABASE_URL must use PostgreSQL")
+        raise ValueError("Generated database URL must use PostgreSQL")
     query = {
         key: value
         for key, value in url.query.items()

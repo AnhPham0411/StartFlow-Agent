@@ -17,7 +17,9 @@ import { CasesModule } from './modules/cases/cases.module';
 import { EventsModule } from './modules/events/events.module';
 import { HealthModule } from './modules/health/health.module';
 import { InternalCallbackModule } from './modules/internal-callback/internal-callback.module';
+import { IdentityModule } from './modules/identity/identity.module';
 import { KnowledgeModule } from './modules/knowledge/knowledge.module';
+import { NbaModule } from './modules/nba/nba.module';
 import { RunsModule } from './modules/runs/runs.module';
 
 @Module({
@@ -33,8 +35,10 @@ import { RunsModule } from './modules/runs/runs.module';
     EventsModule,
     RunsModule,
     InternalCallbackModule,
+    IdentityModule,
     ApprovalsModule,
     KnowledgeModule,
+    NbaModule,
   ],
   providers: [
     PinoLoggerService,

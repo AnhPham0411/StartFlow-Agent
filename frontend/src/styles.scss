@@ -1,0 +1,30 @@
+:root {
+  // why: Rotate the global stylesheet URL once so clients discard the previously immutable cached asset.
+  --startflow-asset-revision: '2026-07-19-cache-recovery';
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: #f7f8fa;
+  color: #252a34;
+  font-family: Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid #9b1c31;
+  outline-offset: 2px;
+}

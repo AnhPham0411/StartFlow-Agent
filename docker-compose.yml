@@ -59,7 +59,7 @@ services:
           'CMD',
           'python',
           '-c',
-          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=3)",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)",
         ]
       interval: 10s
       timeout: 5s
@@ -73,15 +73,8 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-        NEXT_PUBLIC_AUTH_MODE: ${NEXT_PUBLIC_AUTH_MODE:-keycloak}
-        NEXT_PUBLIC_KEYCLOAK_URL: ${NEXT_PUBLIC_KEYCLOAK_URL}
-        NEXT_PUBLIC_KEYCLOAK_REALM: ${NEXT_PUBLIC_KEYCLOAK_REALM}
-        NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: ${NEXT_PUBLIC_KEYCLOAK_CLIENT_ID}
+        STARTFLOW_BUILD_CONFIGURATION: ${STARTFLOW_BUILD_CONFIGURATION:-local}
     container_name: startflow-frontend-${DEPLOY_ENV:-local}
-    env_file:
-      - path: ${STARTFLOW_ENV_FILE:-.env}
-        required: false
     ports:
       - '${FRONTEND_BIND_ADDRESS:-0.0.0.0}:${FRONTEND_PORT:-3000}:3000'
     depends_on:
@@ -90,13 +83,7 @@ services:
     networks:
       - startflow
     healthcheck:
-      test:
-        [
-          'CMD',
-          'node',
-          '-e',
-          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
-        ]
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3000/health >/dev/null || exit 1']
       interval: 10s
       timeout: 5s
       retries: 10
@@ -121,7 +108,13 @@ services:
   ai-migrate:
     <<: *ai-service
     profiles: [tools]
-    command: ['sh', '-c', 'alembic upgrade head && python -m src.rag.ingest']
+    command: ['alembic', 'upgrade', 'head']
+    restart: 'no'
+
+  ai-seed:
+    <<: *ai-service
+    profiles: [tools]
+    command: ['python', '-m', 'src.rag.ingest']
     restart: 'no'
 
 networks:

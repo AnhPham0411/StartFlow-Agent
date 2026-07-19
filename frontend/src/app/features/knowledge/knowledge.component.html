@@ -1,0 +1,60 @@
+<sd-page>
+  <div headerLeft class="d-flex flex-column">
+    <h1 class="T20M m-0">Tri thức mô phỏng</h1>
+    <p class="T14R text-secondary mt-4 mb-0">
+      Quản lý tài liệu demo cho Tín dụng, Tuân thủ và Vận hành.
+    </p>
+  </div>
+  <div headerRight *sdPermission="permissions.knowledgeCreate">
+    <sd-button
+      autoId="add-knowledge"
+      title="Thêm tài liệu"
+      prefixIcon="add"
+      color="primary"
+      (click)="openIngestDrawer()"
+    />
+  </div>
+
+  <sd-section
+    title="Thư viện hiện có"
+    [subTitle]="documents().length + ' tài liệu demo'"
+    icon="library_books"
+    iconColor="primary"
+  >
+    <div class="p-16">
+      @if (loading()) {
+        <app-loading-state label="Đang tải thư viện tri thức…" />
+      } @else if (error()) {
+        <app-error-state
+          title="Không tải được thư viện tri thức demo"
+          [description]="error() ?? ''"
+          (retry)="load()"
+        />
+      } @else if (documents().length === 0) {
+        <app-empty-state
+          title="Chưa có tài liệu"
+          description="Ingest tài liệu đầu tiên để các agent trả citation có căn cứ."
+        />
+      } @else {
+        <sd-table
+          role="table"
+          aria-label="Thư viện tri thức demo"
+          autoId="knowledge-documents"
+          [option]="knowledgeTableOption"
+        >
+          <ng-template sdTableCellDef="title" let-row="item">
+            <div class="d-flex flex-column gap-4">
+              <strong>{{ row.title }}</strong>
+              <small class="text-secondary">#{{ row.shortId }}</small>
+            </div>
+          </ng-template>
+          <ng-template sdTableCellDef="statusLabel" let-row="item">
+            <sd-badge type="round" [title]="row.statusLabel" [color]="row.statusColor" />
+          </ng-template>
+        </sd-table>
+      }
+    </div>
+  </sd-section>
+
+  <app-ingest-drawer (ingested)="onIngested()" />
+</sd-page>

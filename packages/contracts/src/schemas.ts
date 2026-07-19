@@ -1,6 +1,15 @@
 import { z } from 'zod';
 
-export const userRoleSchema = z.enum(['analyst', 'approver', 'admin']);
+export const userRoleSchema = z.enum(['employee', 'manager', 'admin']);
+export const legacyUserRoleSchema = z.enum(['analyst', 'approver', 'sale']);
+
+export function normalizeUserRole(value: unknown): UserRole | undefined {
+  const current = userRoleSchema.safeParse(value);
+  if (current.success) return current.data;
+  const legacy = legacyUserRoleSchema.safeParse(value);
+  if (!legacy.success) return undefined;
+  return legacy.data === 'approver' ? 'manager' : 'employee';
+}
 export const runStatusSchema = z.enum([
   'PENDING',
   'PLANNING',

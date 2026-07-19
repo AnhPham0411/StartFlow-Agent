@@ -4,6 +4,10 @@ import {
   decisionStatusSchema,
   publicRunEventTypeSchema,
   runEventSchema,
+  createAccountInputSchema,
+  nbaRunRequestSchema,
+  normalizeUserRole,
+  userRoleSchema,
 } from '../src/index.js';
 
 describe('shared StartFlow contracts', () => {
@@ -46,6 +50,48 @@ describe('shared StartFlow contracts', () => {
         correlationId: 'b00f4274-3107-4754-90b9-97e29255af91',
         idempotencyKey: 'run-started-1',
         payload: {},
+      }).success,
+    ).toBe(false);
+  });
+
+  it('locks the three-level application role hierarchy and rollout aliases', () => {
+    expect(userRoleSchema.options).toEqual(['employee', 'manager', 'admin']);
+    expect(normalizeUserRole('sale')).toBe('employee');
+    expect(normalizeUserRole('analyst')).toBe('employee');
+    expect(normalizeUserRole('approver')).toBe('manager');
+    expect(normalizeUserRole('unknown')).toBeUndefined();
+  });
+
+  it('enforces the mini and nightly run target contract', () => {
+    const base = { business_date: '2026-07-19', idempotency_key: 'demo-run-20260719' };
+    expect(nbaRunRequestSchema.safeParse({ ...base, kind: 'mini', customer_id: 1 }).success).toBe(true);
+    expect(nbaRunRequestSchema.safeParse({ ...base, kind: 'mini' }).success).toBe(false);
+    expect(nbaRunRequestSchema.safeParse({ ...base, kind: 'nightly' }).success).toBe(true);
+    expect(nbaRunRequestSchema.safeParse({ ...base, kind: 'nightly', customer_id: 1 }).success).toBe(false);
+  });
+
+  it('enforces branch assignment for manager and employee accounts', () => {
+    expect(
+      createAccountInputSchema.safeParse({
+        username: 'employee.demo',
+        full_name: 'Nhân viên Demo',
+        role: 'employee',
+        branch_id: 1,
+      }).success,
+    ).toBe(true);
+    expect(
+      createAccountInputSchema.safeParse({
+        username: 'manager.demo',
+        full_name: 'Quản lý Demo',
+        role: 'manager',
+      }).success,
+    ).toBe(false);
+    expect(
+      createAccountInputSchema.safeParse({
+        username: 'admin.demo',
+        full_name: 'Quản trị Demo',
+        role: 'admin',
+        branch_id: 1,
       }).success,
     ).toBe(false);
   });

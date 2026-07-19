@@ -1,0 +1,11 @@
+// why: Keep only direct page sections separated without changing section internals.
+.nba-call-list-sections {
+  display: grid;
+  gap: 16px;
+}
+
+@media (max-width: 767px) {
+  .nba-call-list-sections {
+    gap: 12px;
+  }
+}

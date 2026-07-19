@@ -1,0 +1,62 @@
+// why: Core utilities do not provide data-driven horizontal comparison bars.
+.comparison-value {
+  display: grid;
+  gap: 4px;
+}
+
+// why: The page needs local sibling spacing with a smaller mobile rhythm.
+.comparison-page-sections {
+  display: grid;
+  gap: 16px;
+}
+
+// why: The source field stays fluid while the action keeps its intrinsic desktop width.
+.comparison-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 16px;
+}
+
+.comparison-action {
+  width: fit-content;
+}
+
+@media (max-width: 767px) {
+  .comparison-page-sections,
+  .comparison-controls {
+    gap: 12px;
+  }
+
+  .comparison-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .comparison-action {
+    width: 100%;
+  }
+}
+
+.comparison-bar-track {
+  display: block;
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--sd-secondary-light, #e5e7eb);
+}
+
+.comparison-bar {
+  display: block;
+  width: var(--comparison-bar-width);
+  height: 100%;
+  border-radius: inherit;
+}
+
+.comparison-bar--single {
+  background: var(--sd-secondary, #64748b);
+}
+
+.comparison-bar--multi {
+  background: var(--sd-primary, #005cbb);
+}

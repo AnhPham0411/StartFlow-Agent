@@ -1,0 +1,11 @@
+// why: Page-level sections need consistent spacing without changing shell padding.
+.dashboard-page-sections {
+  display: grid;
+  gap: 16px;
+}
+
+@media (max-width: 767px) {
+  .dashboard-page-sections {
+    gap: 12px;
+  }
+}

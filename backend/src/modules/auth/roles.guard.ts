@@ -8,11 +8,11 @@ import { Reflector } from '@nestjs/core';
 
 import type { RequestContext } from '../../common/types/request-context';
 import { IS_PUBLIC_KEY } from './public.decorator';
-import { ROLES_KEY, type ApplicationRole } from './roles.decorator';
+import { normalizeApplicationRole, ROLES_KEY, type ApplicationRole } from './roles.decorator';
 
 const allowedByRequirement: Record<ApplicationRole, ApplicationRole[]> = {
-  analyst: ['analyst', 'approver'],
-  approver: ['approver'],
+  employee: ['employee', 'manager', 'admin'],
+  manager: ['manager', 'admin'],
   admin: ['admin'],
 };
 
@@ -34,9 +34,17 @@ export class RolesGuard implements CanActivate {
     if (!required?.length) return true;
 
     const user = context.switchToHttp().getRequest<RequestContext>().user;
-    const authorized = required.some((role) =>
-      allowedByRequirement[role].some((acceptedRole) => user?.roles.includes(acceptedRole)),
+    const userRoles = new Set(
+      (user?.roles ?? [])
+        .map(normalizeApplicationRole)
+        .filter((role): role is ApplicationRole => role !== undefined),
     );
+    const authorized = required.some((requiredRole) => {
+      const role = normalizeApplicationRole(requiredRole);
+      return role
+        ? allowedByRequirement[role].some((acceptedRole) => userRoles.has(acceptedRole))
+        : false;
+    });
     if (!authorized) {
       throw new ForbiddenException('Required realm role is missing');
     }

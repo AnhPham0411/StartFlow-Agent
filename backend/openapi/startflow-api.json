@@ -365,6 +365,316 @@
           "knowledge"
         ]
       }
+    },
+    "/api/nba/calllist": {
+      "get": {
+        "operationId": "NbaController_getCallList",
+        "parameters": [
+          {
+            "name": "date",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Call list T+1 với đề xuất mới nhất",
+        "tags": [
+          "nba"
+        ]
+      }
+    },
+    "/api/nba/customers": {
+      "get": {
+        "operationId": "NbaController_listCustomers",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Danh sách khách theo phạm vi của người dùng",
+        "tags": [
+          "nba"
+        ]
+      }
+    },
+    "/api/nba/customer/{id}": {
+      "get": {
+        "operationId": "NbaController_getCustomer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Đề xuất + staleness + versions cho 1 khách",
+        "tags": [
+          "nba"
+        ]
+      }
+    },
+    "/api/nba/customer/{id}/assessment": {
+      "get": {
+        "operationId": "NbaController_assessCustomer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "as_of",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Tổng hợp 3/6 tháng + chấm policy từng gói + lý do phù hợp",
+        "tags": [
+          "nba"
+        ]
+      }
+    },
+    "/api/nba/feedback": {
+      "post": {
+        "operationId": "NbaController_submitFeedback",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ghi feedback + kích suppression",
+        "tags": [
+          "nba"
+        ]
+      }
+    },
+    "/api/nba/admin/calllist": {
+      "post": {
+        "operationId": "NbaController_assignCallList",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignCallListDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Assign call list T+1",
+        "tags": [
+          "nba"
+        ]
+      }
+    },
+    "/api/nba/admin/kpi": {
+      "put": {
+        "operationId": "NbaController_setKpi",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetKpiDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Set hệ số KPI tháng",
+        "tags": [
+          "nba"
+        ]
+      }
+    },
+    "/api/nba/audit/recommendation/{id}": {
+      "get": {
+        "operationId": "NbaController_audit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Truy vết đề xuất (version + snapshot + rules)",
+        "tags": [
+          "nba"
+        ]
+      }
+    },
+    "/api/nba/notes": {
+      "post": {
+        "operationId": "NbaController_saveCallNote",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lưu ghi chú cuộc gọi",
+        "tags": [
+          "nba"
+        ]
+      }
+    },
+    "/api/nba/notes/{customerId}": {
+      "get": {
+        "operationId": "NbaController_getCallNotes",
+        "parameters": [
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Xem lịch sử ghi chú",
+        "tags": [
+          "nba"
+        ]
+      }
     }
   },
   "info": {
@@ -610,6 +920,22 @@
           "content",
           "demoData"
         ]
+      },
+      "FeedbackDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AssignCallListDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SetKpiDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateNoteDto": {
+        "type": "object",
+        "properties": {}
       }
     }
   }

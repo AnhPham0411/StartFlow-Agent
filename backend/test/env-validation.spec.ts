@@ -3,10 +3,15 @@ import { validateEnvironment } from '../src/config/env.validation';
 const validEnvironment = {
   AI_SERVICE_URL: 'http://ai-service:8000',
   CORS_ORIGINS: 'http://localhost:3000',
-  DATABASE_URL: 'postgresql://demo:demo@localhost:5432/demo',
+  DB_HOST: 'localhost',
+  DB_NAME: 'demo',
+  DB_PASSWORD: 'fixture-password',
+  DB_PORT: '5432',
+  DB_SSL_MODE: 'require',
+  DB_USER: 'demo',
   INTERNAL_SERVICE_TOKEN: 'a-demo-token-with-safe-length',
-  KEYCLOAK_AUDIENCE: 'startflow-api',
   KEYCLOAK_ISSUER: 'https://auth.example.test/realms/startflow',
+  KEYCLOAK_SECRET: 'fixture-client-secret',
 };
 
 describe('environment validation', () => {
@@ -16,11 +21,55 @@ describe('environment validation', () => {
     expect(result.PORT).toBe(3001);
     expect(result.NODE_ENV).toBe('development');
     expect(result.KEYCLOAK_ISSUER).toBe('https://auth.example.test/realms/startflow');
+    expect(result.DATABASE_URL).toContain('sslmode=require');
+    expect(result.EXPLAINER_MODE).toBe('rules');
+    expect(result.IDENTITY_ENFORCEMENT_MODE).toBe('compat');
+    expect(result.KEYCLOAK_ADMIN_CLIENT_ID).toBe('INTEGRATION_API');
+    expect(result.LLM_BASE_URL).toBe('https://api.openai.com/v1');
+  });
+
+  it('accepts the canonical identity rollout enforcement mode', () => {
+    expect(
+      validateEnvironment({ ...validEnvironment, IDENTITY_ENFORCEMENT_MODE: 'strict' }),
+    ).toMatchObject({ IDENTITY_ENFORCEMENT_MODE: 'strict' });
+    expect(() =>
+      validateEnvironment({ ...validEnvironment, IDENTITY_ENFORCEMENT_MODE: 'loose' }),
+    ).toThrow('IDENTITY_ENFORCEMENT_MODE');
+  });
+
+  it('keeps IDENTITY_ENFORCEMENT as a backward-compatible input alias', () => {
+    expect(
+      validateEnvironment({ ...validEnvironment, IDENTITY_ENFORCEMENT: 'strict' }),
+    ).toMatchObject({ IDENTITY_ENFORCEMENT_MODE: 'strict' });
+    expect(
+      validateEnvironment({
+        ...validEnvironment,
+        IDENTITY_ENFORCEMENT: 'strict',
+        IDENTITY_ENFORCEMENT_MODE: 'compat',
+      }),
+    ).toMatchObject({ IDENTITY_ENFORCEMENT_MODE: 'compat' });
   });
 
   it('fails closed when an internal token is too short', () => {
     expect(() =>
       validateEnvironment({ ...validEnvironment, INTERNAL_SERVICE_TOKEN: 'short' }),
     ).toThrow('INTERNAL_SERVICE_TOKEN');
+  });
+
+  it('requires only the confidential Keycloak secret', () => {
+    expect(() => validateEnvironment({ ...validEnvironment, KEYCLOAK_SECRET: '' })).toThrow(
+      'KEYCLOAK_SECRET',
+    );
+    expect(() => validateEnvironment(validEnvironment)).not.toThrow();
+  });
+
+  it('requires provider configuration for non-rule explainers', () => {
+    expect(() => validateEnvironment({ ...validEnvironment, EXPLAINER_MODE: 'llm' })).toThrow(
+      'LLM_API_KEY',
+    );
+
+    expect(() => validateEnvironment({ ...validEnvironment, EXPLAINER_MODE: 'model' })).toThrow(
+      'EXTERNAL_MODEL_URL',
+    );
   });
 });

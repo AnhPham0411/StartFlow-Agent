@@ -10,7 +10,7 @@ import { CreateApprovalDto } from './dto/create-approval.dto';
 @ApiTags('approvals')
 @ApiBearerAuth()
 @Controller('api/runs')
-@Roles('approver')
+@Roles('manager')
 export class ApprovalsController {
   constructor(private readonly approvals: ApprovalsService) {}
 

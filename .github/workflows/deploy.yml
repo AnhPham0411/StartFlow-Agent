@@ -1,30 +1,52 @@
 name: Deploy StartFlow
 
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [dev, main]
+  workflow_call:
+    inputs:
+      target_env:
+        description: Validated deployment target selected by the caller branch
+        required: true
+        type: string
+      release_sha:
+        description: Full Git SHA that passed the caller CI workflow
+        required: true
+        type: string
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: startflow-deploy-${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref_name }}
+  group: startflow-deploy-${{ inputs.target_env || (github.ref_name == 'main' && 'prod' || 'dev') }}
   cancel-in-progress: false
 
 jobs:
   deploy:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
-    name: Deploy ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'main' && 'production' || 'development' }}
+    name: Deploy ${{ (inputs.target_env || (github.ref_name == 'main' && 'prod' || 'dev')) == 'prod' && 'production' || 'development' }}
     runs-on: ubuntu-latest
-    environment: ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'main' && 'production' || 'development' }}
+    environment: ${{ (inputs.target_env || (github.ref_name == 'main' && 'prod' || 'dev')) == 'prod' && 'production' || 'development' }}
     env:
-      TARGET_ENV: ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'main' && 'prod' || 'dev' }}
-      RELEASE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      TARGET_ENV: ${{ inputs.target_env || (github.ref_name == 'main' && 'prod' || 'dev') }}
+      FRONTEND_BUILD_CONFIGURATION: ${{ (inputs.target_env || (github.ref_name == 'main' && 'prod' || 'dev')) == 'prod' && 'production' || 'development' }}
+      RELEASE_SHA: ${{ inputs.release_sha || github.sha }}
       DROPLET_ROOT: ${{ vars.STARTFLOW_DROPLET_ROOT || '/opt/startflow-agent' }}
     steps:
+      - name: Validate deployment target
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$GITHUB_REF_NAME:$TARGET_ENV" in
+            dev:dev|main:prod) ;;
+            *)
+              echo "Branch $GITHUB_REF_NAME cannot deploy target $TARGET_ENV." >&2
+              exit 2
+              ;;
+          esac
+          [[ "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]] || {
+            echo 'RELEASE_SHA must be a full Git SHA.' >&2
+            exit 2
+          }
+
       - name: Checkout StartFlow
         uses: actions/checkout@v5
         with:
@@ -44,21 +66,70 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          [[ "$DROPLET_ROOT" =~ ^/[A-Za-z0-9._/-]+$ ]]
-          [[ "$DROPLET_ROOT" != '/' ]]
-          printf 'DROPLET_PATH=%s/%s\n' "${DROPLET_ROOT%/}" "$TARGET_ENV" >> "$GITHUB_ENV"
+          is_safe_absolute_path() {
+            local path="$1" segment
+            local -a segments
+            [[ "$path" =~ ^/[A-Za-z0-9._/-]+$ ]] || return 1
+            [[ "$path" != '/' && "$path" != */ && "$path" != *'//'* ]] || return 1
+            IFS='/' read -r -a segments <<< "${path#/}"
+            for segment in "${segments[@]}"; do
+              [[ -n "$segment" && "$segment" != '.' && "$segment" != '..' ]] || return 1
+            done
+          }
+
+          is_safe_absolute_path "$DROPLET_ROOT" || {
+            printf 'Unsafe STARTFLOW_DROPLET_ROOT: use an absolute path without empty, dot, or dot-dot segments.\n' >&2
+            exit 2
+          }
+          droplet_path="$DROPLET_ROOT/$TARGET_ENV"
+          is_safe_absolute_path "$droplet_path" || {
+            printf 'Unsafe derived DROPLET_PATH.\n' >&2
+            exit 2
+          }
+          printf 'DROPLET_PATH=%s/%s\n' "$DROPLET_ROOT" "$TARGET_ENV" >> "$GITHUB_ENV"
 
       - name: Prepare runtime environment
         shell: bash
         env:
-          STARTFLOW_RUNTIME_ENV: ${{ secrets.STARTFLOW_ENV }}
-          POSTGRES_CA_CERT_BASE64: ${{ secrets.POSTGRES_TLS_CA_BASE64 }}
+          STARTFLOW_DEV_SECRET: ${{ secrets.STARTFLOW_DEV }}
+          STARTFLOW_PROD_SECRET: ${{ secrets.STARTFLOW_PROD }}
         run: |
           set -euo pipefail
+          case "$TARGET_ENV" in
+            dev) runtime_env="$STARTFLOW_DEV_SECRET" ;;
+            prod) runtime_env="$STARTFLOW_PROD_SECRET" ;;
+            *) exit 2 ;;
+          esac
+          [[ -n "$runtime_env" ]] || {
+            echo "STARTFLOW_${TARGET_ENV^^} GitHub secret is empty." >&2
+            exit 2
+          }
           mkdir -p .deploy
+          STARTFLOW_RUNTIME_ENV="$runtime_env" \
           OUTPUT_ENV="$GITHUB_WORKSPACE/.deploy/.env" \
           OUTPUT_CA="$GITHUB_WORKSPACE/.deploy/postgres-ca.crt" \
             bash infra/deploy/prepare-env.sh
+
+          env_value() {
+            local key="$1"
+            sed -n "s/^${key}=//p" .deploy/.env | tail -n 1
+          }
+          deploy_host="$(env_value DROPLET_HOST)"
+          deploy_user="$(env_value DROPLET_USER)"
+          deploy_known_hosts="$(env_value DROPLET_SSH_KNOWN_HOSTS)"
+          for value in "$deploy_host" "$deploy_user" "$deploy_known_hosts"; do
+            printf '::add-mask::%s\n' "$value"
+          done
+          {
+            printf 'DROPLET_HOST=%s\n' "$deploy_host"
+            printf 'DROPLET_USER=%s\n' "$deploy_user"
+            printf 'DROPLET_SSH_KNOWN_HOSTS=%s\n' "$deploy_known_hosts"
+          } >> "$GITHUB_ENV"
+          sed -i \
+            -e '/^DROPLET_HOST=/d' \
+            -e '/^DROPLET_USER=/d' \
+            -e '/^DROPLET_SSH_KNOWN_HOSTS=/d' \
+            .deploy/.env
 
           image_tag="${RELEASE_SHA::12}"
           {
@@ -74,10 +145,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          env_value() {
-            local key="$1"
-            sed -n "s/^${key}=//p" .deploy/.env | tail -n 1
-          }
 
           docker build \
             --file backend/Dockerfile \
@@ -86,11 +153,7 @@ jobs:
 
           docker build \
             --file frontend/Dockerfile \
-            --build-arg "NEXT_PUBLIC_API_URL=$(env_value NEXT_PUBLIC_API_URL)" \
-            --build-arg "NEXT_PUBLIC_AUTH_MODE=$(env_value NEXT_PUBLIC_AUTH_MODE)" \
-            --build-arg "NEXT_PUBLIC_KEYCLOAK_URL=$(env_value NEXT_PUBLIC_KEYCLOAK_URL)" \
-            --build-arg "NEXT_PUBLIC_KEYCLOAK_REALM=$(env_value NEXT_PUBLIC_KEYCLOAK_REALM)" \
-            --build-arg "NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=$(env_value NEXT_PUBLIC_KEYCLOAK_CLIENT_ID)" \
+            --build-arg "STARTFLOW_BUILD_CONFIGURATION=$FRONTEND_BUILD_CONFIGURATION" \
             --tag "startflow-frontend:$IMAGE_TAG" \
             .
 
@@ -107,26 +170,51 @@ jobs:
       - name: Configure strict SSH
         shell: bash
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          DROPLET_SSH_KNOWN_HOSTS: ${{ secrets.DROPLET_SSH_KNOWN_HOSTS }}
+          SSH_PRIVATE_KEY_DEV_SECRET: ${{ secrets.SSH_PRIVATE_KEY_DEV }}
+          SSH_PRIVATE_KEY_PROD_SECRET: ${{ secrets.SSH_PRIVATE_KEY_PROD }}
         run: |
           set -euo pipefail
+          case "$TARGET_ENV" in
+            dev) ssh_private_key="$SSH_PRIVATE_KEY_DEV_SECRET" ;;
+            prod) ssh_private_key="$SSH_PRIVATE_KEY_PROD_SECRET" ;;
+            *) exit 2 ;;
+          esac
+          [[ -n "$ssh_private_key" ]] || {
+            echo "SSH_PRIVATE_KEY_${TARGET_ENV^^} GitHub secret is empty." >&2
+            exit 2
+          }
           install -d -m 700 ~/.ssh
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$ssh_private_key" > ~/.ssh/id_ed25519
           printf '%s\n' "$DROPLET_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
           test -s ~/.ssh/id_ed25519
           test -s ~/.ssh/known_hosts
 
       - name: Upload release bundle
+        id: upload_release
         shell: bash
-        env:
-          DROPLET_HOST: ${{ secrets.DROPLET_HOST }}
-          DROPLET_USER: ${{ secrets.DROPLET_USER }}
         run: |
           set -euo pipefail
-          [[ "$DROPLET_PATH" =~ ^/[A-Za-z0-9._/-]+$ ]]
-          ssh -o BatchMode=yes "$DROPLET_USER@$DROPLET_HOST" "mkdir -p '$DROPLET_PATH/release'"
+          is_safe_absolute_path() {
+            local path="$1" segment
+            local -a segments
+            [[ "$path" =~ ^/[A-Za-z0-9._/-]+$ ]] || return 1
+            [[ "$path" != '/' && "$path" != */ && "$path" != *'//'* ]] || return 1
+            IFS='/' read -r -a segments <<< "${path#/}"
+            for segment in "${segments[@]}"; do
+              [[ -n "$segment" && "$segment" != '.' && "$segment" != '..' ]] || return 1
+            done
+          }
+
+          is_safe_absolute_path "$DROPLET_PATH" || {
+            printf 'Unsafe DROPLET_PATH.\n' >&2
+            exit 2
+          }
+          [[ "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          umask 077
+          remote_archive="$DROPLET_PATH/release/release-$RELEASE_SHA.tar.gz"
+          ssh -o BatchMode=yes "$DROPLET_USER@$DROPLET_HOST" \
+            "set -eu; test ! -L '$DROPLET_PATH/release'; install -d -m 700 '$DROPLET_PATH/release'"
           cp docker-compose.yml .deploy/docker-compose.yml
           cp docker-compose.prod.yml .deploy/docker-compose.prod.yml
           cp infra/deploy/deploy.sh .deploy/deploy.sh
@@ -136,16 +224,29 @@ jobs:
             release_files+=(postgres-ca.crt)
           fi
           tar -C .deploy -czf .deploy/release.tar.gz "${release_files[@]}"
-          scp -o BatchMode=yes .deploy/release.tar.gz \
-            "$DROPLET_USER@$DROPLET_HOST:$DROPLET_PATH/release/release-$RELEASE_SHA.tar.gz"
+          chmod 600 .deploy/release.tar.gz
+          scp -p -o BatchMode=yes .deploy/release.tar.gz \
+            "$DROPLET_USER@$DROPLET_HOST:$remote_archive"
+          ssh -o BatchMode=yes "$DROPLET_USER@$DROPLET_HOST" "chmod 600 '$remote_archive'"
 
       - name: Migrate, deploy, and verify
         shell: bash
-        env:
-          DROPLET_HOST: ${{ secrets.DROPLET_HOST }}
-          DROPLET_USER: ${{ secrets.DROPLET_USER }}
         run: |
           set -euo pipefail
           ssh -o BatchMode=yes "$DROPLET_USER@$DROPLET_HOST" \
             "DROPLET_PATH='$DROPLET_PATH' RELEASE_SHA='$RELEASE_SHA' TARGET_ENV='$TARGET_ENV' bash -se" \
             < infra/deploy/deploy.sh
+
+      - name: Remove uploaded release archive
+        if: always() && steps.upload_release.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$DROPLET_PATH" =~ ^/[A-Za-z0-9._/-]+$ ]]
+          [[ "$DROPLET_PATH" != '/' && "$DROPLET_PATH" != */ && "$DROPLET_PATH" != *'//'* ]]
+          case "/${DROPLET_PATH#/}/" in
+            *'/./'*|*'/../'*) exit 2 ;;
+          esac
+          [[ "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          remote_archive="$DROPLET_PATH/release/release-$RELEASE_SHA.tar.gz"
+          ssh -o BatchMode=yes "$DROPLET_USER@$DROPLET_HOST" "rm -f -- '$remote_archive'"

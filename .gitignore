@@ -18,9 +18,11 @@ __pycache__/
 dist/
 build/
 .next/
+.angular/
 coverage/
 test-results/
 playwright-report/
+.worktrees/
 
 # Local agent session state (approved specs/plans remain tracked)
 .sdcorejs/tasks/current-session.md

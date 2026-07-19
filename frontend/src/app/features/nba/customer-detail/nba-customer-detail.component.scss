@@ -1,0 +1,26 @@
+// why: Keep direct page regions and detail columns separated without global section selectors.
+.nba-customer-detail-sections {
+  display: grid;
+  gap: 16px;
+}
+
+.nba-customer-detail-grid {
+  row-gap: 16px;
+}
+
+.nba-customer-detail-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 767px) {
+  .nba-customer-detail-sections,
+  .nba-customer-detail-column {
+    gap: 12px;
+  }
+
+  .nba-customer-detail-grid {
+    row-gap: 12px;
+  }
+}
