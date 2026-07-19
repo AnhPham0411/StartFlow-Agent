@@ -18,7 +18,7 @@ export default defineConfig({
   },
   webServer: {
     command:
-      'corepack pnpm --filter @startflow/frontend exec ng serve --host 127.0.0.1 --port 3100',
+      'corepack pnpm --filter @startflow/frontend exec ng serve --configuration e2e --host 127.0.0.1 --port 3100',
     url: 'http://127.0.0.1:3100/',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
