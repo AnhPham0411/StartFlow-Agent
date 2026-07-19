@@ -8,6 +8,7 @@ describe('permissionsForRoles', () => {
     STARTFLOW_PERMISSIONS.runView,
     STARTFLOW_PERMISSIONS.runStart,
     STARTFLOW_PERMISSIONS.comparisonView,
+    STARTFLOW_PERMISSIONS.nbaView,
   ];
 
   it('gives analysts only the common StartFlow workspace permissions', () => {

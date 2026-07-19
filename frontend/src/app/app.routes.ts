@@ -22,6 +22,24 @@ export const appRoutes: Routes = [
         data: { permission: STARTFLOW_PERMISSIONS.dashboardView },
       },
       {
+        path: 'nba/customers/:customerId',
+        title: 'Chi tiết khách hàng NBA',
+        loadComponent: () =>
+          import('./features/nba/customer-detail/nba-customer-detail.component').then(
+            (component) => component.NbaCustomerDetailComponent,
+          ),
+        data: { permission: STARTFLOW_PERMISSIONS.nbaView },
+      },
+      {
+        path: 'nba',
+        title: 'Danh sách gọi NBA',
+        loadComponent: () =>
+          import('./features/nba/call-list/nba-call-list.component').then(
+            (component) => component.NbaCallListComponent,
+          ),
+        data: { permission: STARTFLOW_PERMISSIONS.nbaView },
+      },
+      {
         path: 'cases/new',
         title: 'Tạo hồ sơ tín dụng',
         loadComponent: () =>

@@ -34,6 +34,12 @@ export class MainLayoutComponent {
       permission: STARTFLOW_PERMISSIONS.dashboardView,
     },
     {
+      path: '/nba',
+      title: 'Tư vấn NBA',
+      icon: 'support_agent',
+      permission: STARTFLOW_PERMISSIONS.nbaView,
+    },
+    {
       path: '/cases',
       title: 'Hồ sơ tín dụng',
       icon: 'folder_open',

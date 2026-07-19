@@ -8,6 +8,7 @@ export const STARTFLOW_PERMISSIONS = {
   runStart: 'STARTFLOW_RUN_START',
   runApprove: 'STARTFLOW_RUN_APPROVE',
   comparisonView: 'STARTFLOW_COMPARISON_VIEW',
+  nbaView: 'STARTFLOW_NBA_VIEW',
   knowledgeView: 'STARTFLOW_KNOWLEDGE_VIEW',
   knowledgeCreate: 'STARTFLOW_KNOWLEDGE_CREATE',
 } as const;
@@ -22,6 +23,7 @@ const COMMON_PERMISSIONS: readonly StartFlowPermission[] = [
   STARTFLOW_PERMISSIONS.runView,
   STARTFLOW_PERMISSIONS.runStart,
   STARTFLOW_PERMISSIONS.comparisonView,
+  STARTFLOW_PERMISSIONS.nbaView,
 ];
 
 export function permissionsForRoles(roles: readonly UserRole[]): StartFlowPermission[] {

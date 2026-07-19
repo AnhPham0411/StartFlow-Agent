@@ -114,3 +114,33 @@ describe('NbaService authorization scope', () => {
     expect(query).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('NbaService recommendation staleness', () => {
+  it('aggregates CASA, debt and product flags independently to avoid join fan-out', async () => {
+    const { query, service } = createSubject();
+    query
+      .mockResolvedValueOnce([{ n: 1 }])
+      .mockResolvedValueOnce([{ full_name: 'Khách hàng Demo', cif_code: 'CIF-001' }])
+      .mockResolvedValueOnce([
+        {
+          id: '100',
+          input_snapshot: {
+            features: { casa_avg: 100_000_000, total_debt: 20_000_000, product_flags: ['the'] },
+          },
+        },
+      ])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        { casa_avg: 100_000_000, total_debt: 20_000_000, product_flags: '["the"]' },
+      ])
+      .mockResolvedValueOnce([]);
+
+    await service.getCustomer(99, analyst);
+
+    const stalenessSql = String(query.mock.calls[4]?.[0]);
+    expect(stalenessSql).toContain('SELECT AVG(a.balance)');
+    expect(stalenessSql).toContain('SELECT SUM(l.outstanding)');
+    expect(stalenessSql).not.toContain('LEFT JOIN accounts');
+    expect(stalenessSql).not.toContain('LEFT JOIN loans');
+  });
+});

@@ -299,15 +299,23 @@ export class NbaService {
       Array<{ casa_avg: number; total_debt: number; product_flags: string }>
     >(
       `SELECT
-         COALESCE(AVG(a.balance),0)::float AS casa_avg,
-         COALESCE(SUM(l.outstanding),0)::float AS total_debt,
-         COALESCE(jsonb_agg(DISTINCT cp.product) FILTER (WHERE cp.product IS NOT NULL),'[]'::jsonb)::text AS product_flags
+         COALESCE((
+           SELECT AVG(a.balance) FROM accounts a
+           WHERE a.customer_id=c.id AND a.acct_type='casa'::account_type
+         ),0)::float AS casa_avg,
+         COALESCE((
+           SELECT SUM(l.outstanding) FROM loans l WHERE l.customer_id=c.id
+         ),0)::float AS total_debt,
+         COALESCE((
+           SELECT jsonb_agg(held.product ORDER BY held.product)
+           FROM (
+             SELECT DISTINCT cp.product::text AS product
+             FROM customer_products cp
+             WHERE cp.customer_id=c.id AND cp.status='active'
+           ) held
+         ),'[]'::jsonb)::text AS product_flags
        FROM customers c
-       LEFT JOIN accounts a ON a.customer_id=c.id AND a.acct_type='casa'::account_type
-       LEFT JOIN loans l ON l.customer_id=c.id
-       LEFT JOIN customer_products cp ON cp.customer_id=c.id AND cp.status='active'
-       WHERE c.id=$1::bigint
-       GROUP BY c.id`,
+       WHERE c.id=$1::bigint`,
       customerId,
     );
     if (!live) return { flag: false, fields: [] };

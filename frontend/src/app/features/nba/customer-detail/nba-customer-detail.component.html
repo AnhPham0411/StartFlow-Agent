@@ -1,0 +1,321 @@
+<sd-page>
+  <div headerLeft class="d-flex flex-column">
+    <h1 class="T20M m-0">{{ customer()?.full_name ?? 'Chi tiết khách hàng NBA' }}</h1>
+    <p class="T14R text-secondary mt-4 mb-0">
+      {{ customer()?.cif_code ?? 'Đang tải hồ sơ tư vấn…' }} · Snapshot demo có truy vết
+    </p>
+  </div>
+
+  @if (loading()) {
+    <app-loading-state label="Đang tổng hợp đề xuất và đánh giá khách hàng…"></app-loading-state>
+  } @else if (loadError()) {
+    <app-error-state
+      title="Không mở được khách hàng"
+      [description]="loadError() ?? ''"
+      (retry)="load()"
+    ></app-error-state>
+  } @else if (customer(); as item) {
+    <div class="mb-16">
+      <sd-inform
+        [color]="item.staleness.flag ? 'warning' : 'info'"
+        [title]="item.staleness.flag ? 'Dữ liệu đã thay đổi' : 'Snapshot còn trong ngưỡng'"
+        [description]="stalenessDescription()"
+      ></sd-inform>
+    </div>
+
+    <div class="row gap-y-16">
+      <div class="col-12 col-xl-8 d-flex flex-column gap-16">
+        <section aria-labelledby="nba-recommendation-title">
+          <h2 id="nba-recommendation-title" class="d-none">Đề xuất ưu tiên</h2>
+          <sd-section
+            title="Đề xuất ưu tiên"
+            subTitle="Top 2 từ snapshot batch/rule-based mới nhất; sale cần kiểm tra lại trước khi tư vấn."
+            icon="recommend"
+          >
+            @if (recommendationSlots().length === 0) {
+              <div class="p-16">
+                <app-empty-state
+                  title="Chưa có đề xuất"
+                  description="Khách hàng này chưa có recommendation trong batch hiện tại."
+                ></app-empty-state>
+              </div>
+            } @else {
+              <div class="row gap-y-16 p-16">
+                @for (slot of recommendationSlots(); track slot.rank) {
+                  <div class="col-12 col-md-6">
+                    <sd-section
+                      [title]="'Ưu tiên ' + slot.rank + ' · ' + slot.productLabel"
+                      [icon]="slot.rank === 1 ? 'looks_one' : 'looks_two'"
+                      [iconColor]="slot.rank === 1 ? 'primary' : 'secondary'"
+                    >
+                      <div class="d-flex flex-column gap-16 p-16">
+                        <sd-badge
+                          type="tag"
+                          [color]="slot.rank === 1 ? 'primary' : 'secondary'"
+                          icon="campaign"
+                          title="Câu mở đầu"
+                          [description]="slot.hook"
+                        ></sd-badge>
+                        <sd-view label="Vì sao phù hợp" [display]="slot.explanation"></sd-view>
+                      </div>
+                    </sd-section>
+                  </div>
+                }
+              </div>
+            }
+          </sd-section>
+        </section>
+
+        @if (assessment(); as scorecard) {
+          <section aria-labelledby="nba-assessment-title">
+            <h2 id="nba-assessment-title" class="d-none">Đánh giá 3/6 tháng</h2>
+            <sd-section
+              title="Đánh giá 3/6 tháng"
+              [subTitle]="'Ngày chốt ' + scorecard.as_of + ' · Giải thích ' + explanationMode()"
+              icon="analytics"
+            >
+              <div class="grid-container grid-cols-2 gap-y-16 p-16">
+                <div class="col-span-1">
+                  <sd-view
+                    label="Dòng tiền ròng 3 tháng"
+                    [display]="formatCurrency(scorecard.window_3m.net_flow)"
+                  ></sd-view>
+                </div>
+                <div class="col-span-1">
+                  <sd-view
+                    label="Dòng tiền ròng 6 tháng"
+                    [display]="formatCurrency(scorecard.window_6m.net_flow)"
+                  ></sd-view>
+                </div>
+                <div class="col-span-1">
+                  <sd-view
+                    label="Giao dịch/tháng (3T)"
+                    [display]="scorecard.window_3m.txn_per_month"
+                  ></sd-view>
+                </div>
+                <div class="col-span-1">
+                  <sd-view
+                    label="Xu hướng dòng tiền"
+                    [display]="
+                      scorecard.trend.net_flow_pct === null
+                        ? '—'
+                        : formatPercent(scorecard.trend.net_flow_pct)
+                    "
+                  ></sd-view>
+                </div>
+                <div class="col-span-1">
+                  <sd-view
+                    label="CASA hiện tại"
+                    [display]="
+                      scorecard.current.casa_avg === null
+                        ? '—'
+                        : formatCurrency(scorecard.current.casa_avg)
+                    "
+                  ></sd-view>
+                </div>
+                <div class="col-span-1">
+                  <sd-view
+                    label="Tổng dư nợ hiện tại"
+                    [display]="formatCurrency(scorecard.current.total_debt)"
+                  ></sd-view>
+                </div>
+                <div class="col-span-1">
+                  <sd-view
+                    label="DTI hiện tại"
+                    [display]="
+                      scorecard.current.dti === null ? '—' : formatPercent(scorecard.current.dti)
+                    "
+                  ></sd-view>
+                </div>
+                <div class="col-span-1">
+                  <sd-view label="Nhóm CIC" [display]="scorecard.current.cic_group"></sd-view>
+                </div>
+              </div>
+
+              @if (scorecard.explanation.evidence.length) {
+                <div class="border-top p-16">
+                  <div class="T14M mb-8">Bằng chứng rule-based</div>
+                  <ul class="m-0 pl-24">
+                    @for (evidence of scorecard.explanation.evidence; track evidence) {
+                      <li class="T14R mb-4">{{ evidence }}</li>
+                    }
+                  </ul>
+                </div>
+              }
+
+              <div class="overflow-x-auto border-top">
+                <sd-table autoId="nba-package-assessment" [option]="packageTable"></sd-table>
+              </div>
+            </sd-section>
+          </section>
+        }
+
+        <section aria-labelledby="nba-notes-title">
+          <h2 id="nba-notes-title" class="d-none">Ghi chú cuộc gọi</h2>
+          <sd-section
+            title="Ghi chú cuộc gọi"
+            [subTitle]="notes().length + ' ghi chú đã lưu'"
+            icon="notes"
+          >
+            <div class="p-16">
+              <sd-textarea
+                autoId="nba-call-note"
+                label="Nội dung ghi chú"
+                placeholder="Nhu cầu, thời điểm gọi lại hoặc thông tin cần theo dõi"
+                [rows]="3"
+                [maxlength]="2000"
+                [model]="noteText()"
+                (modelChange)="updateNoteText($event)"
+              ></sd-textarea>
+              <div class="d-flex justify-content-end mt-8">
+                <sd-button
+                  autoId="nba-save-note"
+                  type="fill"
+                  color="primary"
+                  prefixIcon="save"
+                  title="Lưu ghi chú"
+                  [loading]="savingNote()"
+                  [disabled]="!noteText().trim()"
+                  (click)="saveNote()"
+                ></sd-button>
+              </div>
+            </div>
+            @if (notes().length) {
+              <div class="overflow-x-auto border-top">
+                <sd-table autoId="nba-call-notes" [option]="noteTable"></sd-table>
+              </div>
+            }
+          </sd-section>
+        </section>
+      </div>
+
+      <div class="col-12 col-xl-4 d-flex flex-column gap-16">
+        <section aria-labelledby="nba-customer-summary-title">
+          <h2 id="nba-customer-summary-title" class="d-none">Thông tin snapshot</h2>
+          <sd-section title="Thông tin snapshot" icon="person">
+            <div class="grid-container grid-cols-2 gap-y-16 p-16">
+              <div class="col-span-full">
+                <sd-view label="Khách hàng" [display]="item.full_name"></sd-view>
+              </div>
+              <div class="col-span-1">
+                <sd-view label="CIF" [display]="item.cif_code"></sd-view>
+              </div>
+              <div class="col-span-1">
+                <sd-view
+                  label="Phiên bản"
+                  [display]="item.recommendation ? 'v' + item.recommendation.version : '—'"
+                ></sd-view>
+              </div>
+              <div class="col-span-1">
+                <sd-view label="Nguồn" [display]="item.recommendation?.source"></sd-view>
+              </div>
+              <div class="col-span-1">
+                <sd-view
+                  label="Thời điểm tạo"
+                  [display]="
+                    item.recommendation ? formatDateTime(item.recommendation.created_at) : '—'
+                  "
+                ></sd-view>
+              </div>
+            </div>
+          </sd-section>
+        </section>
+
+        <section aria-labelledby="nba-feedback-title">
+          <h2 id="nba-feedback-title" class="d-none">Kết quả tư vấn</h2>
+          <sd-section
+            title="Kết quả tư vấn"
+            subTitle="Feedback từ chối sẽ kích hoạt suppression 90 ngày."
+            icon="fact_check"
+          >
+            <div class="d-flex flex-column gap-12 p-16">
+              <sd-select
+                autoId="nba-feedback-product"
+                label="Sản phẩm"
+                [items]="productOptions"
+                valueField="value"
+                displayField="label"
+                required
+                [model]="feedbackProduct()"
+                (modelChange)="setFeedbackProduct($event)"
+              ></sd-select>
+              <sd-select
+                autoId="nba-feedback-status"
+                label="Kết quả"
+                [items]="feedbackStatusOptions"
+                valueField="value"
+                displayField="label"
+                required
+                [model]="feedbackStatus()"
+                (modelChange)="setFeedbackStatus($event)"
+              ></sd-select>
+              @if (feedbackStatus() === 'rejected') {
+                <sd-textarea
+                  autoId="nba-reject-reason"
+                  label="Lý do từ chối"
+                  [rows]="2"
+                  [maxlength]="128"
+                  required
+                  [model]="rejectReason()"
+                  (modelChange)="updateRejectReason($event)"
+                ></sd-textarea>
+              }
+              <sd-textarea
+                autoId="nba-feedback-note"
+                label="Ghi chú feedback"
+                [rows]="3"
+                [maxlength]="2000"
+                [model]="feedbackNote()"
+                (modelChange)="updateFeedbackNote($event)"
+              ></sd-textarea>
+              <sd-button
+                autoId="nba-submit-feedback"
+                type="fill"
+                color="primary"
+                prefixIcon="send"
+                title="Ghi nhận kết quả"
+                [loading]="submittingFeedback()"
+                [disabled]="!item.recommendation || !feedbackProduct()"
+                (click)="submitFeedback()"
+              ></sd-button>
+            </div>
+          </sd-section>
+        </section>
+
+        <section aria-labelledby="nba-version-title">
+          <h2 id="nba-version-title" class="d-none">Lịch sử phiên bản</h2>
+          <sd-section
+            title="Lịch sử phiên bản"
+            [subTitle]="item.versions.length + ' snapshot append-only'"
+            icon="history"
+            collapsible
+          >
+            <div class="overflow-x-auto">
+              <sd-table autoId="nba-recommendation-versions" [option]="versionTable"></sd-table>
+            </div>
+          </sd-section>
+        </section>
+
+        <section aria-labelledby="nba-audit-title">
+          <h2 id="nba-audit-title" class="d-none">Truy vết đề xuất</h2>
+          <sd-section
+            title="Truy vết đề xuất"
+            subTitle="Dữ liệu audit chỉ đọc từ recommendation append-only."
+            icon="policy"
+            collapsible
+          >
+            <div class="d-flex flex-column gap-16 p-16">
+              <sd-view label="Recommendation ID" [display]="auditValue('id')"></sd-view>
+              <sd-view
+                label="Snapshot hash"
+                [display]="auditValue('input_snapshot_hash')"
+              ></sd-view>
+              <sd-view label="Rules áp dụng" [display]="auditValue('rules_applied')"></sd-view>
+              <sd-view label="Số feedback" [display]="audit()?.feedback?.length ?? 0"></sd-view>
+            </div>
+          </sd-section>
+        </section>
+      </div>
+    </div>
+  }
+</sd-page>

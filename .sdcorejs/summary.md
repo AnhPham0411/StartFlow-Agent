@@ -1,6 +1,6 @@
 ---
-generated_at: 2026-07-19T04:45:00+07:00
-git_head: 200d429f179729d4e19036343d507b7d29eded96 + origin/dev
+generated_at: 2026-07-19T07:45:00+07:00
+git_head: e3b260d2ff870d16f7d40d96af47cfbdd724e281
 branch: feat/angular-core-ui-migration
 tracks: [angular, nestjs, test, generic]
 generator: sdcorejs-explore
@@ -17,7 +17,7 @@ StartFlow là demo hackathon đánh giá tín dụng bằng multi-agent. Planner
 - Monorepo pnpm 10, Node 22, TypeScript 5.9.
 - Frontend đã được thay toàn bộ bằng Angular 20 standalone/strict và `@sdcorejs/angular` 20.1.2; React, Next.js và Vitest frontend cũ đã bị loại bỏ.
 - Backend giữ nguyên NestJS, Prisma/PostgreSQL, JWT/role guards và các module cases/runs/events/approvals/knowledge.
-- AI service giữ nguyên FastAPI/LangGraph, ba specialist agents, Synthesizer, tools và RAG/pgvector.
+- AI service giữ nguyên FastAPI/LangGraph, ba specialist agents, Synthesizer, tools và external Qdrant RAG.
 - Shared vocabulary tiếp tục dùng Zod schemas/types trong `packages/contracts/src/schemas.ts`.
 - Runtime gồm ba application containers; PostgreSQL và Keycloak là external dependencies.
 
@@ -65,6 +65,8 @@ StartFlow là demo hackathon đánh giá tín dụng bằng multi-agent. Planner
 - Spec: `.sdcorejs/specs/angular/2026-07-18-22-44-angular-core-ui-frontend-migration.md`.
 - Plan: `.sdcorejs/plans/angular/2026-07-18-22-50-angular-core-ui-frontend-migration.md`.
 - Environment plan: `.sdcorejs/plans/angular/2026-07-19-angular-build-environments.md`.
+- Demo-first NBA spec: `.sdcorejs/specs/fullstack/2026-07-19-07-43-demo-first-nba.md`.
+- Demo-first NBA plan: `.sdcorejs/plans/fullstack/2026-07-19-07-43-demo-first-nba.md`.
 - Implementation branch: `feat/angular-core-ui-migration`.
 
 ## Known follow-up context
@@ -73,11 +75,12 @@ StartFlow là demo hackathon đánh giá tín dụng bằng multi-agent. Planner
 - Core UI vẫn có hạn chế upstream ở mobile navigation semantics; application-level repairs đã xử lý form controls và knowledge drawer.
 - Build còn cảnh báo CommonJS từ các dependency bắc cầu của Core UI (ExcelJS, PrismJS, fuzzysort, extend).
 - Hosted development và production hiện dùng chung public API/Keycloak endpoints đã được xác nhận; chưa thêm UAT/QC vì chưa có endpoint/pipeline tương ứng.
-- Angular migration đã được commit và đang hợp nhất với `origin/dev` trước khi push fast-forward lên nhánh `dev`.
+- Angular migration/CSP fix đã được commit, push lên `dev` và deploy thành công tại commit `e3b260d`.
+- `frontend/public/logo.png` là untracked user asset phát hiện tại preflight; giữ nguyên và không đưa vào phạm vi NBA nếu user không yêu cầu.
 
 ## Freshness
 
-Generated from Angular commit `200d429` merged with `origin/dev` at `36dd5ce` on `feat/angular-core-ui-migration`.
+Refreshed from commit `e3b260d` on `feat/angular-core-ui-migration` trước khi thực thi demo-first NBA plan.
 
 ## Merged dev capabilities
 

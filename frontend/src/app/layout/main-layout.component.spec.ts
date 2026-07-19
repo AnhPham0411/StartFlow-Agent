@@ -54,7 +54,7 @@ describe('MainLayoutComponent', () => {
       'path' in menu ? menu.path : undefined,
     );
 
-    expect(paths).toEqual(['/dashboard', '/cases', '/comparisons', '/knowledge']);
+    expect(paths).toEqual(['/dashboard', '/nba', '/cases', '/comparisons', '/knowledge']);
   });
 
   it('focuses semantic main content and announces subsequent route changes in Vietnamese', async () => {
