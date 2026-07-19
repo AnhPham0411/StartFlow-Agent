@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { SD_LAYOUT_CONFIGURATION } from '@sdcorejs/angular/modules/layout';
 import { SD_PERMISSION_CONFIGURATION } from '@sdcorejs/angular/modules/permission';
+import { STARTFLOW_PERMISSIONS } from '../core/auth/permission-map';
 import { MainLayoutComponent } from './main-layout.component';
 
 @Component({ template: '<p>Nội dung kiểm thử</p>' })
@@ -55,15 +56,55 @@ describe('MainLayoutComponent', () => {
     const groups = fixture.componentInstance.menus.map((group) => ({
       id: group.id,
       title: group.title,
-      paths:
+      items:
         'children' in group
-          ? (group.children ?? []).flatMap((child) => ('path' in child ? [child.path] : []))
+          ? (group.children ?? []).flatMap((child) =>
+              'path' in child
+                ? [
+                    {
+                      title: child.title,
+                      path: child.path,
+                      permission: child.permission,
+                    },
+                  ]
+                : [],
+            )
           : [],
     }));
 
     expect(groups).toEqual([
-      { id: 'business', title: 'Nghiệp vụ', paths: ['/dashboard', '/cases'] },
-      { id: 'ai-data', title: 'AI & Dữ liệu', paths: ['/comparisons', '/knowledge'] },
+      {
+        id: 'business',
+        title: 'Nghiệp vụ',
+        items: [
+          {
+            title: 'Tổng quan',
+            path: '/dashboard',
+            permission: STARTFLOW_PERMISSIONS.dashboardView,
+          },
+          {
+            title: 'Hồ sơ tín dụng',
+            path: '/cases',
+            permission: STARTFLOW_PERMISSIONS.caseView,
+          },
+        ],
+      },
+      {
+        id: 'ai-data',
+        title: 'AI & Dữ liệu',
+        items: [
+          {
+            title: 'So sánh mô hình',
+            path: '/comparisons',
+            permission: STARTFLOW_PERMISSIONS.comparisonView,
+          },
+          {
+            title: 'Kho tri thức',
+            path: '/knowledge',
+            permission: STARTFLOW_PERMISSIONS.knowledgeView,
+          },
+        ],
+      },
     ]);
   });
 
