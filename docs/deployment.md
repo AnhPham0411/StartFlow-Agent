@@ -60,7 +60,7 @@ Các giá trị này đều xuất hiện trong browser bundle. Không đặt cl
 2. Workflow validate shell/static deployment tests và build ba immutable image theo commit SHA.
 3. Bundle gồm images, Compose, validated env, deploy script và host Nginx templates được chuyển qua strict SSH tới release root riêng.
 4. Remote script kiểm tra Keycloak discovery, Docker Compose config và Docker network riêng.
-5. Chạy `backend-migrate`, `ai-migrate`, rồi seed profile backend trước khi thay container.
+5. Chạy `backend-migrate`, `ai-migrate`, rồi seed profile backend trước khi thay container. Khi `STARTFLOW_ENABLE_IDENTITY_SEED=true`, deploy tiếp tục đồng bộ 30 identity/role sang Keycloak bằng service account; mật khẩu tạm chỉ lấy từ runtime secret và không được ghi log.
 6. Start ba StartFlow containers và chờ backend `/ready`, frontend Nginx `/health`.
 7. Render host Nginx config, chạy `nginx -t`, reload, xác minh route TLS và cập nhật symlink release.
 8. Chạy knowledge `ai-seed` idempotent với timeout; lỗi Qdrant được cảnh báo nhưng không làm website/API đã healthy bị rollback.

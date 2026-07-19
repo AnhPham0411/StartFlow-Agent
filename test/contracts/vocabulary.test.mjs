@@ -71,6 +71,18 @@ test('frontend container never receives private runtime env', async () => {
   assert.doesNotMatch(frontend, /env_file:/);
 });
 
+test('NBA schema keeps canonical roles and auditable run vocabulary', async () => {
+  const schema = JSON.parse(await readFile('packages/contracts/nba-contracts.schema.json', 'utf8'));
+  const serialized = JSON.stringify(schema);
+
+  for (const role of ['employee', 'manager', 'admin']) assert.match(serialized, new RegExp(`"${role}"`));
+  for (const status of ['pending', 'running', 'succeeded', 'failed']) {
+    assert.match(serialized, new RegExp(`"${status}"`));
+  }
+  for (const stage of ['M1', 'AG1', 'M8', 'M13']) assert.match(serialized, new RegExp(`"${stage}"`));
+  assert.doesNotMatch(serialized, /"sale"|"analyst"|"approver"/);
+});
+
 test('frontend CSP permits only the Core UI silent SSO inline script', async () => {
   const angularConfig = JSON.parse(await readFile('frontend/angular.json', 'utf8'));
   const assets = angularConfig.projects.startflow.architect.build.options.assets;

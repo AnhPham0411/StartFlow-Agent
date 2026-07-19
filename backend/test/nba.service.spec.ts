@@ -25,8 +25,9 @@ const analyst: AuthenticatedUser = {
 
 const approver: AuthenticatedUser = {
   branch: 'HN-01',
+  branchId: 1,
   id: 21,
-  roles: ['approver'],
+  roles: ['manager'],
   sub: 'approver-subject',
   username: 'manager.demo',
 };
@@ -59,9 +60,9 @@ describe('NbaService authorization scope', () => {
 
     expect(query).toHaveBeenNthCalledWith(
       1,
-      expect.stringContaining('SELECT id FROM users WHERE branch = $2'),
+      expect.stringContaining('SELECT id FROM users WHERE branch_id = $2::bigint'),
       '2026-07-18',
-      'HN-01',
+      1,
     );
   });
 

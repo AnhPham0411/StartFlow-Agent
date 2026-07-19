@@ -25,6 +25,16 @@
 
 “StartFlow không thay người phê duyệt. Nó biến một hồ sơ thành quy trình phân tích nhiều chuyên môn có căn cứ, quan sát được, chạy lại được và luôn giữ human gate cho hành động nhạy cảm.”
 
+## Demo NBA & Customer 360 — 6 phút
+
+1. Đăng nhập bằng Manager, mở **Khách hàng** và nhấn một dòng để vào Customer 360. Nhấn mạnh danh sách được giới hạn theo chi nhánh và vẫn mở được khách hàng chưa có recommendation.
+2. Mở **NBA Operations → Batch & Stages**, chỉ đúng lane M1–M13 và badge `DEMO MODE`. Nhấn **Chạy mini-run demo**; nói rõ đây là journey UI deterministic, không ghi production batch.
+3. Mở Compliance/Tag QA/Models/RAG/Audit để trình bày các control surface; mục thiếu E1–E10, R1–R12 và C5 luôn hiện `planned/not-configured`, không giả lập rule production.
+4. Mở **Quản trị hệ thống → Chi nhánh/Tài khoản** bằng Manager: thấy dữ liệu chi nhánh nhưng không có thao tác ghi. Chuyển sang Admin: tạo/cập nhật, khóa/mở khóa, reset mật khẩu; nhấn mạnh mật khẩu tạm không hiển thị trên Portal.
+5. Chốt bằng ba lớp bảo vệ: Keycloak xác thực, PostgreSQL giữ effective role/branch, API thực thi scope; việc ẩn menu/nút chỉ là UX và không thay thế authorization backend.
+
+Tài khoản demo phải dùng identity đã được đồng bộ qua `identity:seed`; không dùng shared password trên màn hình hoặc trong log.
+
 ## Phương án dự phòng
 
 - LLM lỗi: chuyển `LLM_MODE=mock` và dùng cùng seed.

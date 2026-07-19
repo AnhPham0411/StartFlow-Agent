@@ -3,6 +3,53 @@ import { gunzipSync } from 'node:zlib';
 
 import { PrismaClient } from '@prisma/client';
 
+const BRANCH_IDS_BY_NAME: Readonly<Record<string, number>> = {
+  'Hà Nội - Hoàn Kiếm': 1,
+  'Hải Phòng': 2,
+  'TP.HCM - Bình Thạnh': 3,
+  'Hà Nội - Đống Đa': 4,
+  'Cần Thơ': 5,
+  Huế: 6,
+  'Đà Nẵng': 7,
+  'Nha Trang': 8,
+  'Biên Hòa': 9,
+  'TP.HCM - Quận 1': 10,
+};
+
+export interface OperationalUserSeedRow extends Record<string, unknown> {
+  active: boolean;
+  branch: string | null;
+  branch_id: number | null;
+  id: number;
+  role: 'employee' | 'manager' | 'admin';
+  username: string;
+}
+
+export function buildOperationalUserSeedRows(
+  rows: Array<Record<string, unknown>>,
+): OperationalUserSeedRow[] {
+  return rows.map((row) => {
+    const username = String(row.username);
+    const admin = username === 'user017' || username === 'user028';
+    const manager = ['user006', 'user007', 'user020', 'user023', 'user029'].includes(username);
+    const branch = admin ? null : String(row.branch);
+    const branchId = branch ? BRANCH_IDS_BY_NAME[branch] : undefined;
+    if (!admin && branchId === undefined) {
+      throw new Error(`Unknown branch in operational profile for ${username}`);
+    }
+    return {
+      ...row,
+      active: true,
+      branch,
+      branch_id: branchId ?? null,
+      id: Number(row.id),
+      role: admin ? 'admin' : manager ? 'manager' : 'employee',
+      updated_at: row.created_at,
+      username,
+    };
+  });
+}
+
 export const PROFILE_SEED_SHA256 =
   'e3f3fa03c8a009d95e4ad8214187188141b93696e35751ff7f1b5c07dfa7f32d';
 const PROFILE_SEED_GZIP_BASE64 =
@@ -11,7 +58,17 @@ const PROFILE_SEED_GZIP_BASE64 =
 export const PROFILE_SEED_TABLES = [
   {
     name: 'users',
-    columns: ['id', 'username', 'full_name', 'role', 'branch', 'created_at'],
+    columns: [
+      'id',
+      'username',
+      'full_name',
+      'role',
+      'branch',
+      'branch_id',
+      'active',
+      'created_at',
+      'updated_at',
+    ],
     conflictColumns: ['id'],
     sequence: true,
   },
@@ -382,7 +439,10 @@ export async function seedProfileBundle(prisma = new PrismaClient()): Promise<vo
           `SELECT set_config('startflow.profile_seed_mode', 'on', true)`,
         );
         for (const table of PROFILE_SEED_TABLES) {
-          const rows = bundle.tables[table.name];
+          const rows =
+            table.name === 'users'
+              ? buildOperationalUserSeedRows(bundle.tables.users)
+              : bundle.tables[table.name];
           if (rows.length === 0) continue;
           await transaction.$executeRawUnsafe(buildTableUpsertSql(table), JSON.stringify(rows));
           if (table.sequence) {

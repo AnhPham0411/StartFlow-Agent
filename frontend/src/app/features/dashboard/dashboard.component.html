@@ -5,16 +5,50 @@
       Theo dõi hồ sơ demo, lượt đánh giá và quyết định đang cần con người xử lý.
     </p>
   </div>
-  <sd-button
-    headerRight
-    autoId="dashboard-create-case"
-    type="fill"
-    color="primary"
-    size="md"
-    prefixIcon="add"
-    title="Tạo hồ sơ demo"
-    (click)="createCase()"
-  ></sd-button>
+  <div headerRight class="d-flex align-items-center gap-8">
+    <sd-badge type="round" color="info" icon="science" title="NBA: DEMO"></sd-badge>
+    <sd-button
+      autoId="dashboard-open-nba-demo"
+      type="outline"
+      color="primary"
+      size="md"
+      prefixIcon="play_circle"
+      title="Mini-run NBA"
+      (click)="openNbaDemo()"
+    ></sd-button>
+    <sd-button
+      autoId="dashboard-create-case"
+      type="fill"
+      color="primary"
+      size="md"
+      prefixIcon="add"
+      title="Tạo hồ sơ demo"
+      (click)="createCase()"
+    ></sd-button>
+  </div>
+
+  <sd-section
+    class="d-block mb-16"
+    title="NBA Sales Copilot"
+    subTitle="Customer data dùng API theo phạm vi thật; mini-run pipeline là hành trình demo cục bộ và được gắn nhãn rõ ràng."
+    icon="support_agent"
+  >
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-12 p-16">
+      <div class="d-flex flex-wrap align-items-center gap-8">
+        <sd-badge type="round" color="success" icon="cloud_done" title="Customer: LIVE DATA"></sd-badge>
+        <sd-badge type="round" color="info" icon="account_tree" title="Pipeline: DEMO MODE"></sd-badge>
+        <span class="T12R text-muted">M1–M13 · Compliance · Tag QA · Models · RAG · Audit</span>
+      </div>
+      <sd-button
+        autoId="dashboard-nba-journey"
+        type="fill"
+        color="primary"
+        suffixIcon="arrow_forward"
+        title="Mở NBA Operations"
+        (click)="openNbaDemo()"
+      ></sd-button>
+    </div>
+  </sd-section>
 
   @if (loading()) {
     <app-loading-state label="Đang tổng hợp hàng đợi…"></app-loading-state>

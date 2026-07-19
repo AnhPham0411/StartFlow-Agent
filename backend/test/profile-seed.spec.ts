@@ -5,6 +5,7 @@ import {
   PROFILE_SEED_COUNTS,
   PROFILE_SEED_SHA256,
   PROFILE_SEED_TABLES,
+  buildOperationalUserSeedRows,
   buildTableUpsertSql,
   decodeProfileSeed,
 } from '../prisma/profile-seed';
@@ -29,6 +30,29 @@ describe('Sales Copilot profile seed', () => {
       expect(bundle.tables[table.name]).toHaveLength(PROFILE_SEED_COUNTS[table.name]);
     }
     expect(PROFILE_SEED_SHA256).toMatch(/^[a-f0-9]{64}$/);
+  });
+
+  it('transforms the immutable bundle into the approved three-level branch model', () => {
+    const rows = buildOperationalUserSeedRows(decodeProfileSeed().tables.users);
+
+    expect(rows).toHaveLength(30);
+    expect(rows.find((row) => row.username === 'user017')).toMatchObject({
+      id: 17,
+      role: 'admin',
+      branch: null,
+      branch_id: null,
+    });
+    expect(rows.find((row) => row.username === 'user006')).toMatchObject({
+      id: 6,
+      role: 'manager',
+      branch_id: 1,
+    });
+    expect(rows.find((row) => row.username === 'user001')).toMatchObject({
+      id: 1,
+      role: 'employee',
+      branch_id: 1,
+    });
+    expect(new Set(rows.map((row) => row.branch_id).filter(Boolean)).size).toBe(10);
   });
 
   it('builds conflict-safe upserts without destructive statements', () => {
@@ -60,5 +84,21 @@ describe('Sales Copilot profile seed', () => {
     for (const matchMethod of new Set(bundle.tables.customer_geo.map((row) => row.match_method))) {
       expect(migrationSql).toContain(`'${String(matchMethod)}'`);
     }
+  });
+
+  it('adds the branch model and enforces the approved role/branch invariant', () => {
+    const migrationSql = [
+      '../prisma/migrations/20260719093000_identity_branch_rbac/migration.sql',
+      '../prisma/migrations/20260719094000_identity_branch_accounts/migration.sql',
+    ]
+      .map((path) => readFileSync(join(__dirname, path), 'utf8'))
+      .join('\n');
+
+    expect(migrationSql).toContain("ADD VALUE IF NOT EXISTS 'employee'");
+    expect(migrationSql).toContain('CREATE TABLE branches');
+    expect(migrationSql).toContain('users_role_branch_check');
+    expect(migrationSql).toContain("role = 'admin'::user_role AND branch_id IS NULL");
+    expect(migrationSql).toContain("'employee'::user_role) AND branch_id IS NOT NULL");
+    expect(migrationSql).not.toMatch(/DROP TABLE users|TRUNCATE users/i);
   });
 });

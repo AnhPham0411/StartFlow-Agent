@@ -1,0 +1,158 @@
+<sd-page>
+  <div headerLeft class="d-flex flex-column">
+    <h1 class="T20M m-0">Quản lý chi nhánh</h1>
+    <p class="T14R text-secondary mt-4 mb-0">
+      Quản lý phạm vi vận hành dùng để phân quyền dữ liệu cho quản lý và nhân viên.
+    </p>
+  </div>
+  @if (canManage) {
+    <sd-button
+      headerRight
+      autoId="branch-create"
+      type="fill"
+      color="primary"
+      prefixIcon="add_business"
+      title="Thêm chi nhánh"
+      (click)="startCreate()"
+    ></sd-button>
+  }
+
+  <sd-inform
+    class="d-block mb-16"
+    info
+    title="Quy tắc phân quyền 3 cấp"
+    description="Admin không thuộc chi nhánh; Manager và Employee bắt buộc thuộc đúng một chi nhánh. Không thể ngừng chi nhánh còn tài khoản hoạt động."
+  ></sd-inform>
+
+  <sd-section
+    title="Danh mục chi nhánh"
+    subTitle="Mã chi nhánh là bất biến sau khi tạo để bảo toàn liên kết dữ liệu."
+    icon="account_tree"
+  >
+    <div class="p-16 pb-0">
+      <div class="row align-items-end">
+        <div class="col-12 col-lg-7">
+          <sd-input
+            autoId="branch-search"
+            size="sm"
+            hideInlineError
+            label="Tìm chi nhánh"
+            placeholder="Mã hoặc tên chi nhánh"
+            [model]="query()"
+            (modelChange)="updateQuery($event)"
+            (keyupEnter)="load()"
+          ></sd-input>
+        </div>
+        <div class="col-12 col-lg-3">
+          <sd-select
+            autoId="branch-active-filter"
+            size="sm"
+            hideInlineError
+            label="Trạng thái"
+            [items]="activeOptions"
+            valueField="value"
+            displayField="label"
+            [model]="activeFilter()"
+            (modelChange)="updateActiveFilter($event)"
+          ></sd-select>
+        </div>
+        <div class="col-12 col-lg-2">
+          <sd-button
+            autoId="branch-filter-submit"
+            type="outline"
+            color="primary"
+            prefixIcon="filter_alt"
+            title="Lọc"
+            [loading]="loading()"
+            (click)="load()"
+          ></sd-button>
+        </div>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <app-loading-state label="Đang tải danh mục chi nhánh…"></app-loading-state>
+    } @else if (error()) {
+      <div class="p-16">
+        <app-error-state
+          title="Không tải được chi nhánh"
+          [description]="error() ?? ''"
+          (retry)="load()"
+        ></app-error-state>
+      </div>
+    } @else if (branches().length === 0) {
+      <div class="p-16">
+        <app-empty-state
+          title="Chưa có chi nhánh phù hợp"
+          description="Thay đổi bộ lọc hoặc tạo chi nhánh mới."
+          [actionLabel]="canManage ? 'Thêm chi nhánh' : ''"
+          (primaryAction)="startCreate()"
+        ></app-empty-state>
+      </div>
+    } @else {
+      <div class="overflow-x-auto">
+        <sd-table autoId="branch-list" [option]="tableOption"></sd-table>
+      </div>
+    }
+  </sd-section>
+</sd-page>
+
+@if (canManage) {
+<sd-modal #editorModal autoId="branch-editor" [title]="editorTitle()" width="sm">
+  <form class="p-16" [formGroup]="form">
+    <div class="d-flex flex-column gap-16">
+      <sd-input
+        autoId="branch-code"
+        [form]="form"
+        name="code"
+        label="Mã chi nhánh"
+        helperText="Chỉ dùng chữ in hoa, số và dấu gạch ngang."
+        required
+        [minlength]="2"
+        [maxlength]="32"
+        pattern="^[A-Z0-9-]+$"
+        [readonly]="isEditing()"
+        [(model)]="draft.code"
+      ></sd-input>
+      <sd-input
+        autoId="branch-name"
+        [form]="form"
+        name="name"
+        label="Tên chi nhánh"
+        required
+        [minlength]="2"
+        [maxlength]="160"
+        [(model)]="draft.name"
+      ></sd-input>
+      @if (isEditing()) {
+        <sd-switch
+          autoId="branch-active"
+          [form]="form"
+          name="active"
+          label="Chi nhánh đang hoạt động"
+          [(model)]="draft.active"
+        ></sd-switch>
+      }
+    </div>
+  </form>
+
+  <sd-button
+    sdFooterLeft
+    autoId="branch-cancel"
+    type="text"
+    color="secondary"
+    title="Hủy"
+    (click)="closeEditor()"
+  ></sd-button>
+  <sd-button
+    sdFooterRight
+    autoId="branch-save"
+    type="fill"
+    color="primary"
+    prefixIcon="save"
+    title="Lưu chi nhánh"
+    [loading]="saving()"
+    (click)="save()"
+  ></sd-button>
+</sd-modal>
+}

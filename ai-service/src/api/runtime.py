@@ -8,6 +8,18 @@ from src.clients.callback import CallbackClient
 from src.clients.llm import build_llm_client
 from src.core.settings import Settings
 from src.graph.workflow import WorkflowRunner
+from src.nba.clients.local_llm import DeterministicDemoModel
+from src.nba.config import NbaConfig
+from src.nba.orchestrator import NbaOrchestrator
+from src.nba.repository import InMemoryNbaRepository
+from src.nba.stages.call_list import CallListStage
+from src.nba.stages.etl import EtlStage
+from src.nba.stages.extraction import ExtractionStage
+from src.nba.stages.geo import GeoStage
+from src.nba.stages.profile import ProfileStage
+from src.nba.stages.ranker import RankerStage
+from src.nba.stages.scoring import ScoringStage
+from src.nba.stages.scripting import ScriptingStage
 from src.rag.repository import KnowledgeRepository
 from src.rag.retrieval import (
     KnowledgeRetriever,
@@ -22,6 +34,8 @@ class Runtime:
     workflow: WorkflowRunner
     callback: CallbackClient
     repository: KnowledgeRepository | None
+    nba_repository: InMemoryNbaRepository
+    nba_orchestrator: NbaOrchestrator
 
     async def close(self) -> None:
         await self.callback.close()
@@ -60,4 +74,30 @@ def build_runtime(settings: Settings) -> Runtime:
         settings.callback_timeout_seconds,
         settings.callback_max_attempts,
     )
-    return Runtime(settings, workflow, callback, repository)
+    nba_config = NbaConfig.from_settings(settings)
+    nba_repository = InMemoryNbaRepository()
+    nba_stages = [
+        EtlStage(),
+        GeoStage(nba_config.geo_confidence_threshold),
+        ProfileStage(),
+        ScoringStage(),
+        RankerStage(),
+        CallListStage(),
+        ExtractionStage(),
+    ]
+    if nba_config.demo_mode:
+        nba_stages.append(ScriptingStage(DeterministicDemoModel()))
+    nba_orchestrator = NbaOrchestrator(
+        nba_repository,
+        nba_stages,
+        max_attempts=nba_config.stage_max_attempts,
+        stage_timeout_seconds=nba_config.stage_timeout_seconds,
+    )
+    return Runtime(
+        settings,
+        workflow,
+        callback,
+        repository,
+        nba_repository,
+        nba_orchestrator,
+    )

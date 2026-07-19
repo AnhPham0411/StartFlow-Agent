@@ -177,6 +177,10 @@ export class DashboardComponent {
     void this.#router.navigate(['/cases']);
   }
 
+  openNbaDemo(): void {
+    void this.#router.navigate(['/nba/operations']);
+  }
+
   openNextAction(item: NextActionViewModel): void {
     void this.#router.navigate(item.runId ? ['/runs', item.runId] : ['/cases', item.id]);
   }

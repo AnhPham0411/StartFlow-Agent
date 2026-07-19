@@ -7,6 +7,7 @@ from fastapi import FastAPI
 
 from src.api.health import router as health_router
 from src.api.knowledge import router as knowledge_router
+from src.api.nba import router as nba_router
 from src.api.runs import router as runs_router
 from src.api.runtime import build_runtime
 from src.core.logging import configure_logging
@@ -35,6 +36,7 @@ def create_app() -> FastAPI:
     application.include_router(health_router)
     application.include_router(runs_router)
     application.include_router(knowledge_router)
+    application.include_router(nba_router)
     return application
 
 

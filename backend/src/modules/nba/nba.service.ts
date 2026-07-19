@@ -50,7 +50,7 @@ function isAdmin(user: AuthenticatedUser): boolean {
 }
 
 function hasManagerScope(user: AuthenticatedUser): boolean {
-  return isAdmin(user) || user.roles.includes('manager') || user.roles.includes('approver');
+  return isAdmin(user) || user.roles.includes('manager');
 }
 
 @Injectable()
@@ -103,15 +103,15 @@ export class NbaService {
   ): Promise<void> {
     if (hasManagerScope(user)) {
       if (isAdmin(user)) return;
-      if (!user.branch) {
+      if (!user.branchId) {
         throw new ForbiddenException('Tài khoản quản lý chưa được liên kết với chi nhánh');
       }
       const rows = await this.prisma.$queryRawUnsafe<Array<{ n: number }>>(
         `SELECT count(*)::int AS n
          FROM call_lists cl JOIN users u ON u.id = cl.assigned_sale_id
-         WHERE cl.customer_id = $1::bigint AND u.branch = $2`,
+         WHERE cl.customer_id = $1::bigint AND u.branch_id = $2::bigint`,
         customerId,
-        user.branch,
+        user.branchId,
       );
       if ((rows[0]?.n ?? 0) > 0) return;
       throw new ForbiddenException('Khách hàng không thuộc chi nhánh của bạn');
@@ -161,8 +161,8 @@ export class NbaService {
       if (isAdmin(user)) {
         // Không lọc
       } else if (hasManagerScope(user)) {
-        query += ` AND cl.assigned_sale_id IN (SELECT id FROM users WHERE branch = $2) `;
-        params.push(user.branch ?? '');
+        query += ` AND cl.assigned_sale_id IN (SELECT id FROM users WHERE branch_id = $2::bigint) `;
+        params.push(user.branchId ?? 0);
       } else {
         query += ` AND cl.assigned_sale_id = $2::bigint `;
         params.push(user.id ?? 0);
@@ -199,11 +199,11 @@ export class NbaService {
     if (isAdmin(user)) {
       // Không giới hạn phạm vi.
     } else if (hasManagerScope(user)) {
-      params.push(user.branch ?? '');
+      params.push(user.branchId ?? 0);
       scope = `WHERE c.id IN (
                  SELECT cl.customer_id FROM call_lists cl
                  JOIN users u ON u.id = cl.assigned_sale_id
-                 WHERE u.branch = $${params.length})`;
+                 WHERE u.branch_id = $${params.length}::bigint)`;
     } else {
       params.push(user.id ?? 0);
       scope = `WHERE c.id IN (
@@ -404,7 +404,7 @@ export class NbaService {
     user: AuthenticatedUser,
   ): Promise<{ inserted: number }> {
     if (!isAdmin(user)) {
-      if (!hasManagerScope(user) || !user.branch) {
+      if (!hasManagerScope(user) || !user.branchId) {
         throw new ForbiddenException('Tài khoản quản lý chưa được liên kết với chi nhánh');
       }
       const saleIds = [...new Set(assignments.map((assignment) => assignment.sale_id))];
@@ -412,9 +412,9 @@ export class NbaService {
         `SELECT count(DISTINCT u.id)::int AS n
          FROM users u
          JOIN jsonb_array_elements_text($1::jsonb) requested(id) ON u.id = requested.id::bigint
-         WHERE u.branch = $2`,
+         WHERE u.branch_id = $2::bigint`,
         JSON.stringify(saleIds),
-        user.branch,
+        user.branchId,
       );
       if ((scope?.n ?? 0) !== saleIds.length) {
         throw new ForbiddenException('Chỉ được phân công cho sale trong cùng chi nhánh');

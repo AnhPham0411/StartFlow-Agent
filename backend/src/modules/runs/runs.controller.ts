@@ -10,7 +10,7 @@ import { RunsService } from './runs.service';
 @ApiTags('runs')
 @ApiBearerAuth()
 @Controller('api')
-@Roles('analyst')
+@Roles('employee')
 export class RunsController {
   constructor(private readonly runs: RunsService) {}
 

@@ -51,6 +51,12 @@ class Settings(BaseSettings):
     callback_timeout_seconds: float = Field(default=5.0, gt=0, le=30)
     callback_max_attempts: int = Field(default=3, ge=1, le=6)
 
+    nba_enabled: bool = True
+    nba_demo_mode: bool = True
+    nba_stage_max_attempts: int = Field(default=2, ge=2, le=2)
+    nba_stage_timeout_seconds: float = Field(default=30.0, gt=0, le=300)
+    nba_geo_confidence_threshold: float = Field(default=0.8, ge=0, le=1)
+
     @property
     def ai_database_url(self) -> str | None:
         """Build the SQLAlchemy DSN in memory from split deployment secrets."""

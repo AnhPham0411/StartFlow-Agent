@@ -34,7 +34,7 @@ describe('AuthStateService', () => {
       username: 'an.nguyen',
       email: undefined,
     });
-    expect(service.roles()).toEqual(['analyst', 'approver', 'sale', 'manager']);
+    expect(service.roles()).toEqual(['employee', 'manager']);
 
     authenticated = false;
     service.refresh();
@@ -91,7 +91,7 @@ describe('AuthStateService', () => {
     expect(service.status()).toBe('authenticated');
     expect(service.error()).toBeNull();
     expect(service.user()?.subject).toBe('recovered-user');
-    expect(service.roles()).toEqual(['analyst', 'sale']);
+    expect(service.roles()).toEqual(['employee']);
   });
 });
 

@@ -6,6 +6,8 @@
   "resetPasswordAllowed": true,
   "roles": {
     "realm": [
+      { "name": "employee", "description": "Branch employee application role" },
+      { "name": "manager", "description": "Branch manager application role" },
       { "name": "analyst", "description": "Create cases and run assessments" },
       { "name": "approver", "description": "Review and approve proposed actions" },
       { "name": "admin", "description": "Manage demo knowledge and audit access" }

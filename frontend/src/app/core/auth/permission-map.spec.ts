@@ -1,46 +1,37 @@
 import { STARTFLOW_PERMISSIONS, permissionsForRoles } from './permission-map';
 
 describe('permissionsForRoles', () => {
-  const commonPermissions = [
-    STARTFLOW_PERMISSIONS.dashboardView,
-    STARTFLOW_PERMISSIONS.caseView,
-    STARTFLOW_PERMISSIONS.caseCreate,
-    STARTFLOW_PERMISSIONS.runView,
-    STARTFLOW_PERMISSIONS.runStart,
-    STARTFLOW_PERMISSIONS.comparisonView,
-    STARTFLOW_PERMISSIONS.nbaView,
-  ];
+  it('gives employees the customer and operator workspace', () => {
+    const permissions = permissionsForRoles(['employee']);
 
-  it('gives analysts only the common StartFlow workspace permissions', () => {
-    expect(permissionsForRoles(['analyst'])).toEqual(commonPermissions);
+    expect(permissions).toContain(STARTFLOW_PERMISSIONS.customerView);
+    expect(permissions).toContain(STARTFLOW_PERMISSIONS.nbaView);
+    expect(permissions).not.toContain(STARTFLOW_PERMISSIONS.nbaOperationsView);
+    expect(permissions).not.toContain(STARTFLOW_PERMISSIONS.branchView);
+    expect(permissions).not.toContain(STARTFLOW_PERMISSIONS.runApprove);
   });
 
-  it('adds approval only for approvers', () => {
-    expect(permissionsForRoles(['approver'])).toEqual([
-      ...commonPermissions,
-      STARTFLOW_PERMISSIONS.runApprove,
-    ]);
-    expect(permissionsForRoles(['admin'])).not.toContain(STARTFLOW_PERMISSIONS.runApprove);
+  it('adds branch visibility and approval capabilities for managers', () => {
+    const permissions = permissionsForRoles(['manager']);
+
+    expect(permissions).toContain(STARTFLOW_PERMISSIONS.customerView);
+    expect(permissions).toContain(STARTFLOW_PERMISSIONS.branchView);
+    expect(permissions).toContain(STARTFLOW_PERMISSIONS.accountView);
+    expect(permissions).toContain(STARTFLOW_PERMISSIONS.nbaOperationsView);
+    expect(permissions).toContain(STARTFLOW_PERMISSIONS.runApprove);
+    expect(permissions).not.toContain(STARTFLOW_PERMISSIONS.branchManage);
   });
 
-  it('adds knowledge view and ingest only for administrators', () => {
-    expect(permissionsForRoles(['admin'])).toEqual([
-      ...commonPermissions,
-      STARTFLOW_PERMISSIONS.knowledgeView,
-      STARTFLOW_PERMISSIONS.knowledgeCreate,
-    ]);
-    expect(permissionsForRoles(['approver'])).not.toContain(STARTFLOW_PERMISSIONS.knowledgeView);
+  it('grants administrators all portal permissions including identity management', () => {
+    const permissions = permissionsForRoles(['admin']);
+
+    expect(new Set(permissions)).toEqual(new Set(Object.values(STARTFLOW_PERMISSIONS)));
   });
 
-  it('merges permissions without duplicates when a token has multiple roles', () => {
-    const permissions = permissionsForRoles(['analyst', 'approver', 'admin']);
+  it('merges permissions without duplicates and grants nothing without a role', () => {
+    const permissions = permissionsForRoles(['employee', 'manager', 'admin']);
 
     expect(new Set(permissions).size).toBe(permissions.length);
-    expect(permissions).toContain(STARTFLOW_PERMISSIONS.runApprove);
-    expect(permissions).toContain(STARTFLOW_PERMISSIONS.knowledgeCreate);
-  });
-
-  it('grants nothing when no approved StartFlow role is present', () => {
     expect(permissionsForRoles([])).toEqual([]);
   });
 });

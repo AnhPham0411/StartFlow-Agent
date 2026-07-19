@@ -12,6 +12,7 @@ import type { RequestContext } from '../../common/types/request-context';
 import type { AppEnvironment } from '../../config/env.validation';
 import { PrismaService } from '../../database/prisma.service';
 import { IS_PUBLIC_KEY } from './public.decorator';
+import { normalizeApplicationRole, type ApplicationRole } from './roles.decorator';
 
 interface RealmAccess {
   roles?: unknown;
@@ -32,6 +33,7 @@ export class JwtAuthGuard implements CanActivate {
   private readonly clientSecret: string;
   private readonly introspectionUrl: string;
   private readonly issuer: string;
+  private readonly identityEnforcement: 'compat' | 'strict';
   private readonly jwks: ReturnType<typeof createRemoteJWKSet>;
 
   constructor(
@@ -42,6 +44,7 @@ export class JwtAuthGuard implements CanActivate {
     this.clientSecret = config.get('KEYCLOAK_SECRET', { infer: true });
     this.issuer = config.get('KEYCLOAK_ISSUER', { infer: true });
     this.introspectionUrl = `${this.issuer}/protocol/openid-connect/token/introspect`;
+    this.identityEnforcement = config.get('IDENTITY_ENFORCEMENT_MODE', { infer: true }) ?? 'compat';
     this.jwks = createRemoteJWKSet(new URL(`${this.issuer}/protocol/openid-connect/certs`));
   }
 
@@ -127,35 +130,87 @@ export class JwtAuthGuard implements CanActivate {
     const realmManagementRoles = Array.isArray(realmManagementAccess?.roles)
       ? realmManagementAccess.roles.filter((role): role is string => typeof role === 'string')
       : [];
-    const roles = [...new Set([...realmRoles, ...clientRoles, ...realmManagementRoles])];
-    if (realmManagementRoles.includes('realm-admin') && !roles.includes('admin')) {
-      roles.push('admin');
-    }
+    const tokenRoles = [...new Set([...realmRoles, ...clientRoles, ...realmManagementRoles])];
+    const normalizedTokenRoles = tokenRoles
+      .map(normalizeApplicationRole)
+      .filter((role): role is ApplicationRole => role !== undefined);
     const username =
       typeof payload.preferred_username === 'string' ? payload.preferred_username : undefined;
 
-    let id: number | undefined;
-    let branch: string | undefined;
-    if (username) {
-      try {
+    let profile:
+      | {
+          active: boolean;
+          branch: string | null;
+          branch_id: bigint | number | null;
+          id: bigint | number;
+          role: string;
+        }
+      | undefined;
+    try {
+      const users = await this.prisma.$queryRaw<
+        Array<{
+          active: boolean;
+          branch: string | null;
+          branch_id: bigint | number | null;
+          id: bigint | number;
+          role: string;
+        }>
+      >`SELECT u.id, u.role::text AS role, u.active, u.branch_id, b.name AS branch
+         FROM users u LEFT JOIN branches b ON b.id=u.branch_id
+         WHERE u.keycloak_user_id=${payload.sub} OR (${username ?? ''} <> '' AND u.username=${username ?? ''})
+         ORDER BY (u.keycloak_user_id=${payload.sub}) DESC LIMIT 1`;
+      profile = users[0];
+      if (profile && (typeof profile.active !== 'boolean' || typeof profile.role !== 'string')) {
+        profile = {
+          active: true,
+          branch: profile.branch,
+          branch_id: null,
+          id: profile.id,
+          role: normalizedTokenRoles[0] ?? 'employee',
+        };
+      }
+    } catch (error) {
+      if (this.identityEnforcement === 'strict') throw error;
+      if (username) {
         const users = await this.prisma.$queryRaw<
           Array<{ id: bigint | number; branch: string | null }>
         >`SELECT id, branch FROM users WHERE username = ${username} LIMIT 1`;
-        if (users[0]) {
-          id = Number(users[0].id);
-          branch = users[0].branch ?? undefined;
+        const legacy = users[0];
+        if (legacy) {
+          profile = {
+            active: true,
+            branch: legacy.branch,
+            branch_id: null,
+            id: legacy.id,
+            role: normalizedTokenRoles[0] ?? 'employee',
+          };
         }
-      } catch {
-        // A valid Keycloak token remains authenticated when the optional NBA profile is unavailable.
       }
     }
 
+    if (profile && !profile.active) throw new Error('Local account is disabled');
+    if (!profile && this.identityEnforcement === 'strict')
+      throw new Error('Local account is missing');
+    const effectiveRole = profile
+      ? normalizeApplicationRole(profile.role)
+      : normalizedTokenRoles.includes('admin')
+        ? 'admin'
+        : normalizedTokenRoles.includes('manager')
+          ? 'manager'
+          : normalizedTokenRoles.includes('employee')
+            ? 'employee'
+            : undefined;
+    if (!effectiveRole) throw new Error('Application role is missing');
+
     return {
-      roles,
+      active: profile?.active ?? true,
+      roles: [effectiveRole],
+      effectiveRole,
       sub: payload.sub,
       ...(username ? { username } : {}),
-      ...(id === undefined ? {} : { id }),
-      ...(branch ? { branch } : {}),
+      ...(profile ? { id: Number(profile.id) } : {}),
+      ...(profile?.branch ? { branch: profile.branch } : {}),
+      ...(profile?.branch_id ? { branchId: Number(profile.branch_id) } : {}),
     };
   }
 }

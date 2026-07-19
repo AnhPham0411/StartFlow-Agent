@@ -1,6 +1,7 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import type { CustomerListItem } from '@startflow/contracts';
 import { AuthStateService } from '../auth/auth-state.service';
 import { APP_ENVIRONMENT } from '../config/app-environment.token';
 import { ApiError } from './startflow-api.service';
@@ -21,6 +22,13 @@ export class NbaApiService {
 
   getCallList(date: string): Promise<NbaCallListEntry[]> {
     return this.#request('GET', '/nba/calllist', undefined, new HttpParams().set('date', date));
+  }
+
+  searchCustomers(query = '', limit = 100): Promise<CustomerListItem[]> {
+    let params = new HttpParams();
+    if (query.trim()) params = params.set('q', query.trim());
+    params = params.set('limit', String(limit));
+    return this.#request('GET', '/nba/customers', undefined, params);
   }
 
   getCustomer(customerId: number): Promise<NbaCustomerDetail> {

@@ -51,7 +51,7 @@ describe('MainLayoutComponent', () => {
     expect(fixture.nativeElement.querySelector('main')?.classList).toContain('app-route-content');
   });
 
-  it('groups permission-aware routes into business and AI navigation', () => {
+  it('groups permission-aware customer, NBA and administration navigation', () => {
     const fixture = TestBed.createComponent(MainLayoutComponent);
     const groups = fixture.componentInstance.menus.map((group) => ({
       id: group.id,
@@ -72,45 +72,44 @@ describe('MainLayoutComponent', () => {
           : [],
     }));
 
-    expect(groups).toEqual([
-      {
-        id: 'business',
-        title: 'Nghiệp vụ',
-        items: [
-          {
-            title: 'Tổng quan',
-            path: '/dashboard',
-            permission: STARTFLOW_PERMISSIONS.dashboardView,
-          },
-          {
-            title: 'Tư vấn NBA',
-            path: '/nba',
-            permission: STARTFLOW_PERMISSIONS.nbaView,
-          },
-          {
-            title: 'Hồ sơ tín dụng',
-            path: '/cases',
-            permission: STARTFLOW_PERMISSIONS.caseView,
-          },
-        ],
-      },
-      {
-        id: 'ai-data',
-        title: 'AI & Dữ liệu',
-        items: [
-          {
-            title: 'So sánh mô hình',
-            path: '/comparisons',
-            permission: STARTFLOW_PERMISSIONS.comparisonView,
-          },
-          {
-            title: 'Kho tri thức',
-            path: '/knowledge',
-            permission: STARTFLOW_PERMISSIONS.knowledgeView,
-          },
-        ],
-      },
+    const items = groups.flatMap((group) => group.items);
+    expect(groups.map((group) => group.id)).toEqual([
+      'business',
+      'ai-data',
+      'nba-operations',
+      'nba-administration',
+      'administration',
     ]);
+    expect(items).toContain(
+      jasmine.objectContaining({
+        path: '/customers',
+        permission: STARTFLOW_PERMISSIONS.customerView,
+      }),
+    );
+    expect(items).toContain(
+      jasmine.objectContaining({
+        path: '/nba/operations',
+        permission: STARTFLOW_PERMISSIONS.nbaOperationsView,
+      }),
+    );
+    expect(items).toContain(
+      jasmine.objectContaining({
+        path: '/nba/admin/catalog',
+        permission: STARTFLOW_PERMISSIONS.accountManage,
+      }),
+    );
+    expect(items).toContain(
+      jasmine.objectContaining({
+        path: '/administration/accounts',
+        permission: STARTFLOW_PERMISSIONS.accountView,
+      }),
+    );
+    expect(items).toContain(
+      jasmine.objectContaining({
+        path: '/administration/branches',
+        permission: STARTFLOW_PERMISSIONS.branchView,
+      }),
+    );
   });
 
   it('focuses semantic main content and announces subsequent route changes in Vietnamese', async () => {

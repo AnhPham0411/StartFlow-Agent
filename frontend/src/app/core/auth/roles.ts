@@ -1,4 +1,4 @@
-import { userRoleSchema, type UserRole } from '@startflow/contracts';
+import { normalizeUserRole, type UserRole } from '@startflow/contracts';
 
 export interface StartFlowTokenClaims {
   sub?: string;
@@ -23,16 +23,11 @@ export function resolveRoles(
   ];
   const roles = new Set<UserRole>();
   for (const candidate of candidates) {
-    const parsed = userRoleSchema.safeParse(candidate);
-    if (parsed.success) roles.add(parsed.data);
+    const role = normalizeUserRole(candidate);
+    if (role) roles.add(role);
   }
 
   if (realmManagementRoles.includes('realm-admin')) roles.add('admin');
-  if (roles.has('analyst')) roles.add('sale');
-  if (roles.has('approver')) {
-    roles.add('sale');
-    roles.add('manager');
-  }
 
   return [...roles];
 }

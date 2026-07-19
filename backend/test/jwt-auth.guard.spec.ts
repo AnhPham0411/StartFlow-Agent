@@ -92,7 +92,12 @@ describe('Keycloak access-token verification', () => {
         issuer: 'https://auth.example.test/realms/startflow',
       }),
     );
-    expect(request.user).toEqual({ roles: ['analyst'], sub: 'demo-user' });
+    expect(request.user).toEqual({
+      active: true,
+      effectiveRole: 'employee',
+      roles: ['employee'],
+      sub: 'demo-user',
+    });
   });
 
   it('returns unauthorized when a bearer token is missing', async () => {
@@ -133,7 +138,9 @@ describe('Keycloak access-token verification', () => {
       true,
     );
     expect(request.user).toEqual({
-      roles: ['offline_access', 'sale'],
+      active: true,
+      effectiveRole: 'employee',
+      roles: ['employee'],
       sub: 'client-role-user',
     });
   });
@@ -164,7 +171,9 @@ describe('Keycloak access-token verification', () => {
     expect(request.user).toEqual({
       id: 10,
       branch: 'Demo Branch',
-      roles: ['analyst'],
+      active: true,
+      effectiveRole: 'employee',
+      roles: ['employee'],
       sub: 'keycloak-subject',
       username: 'sale01',
     });
@@ -190,9 +199,61 @@ describe('Keycloak access-token verification', () => {
       true,
     );
     expect(request.user).toEqual({
-      roles: ['realm-admin', 'admin'],
+      active: true,
+      effectiveRole: 'admin',
+      roles: ['admin'],
       sub: 'realm-admin-subject',
     });
-    expect(prisma.$queryRaw).not.toHaveBeenCalled();
+    expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
+  });
+
+  it('fails closed for a disabled local identity even while rollout compatibility is enabled', async () => {
+    jest.mocked(jwtVerify).mockResolvedValue({
+      payload: {
+        aud: 'INTEGRATION_API',
+        realm_access: { roles: ['employee'] },
+        sub: 'disabled-subject',
+      },
+      protectedHeader: { alg: 'RS256' },
+    } as never);
+    jest.mocked(prisma.$queryRaw).mockResolvedValueOnce([
+      {
+        active: false,
+        branch: 'Demo Branch',
+        branch_id: 1n,
+        id: 10n,
+        role: 'employee',
+      },
+    ] as never);
+    const { context } = executionContext('Bearer disabled-token');
+
+    await expect(
+      new JwtAuthGuard(config, reflector, prisma).canActivate(context),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it('fails closed for an unmapped identity when strict enforcement is enabled', async () => {
+    jest.mocked(jwtVerify).mockResolvedValue({
+      payload: {
+        aud: 'INTEGRATION_API',
+        realm_access: { roles: ['employee'] },
+        sub: 'unmapped-subject',
+      },
+      protectedHeader: { alg: 'RS256' },
+    } as never);
+    jest.mocked(prisma.$queryRaw).mockResolvedValueOnce([] as never);
+    const strictConfig = {
+      get: jest.fn((key: keyof AppEnvironment) => {
+        if (key === 'KEYCLOAK_ISSUER') return 'https://auth.example.test/realms/startflow';
+        if (key === 'KEYCLOAK_SECRET') return 'fixture-client-secret';
+        if (key === 'IDENTITY_ENFORCEMENT_MODE') return 'strict';
+        return undefined;
+      }),
+    } as unknown as ConfigService<AppEnvironment, true>;
+    const { context } = executionContext('Bearer unmapped-token');
+
+    await expect(
+      new JwtAuthGuard(strictConfig, reflector, prisma).canActivate(context),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 });

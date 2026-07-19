@@ -138,7 +138,7 @@ export class NbaController {
 
   /** GET /api/nba/calllist?date=YYYY-MM-DD */
   @Get('calllist')
-  @Roles('sale', 'manager', 'admin')
+  @Roles('employee')
   @ApiOperation({ summary: 'Call list T+1 với đề xuất mới nhất' })
   getCallList(@Query('date') date: string, @CurrentUser() user: AuthenticatedUser) {
     const d = date ? requireIsoDate(date, 'date') : new Date().toISOString().slice(0, 10);
@@ -147,7 +147,7 @@ export class NbaController {
 
   /** GET /api/nba/customers?q=&limit= — danh sách khách trong phạm vi được phép xem */
   @Get('customers')
-  @Roles('sale', 'manager', 'admin')
+  @Roles('employee')
   @ApiOperation({ summary: 'Danh sách khách theo phạm vi của người dùng' })
   listCustomers(
     @CurrentUser() user: AuthenticatedUser,
@@ -163,7 +163,7 @@ export class NbaController {
 
   /** GET /api/nba/customer/:id */
   @Get('customer/:id')
-  @Roles('sale', 'manager', 'admin')
+  @Roles('employee')
   @ApiOperation({ summary: 'Đề xuất + staleness + versions cho 1 khách' })
   getCustomer(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthenticatedUser) {
     return this.nba.getCustomer(id, user);
@@ -171,7 +171,7 @@ export class NbaController {
 
   /** GET /api/nba/customer/:id/assessment?as_of=YYYY-MM-DD */
   @Get('customer/:id/assessment')
-  @Roles('sale', 'manager', 'admin')
+  @Roles('employee')
   @ApiOperation({ summary: 'Tổng hợp 3/6 tháng + chấm policy từng gói + lý do phù hợp' })
   async assessCustomer(
     @Param('id', ParseIntPipe) id: number,
@@ -184,7 +184,7 @@ export class NbaController {
 
   /** POST /api/feedback */
   @Post('/feedback')
-  @Roles('sale', 'manager', 'admin')
+  @Roles('employee')
   @ApiOperation({ summary: 'Ghi feedback + kích suppression' })
   submitFeedback(@Body() body: FeedbackDto, @CurrentUser() user: AuthenticatedUser) {
     // feedback.sale_id là BIGINT FK users(id) — phải dùng user.id, không phải user.sub (chuỗi).
@@ -194,7 +194,7 @@ export class NbaController {
 
   /** POST /api/admin/calllist */
   @Post('/admin/calllist')
-  @Roles('manager', 'admin')
+  @Roles('manager')
   @ApiOperation({ summary: 'Assign call list T+1' })
   assignCallList(@Body() body: AssignCallListDto, @CurrentUser() user: AuthenticatedUser) {
     // created_by = người thực hiện assign (trước đây ghi nhầm thành sale được giao).
@@ -203,7 +203,7 @@ export class NbaController {
 
   /** PUT /api/admin/kpi */
   @Put('/admin/kpi')
-  @Roles('manager', 'admin')
+  @Roles('manager')
   @ApiOperation({ summary: 'Set hệ số KPI tháng' })
   setKpi(@Body() body: SetKpiDto) {
     return this.nba.setKpi(body.month, body.product, body.multiplier);
@@ -211,7 +211,7 @@ export class NbaController {
 
   /** GET /api/audit/recommendation/:id */
   @Get('/audit/recommendation/:id')
-  @Roles('sale', 'manager', 'admin')
+  @Roles('employee')
   @ApiOperation({ summary: 'Truy vết đề xuất (version + snapshot + rules)' })
   audit(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.nba.auditRecommendation(id, user);
@@ -219,7 +219,7 @@ export class NbaController {
 
   /** POST /api/nba/notes */
   @Post('notes')
-  @Roles('sale', 'manager', 'admin')
+  @Roles('employee')
   @ApiOperation({ summary: 'Lưu ghi chú cuộc gọi' })
   saveCallNote(@Body() body: CreateNoteDto, @CurrentUser() user: AuthenticatedUser) {
     return this.nba.saveCallNote(body.customer_id, requireUserId(user), body.note_text, user);
@@ -227,7 +227,7 @@ export class NbaController {
 
   /** GET /api/nba/notes/:customerId */
   @Get('notes/:customerId')
-  @Roles('sale', 'manager', 'admin')
+  @Roles('employee')
   @ApiOperation({ summary: 'Xem lịch sử ghi chú' })
   getCallNotes(
     @Param('customerId', ParseIntPipe) customerId: number,

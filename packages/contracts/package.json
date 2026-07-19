@@ -10,7 +10,8 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./run-event.schema.json": "./run-event.schema.json"
+    "./run-event.schema.json": "./run-event.schema.json",
+    "./nba-contracts.schema.json": "./nba-contracts.schema.json"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

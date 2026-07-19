@@ -2,6 +2,7 @@ import { buildDatabaseUrl } from './database-url';
 
 export type NodeEnvironment = 'development' | 'test' | 'production';
 export type ExplainerMode = 'rules' | 'llm' | 'model';
+export type IdentityEnforcement = 'compat' | 'strict';
 
 export interface AppEnvironment {
   AI_SERVICE_URL: string;
@@ -10,6 +11,9 @@ export interface AppEnvironment {
   EXPLAINER_MODE: ExplainerMode;
   EXTERNAL_MODEL_URL?: string;
   INTERNAL_SERVICE_TOKEN: string;
+  IDENTITY_ENFORCEMENT_MODE: IdentityEnforcement;
+  KEYCLOAK_ADMIN_CLIENT_ID: string;
+  KEYCLOAK_ADMIN_CLIENT_SECRET: string;
   KEYCLOAK_ISSUER: string;
   KEYCLOAK_SECRET: string;
   LOG_LEVEL: string;
@@ -18,6 +22,7 @@ export interface AppEnvironment {
   LLM_MODEL: string;
   NODE_ENV: NodeEnvironment;
   PORT: number;
+  STARTFLOW_DEMO_INITIAL_PASSWORD?: string;
 }
 
 const required = [
@@ -80,6 +85,13 @@ export function validateEnvironment(input: Record<string, unknown>): AppEnvironm
     throw new Error('EXTERNAL_MODEL_URL is required when EXPLAINER_MODE=model');
   }
 
+  const identityEnforcement = String(
+    input.IDENTITY_ENFORCEMENT_MODE ?? input.IDENTITY_ENFORCEMENT ?? 'compat',
+  );
+  if (!['compat', 'strict'].includes(identityEnforcement)) {
+    throw new Error('IDENTITY_ENFORCEMENT_MODE must be compat or strict');
+  }
+
   return {
     AI_SERVICE_URL: requireUrl(String(input.AI_SERVICE_URL), 'AI_SERVICE_URL'),
     CORS_ORIGINS: corsOrigins,
@@ -88,6 +100,11 @@ export function validateEnvironment(input: Record<string, unknown>): AppEnvironm
     EXTERNAL_MODEL_URL:
       externalModelUrl.length > 0 ? requireUrl(externalModelUrl, 'EXTERNAL_MODEL_URL') : undefined,
     INTERNAL_SERVICE_TOKEN: serviceToken,
+    IDENTITY_ENFORCEMENT_MODE: identityEnforcement as IdentityEnforcement,
+    KEYCLOAK_ADMIN_CLIENT_ID: String(input.KEYCLOAK_ADMIN_CLIENT_ID ?? 'INTEGRATION_API'),
+    KEYCLOAK_ADMIN_CLIENT_SECRET: String(
+      input.KEYCLOAK_ADMIN_CLIENT_SECRET ?? input.KEYCLOAK_SECRET,
+    ),
     KEYCLOAK_ISSUER: requireUrl(String(input.KEYCLOAK_ISSUER), 'KEYCLOAK_ISSUER'),
     KEYCLOAK_SECRET: String(input.KEYCLOAK_SECRET),
     LOG_LEVEL: String(input.LOG_LEVEL ?? 'info'),
@@ -99,5 +116,10 @@ export function validateEnvironment(input: Record<string, unknown>): AppEnvironm
     LLM_MODEL: String(input.LLM_MODEL ?? 'gpt-4.1-mini'),
     NODE_ENV: nodeEnvironment as NodeEnvironment,
     PORT: port,
+    STARTFLOW_DEMO_INITIAL_PASSWORD:
+      typeof input.STARTFLOW_DEMO_INITIAL_PASSWORD === 'string' &&
+      input.STARTFLOW_DEMO_INITIAL_PASSWORD.length > 0
+        ? input.STARTFLOW_DEMO_INITIAL_PASSWORD
+        : undefined,
   };
 }

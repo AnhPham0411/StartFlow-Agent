@@ -23,7 +23,31 @@ describe('environment validation', () => {
     expect(result.KEYCLOAK_ISSUER).toBe('https://auth.example.test/realms/startflow');
     expect(result.DATABASE_URL).toContain('sslmode=require');
     expect(result.EXPLAINER_MODE).toBe('rules');
+    expect(result.IDENTITY_ENFORCEMENT_MODE).toBe('compat');
+    expect(result.KEYCLOAK_ADMIN_CLIENT_ID).toBe('INTEGRATION_API');
     expect(result.LLM_BASE_URL).toBe('https://api.openai.com/v1');
+  });
+
+  it('accepts the canonical identity rollout enforcement mode', () => {
+    expect(
+      validateEnvironment({ ...validEnvironment, IDENTITY_ENFORCEMENT_MODE: 'strict' }),
+    ).toMatchObject({ IDENTITY_ENFORCEMENT_MODE: 'strict' });
+    expect(() =>
+      validateEnvironment({ ...validEnvironment, IDENTITY_ENFORCEMENT_MODE: 'loose' }),
+    ).toThrow('IDENTITY_ENFORCEMENT_MODE');
+  });
+
+  it('keeps IDENTITY_ENFORCEMENT as a backward-compatible input alias', () => {
+    expect(
+      validateEnvironment({ ...validEnvironment, IDENTITY_ENFORCEMENT: 'strict' }),
+    ).toMatchObject({ IDENTITY_ENFORCEMENT_MODE: 'strict' });
+    expect(
+      validateEnvironment({
+        ...validEnvironment,
+        IDENTITY_ENFORCEMENT: 'strict',
+        IDENTITY_ENFORCEMENT_MODE: 'compat',
+      }),
+    ).toMatchObject({ IDENTITY_ENFORCEMENT_MODE: 'compat' });
   });
 
   it('fails closed when an internal token is too short', () => {

@@ -80,6 +80,17 @@ describe('DashboardComponent', () => {
     fixture.componentInstance.openNextAction(fixture.componentInstance.nextActions()[0]!);
     expect(navigateSpy).toHaveBeenCalledWith(['/runs', 'run-approval']);
   });
+
+  it('opens the NBA mini-run demo journey from the dashboard', async () => {
+    const fixture = TestBed.createComponent(DashboardComponent);
+    const router = TestBed.inject(Router);
+    const navigateSpy = spyOn(router, 'navigate').and.resolveTo(true);
+    fixture.detectChanges();
+
+    fixture.componentInstance.openNbaDemo();
+
+    expect(navigateSpy).toHaveBeenCalledWith(['/nba/operations']);
+  });
 });
 
 function dashboardCases(): CaseSummary[] {

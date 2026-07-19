@@ -38,6 +38,29 @@ describe('NbaApiService', () => {
 
   afterEach(() => http.verify());
 
+  it('searches the scoped customer portfolio with the frozen query contract', async () => {
+    const resultPromise = api.searchCustomers('demo', 50);
+    await Promise.resolve();
+
+    const request = http.expectOne(
+      'https://api.startflow.test/api/nba/customers?q=demo&limit=50',
+    );
+    expect(request.request.method).toBe('GET');
+    request.flush([
+      {
+        customer_id: 42,
+        full_name: 'Nguyen Demo An',
+        cif_code: 'CIF-00042',
+        product_rank1: 'vay',
+        last_list_date: '2026-07-19',
+      },
+    ]);
+
+    await expectAsync(resultPromise).toBeResolvedTo([
+      jasmine.objectContaining({ customer_id: 42, cif_code: 'CIF-00042' }),
+    ]);
+  });
+
   it('loads the dated call list with bearer authentication', async () => {
     const resultPromise = api.getCallList('2026-07-19');
     await Promise.resolve();

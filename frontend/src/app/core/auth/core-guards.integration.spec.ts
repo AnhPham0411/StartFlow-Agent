@@ -22,7 +22,7 @@ describe('Core auth and permission guards', () => {
   });
 
   it('allows an authenticated common workspace permission', async () => {
-    const harness = configureHarness(true, ['analyst']);
+    const harness = configureHarness(true, ['employee']);
 
     expect(harness.authGuard.canActivate(route(), state('/cases'))).toBeTrue();
     await harness.permissionGuard.canActivate(route(), state('/cases'));
@@ -36,7 +36,7 @@ describe('Core auth and permission guards', () => {
   });
 
   it('denies missing admin and approval permissions and invokes the forbidden route', async () => {
-    const harness = configureHarness(true, ['analyst']);
+    const harness = configureHarness(true, ['employee']);
     await harness.permissionGuard.canActivate(route(), state('/dashboard'));
 
     await expectAsync(
@@ -56,7 +56,7 @@ describe('Core auth and permission guards', () => {
   });
 
   it('allows the protected paths for administrator and approver roles', async () => {
-    const harness = configureHarness(true, ['admin', 'approver']);
+    const harness = configureHarness(true, ['admin', 'manager']);
     await harness.permissionGuard.canActivate(route(), state('/dashboard'));
 
     await expectAsync(
@@ -75,7 +75,7 @@ describe('Core auth and permission guards', () => {
   });
 
   it('keeps the Core auth signout action wired to auth state logout', async () => {
-    const harness = configureHarness(true, ['analyst']);
+    const harness = configureHarness(true, ['employee']);
 
     harness.authService.signout();
     await Promise.resolve();

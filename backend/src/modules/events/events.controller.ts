@@ -8,7 +8,7 @@ import { EventsService } from './events.service';
 @ApiTags('runs')
 @ApiBearerAuth()
 @Controller('api/runs')
-@Roles('analyst')
+@Roles('employee')
 export class EventsController {
   constructor(
     private readonly eventStream: EventStreamService,
