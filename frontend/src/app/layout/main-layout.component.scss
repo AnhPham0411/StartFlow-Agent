@@ -1,0 +1,17 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.app-route-content {
+  box-sizing: border-box;
+  height: 100%;
+  overflow: auto;
+  padding: 24px;
+}
+
+@media (max-width: 767px) {
+  .app-route-content {
+    padding: 16px;
+  }
+}
